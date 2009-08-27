@@ -188,20 +188,6 @@ public class MathFunctions {
         return res;
     }
     
-//    public static double ln(double z) {
-//        double res;
-//        int N=60;
-//        double tmp = z-1;
-//
-//        res = z-1;
-//        for (int i=2;i<N;i+=2) {
-//            tmp *= (z-1);
-//            res -= tmp/i;
-//            tmp *= (z-1);
-//            res += tmp/(i+1);
-//        }
-//        return res;
-//    }
     /** 
      * Conversion from ua to billion of km
      */
