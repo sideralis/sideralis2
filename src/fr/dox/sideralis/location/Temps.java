@@ -1,5 +1,6 @@
 package fr.dox.sideralis.location;
 
+import fr.dox.sideralis.Sideralis;
 import java.util.*;
 
 /**
@@ -13,7 +14,7 @@ public class Temps {
     /** Sideral hour */
     private double sideralHour;
     /** The date */
-    private Calendar myDate;
+    private Date myDate;
     /** The offset between current time and local time */
     private long offsetTime;
 
@@ -21,8 +22,7 @@ public class Temps {
      * Creates a new instance of Temps 
      */
     public Temps() {        
-        //        myDate = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        myDate = Calendar.getInstance(/*TimeZone.getDefault()*/);
+        myDate = new Date();
         offsetTime = 0;
     }
 
@@ -71,20 +71,16 @@ public class Temps {
         return T;
     }
     /**
-     * return the temps as String
-     * @return a string representing the temps
+     * 
+     * @return
      */
-    public String toString() {
-        String res;
-        res = new String(myDate.get(Calendar.DAY_OF_MONTH)+"/"+(myDate.get(Calendar.MONTH)+1)+"/"+myDate.get(Calendar.YEAR)+" "+myDate.get(Calendar.HOUR_OF_DAY)+":"+myDate.get(Calendar.MINUTE)+":"+myDate.get(Calendar.SECOND));
-        return res;
-    }
-    /**
-     * Return the variable representing the date and time of the application.
-     * @return the myDate field
-     */
-    public Calendar getDate() {        
-        return myDate;
+    public Calendar getCalendar() {
+        Calendar cal;
+
+        cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        cal.setTime(myDate);
+
+        return cal;
     }
     /** 
      * Return the time offset
@@ -105,23 +101,18 @@ public class Temps {
      * @param d the requested time.
      */
     public void calculateTimeOffset(Date d) {
-        myDate = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        Date date = myDate.getTime();
-        long lDate = date.getTime();
+        myDate = new Date();
+        long lDate = myDate.getTime();
         offsetTime = d.getTime()-lDate;
-        //System.out.println("Time offset: "+offsetTime);                         // DBG
     }
     /**
      * Calculate date and time according to time offset and current date and time.
      */
     public void adjustDate() {
-        myDate = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        Date date = myDate.getTime();
-        long lDate = date.getTime();
+        myDate = new Date();
+        long lDate = myDate.getTime();
         lDate += offsetTime ;                                                   // Add time offset from current date.
-        date.setTime(lDate);
-        myDate.setTime(date);          // update calendar        
-//        System.out.println("Date/time: "+myDate.getTime().toString());          // DBG
+        myDate.setTime(lDate);
     }
     /**
      * Calculates the Jour Julien
@@ -130,11 +121,14 @@ public class Temps {
         int A,B,C,D;
         int year,month;
         double hour;
+        Calendar cal;
+
+        cal = getCalendar();
 
         // Calcul du jour julien
-        year = myDate.get(Calendar.YEAR);
-        month = myDate.get(Calendar.MONTH)+12-Calendar.DECEMBER;                // returned values is starting from 0
-        hour = myDate.get(Calendar.HOUR_OF_DAY)+myDate.get(Calendar.MINUTE)/60.0+myDate.get(Calendar.SECOND)/3600.0;
+        year = cal.get(Calendar.YEAR);
+        month = cal.get(Calendar.MONTH)+12-Calendar.DECEMBER;                // returned values is starting from 0
+        hour = cal.get(Calendar.HOUR_OF_DAY)+cal.get(Calendar.MINUTE)/60.0+cal.get(Calendar.SECOND)/3600.0;
         if (month<3) {
             month+=12;
             year-=1;
@@ -143,7 +137,8 @@ public class Temps {
         B = 2-A+A/4;
         C = (int)((float)365.25*(float)year);
         D = (int)((float)30.6001 * (float)(month+1));
-        jourJulien = B + C + D + myDate.get(Calendar.DAY_OF_MONTH) + hour/24 + 1720994.5;        
+        jourJulien = B + C + D + cal.get(Calendar.DAY_OF_MONTH) + hour/24 + 1720994.5;
+//        System.out.println("JJ:"+jourJulien+ " y:"+year+" m:"+month+" h:"+hour);
     }
     /**
      * Calculates the sideral hour
@@ -153,9 +148,12 @@ public class Temps {
         double h;
         double m;
         double jj0;
+        Calendar cal;
+
+        cal = getCalendar();
         
-        h = myDate.get(Calendar.HOUR_OF_DAY);   
-        m = myDate.get(Calendar.MINUTE)+myDate.get(Calendar.SECOND)/60.0;
+        h = cal.get(Calendar.HOUR_OF_DAY);
+        m = cal.get(Calendar.MINUTE)+cal.get(Calendar.SECOND)/60.0;
 
         jj0 = (int)(jourJulien-0.5)+0.5;
         // Temps sideral a Greenwich pour 0h UT
@@ -167,16 +165,5 @@ public class Temps {
         sideralHour = (h+m/60.0)*1.002737908 + sideralHour;
         while (sideralHour>24.0)
             sideralHour -= 24.0;
-    }
-    /**
-     * Add minutes to the current time
-     * @param m number of minute to add
-     */
-    public void addMinute(int m) {
-         Date date = myDate.getTime();
-         long lDate = date.getTime();
-         lDate += m*60*1000 ;           // Add m minute from current date.
-         date.setTime(lDate);
-         myDate.setTime(date);          // update calendar
     }
 }

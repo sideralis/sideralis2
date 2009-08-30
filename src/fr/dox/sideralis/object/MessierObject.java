@@ -14,13 +14,6 @@ public class MessierObject extends SkyObject {
         this.dist = dist;
     }
     /**
-     * Return the magnitude of the object
-     * @return mag as a float 
-     */
-    public float getMag() {
-        return (float)mag/10;
-    }
-    /**
      * Return the distance in kilo ly from earth
      * @return the distance as a float in kly
      */

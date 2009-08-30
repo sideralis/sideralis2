@@ -124,14 +124,10 @@ public class MathFunctions {
             }
         }
         
-        if (signN == true && z>=0)
-            res += 0;
         if (signN == false && z>=0)
             res += Math.PI;
         if (signN == true && z<0)
             res += Math.PI;
-        if (signN == false && z<0)
-            res += 0;
         return res;
     }
     /**

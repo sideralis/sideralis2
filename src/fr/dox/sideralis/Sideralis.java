@@ -142,6 +142,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private boolean starting;
     private Timer myRefreshTimer;
     private ConfigParameters myParameter;
+    public static final long REFRESH_TIME_CALC = 1 * 10 * 1000;                 // How often the calculation of position is refreshed
 
     /**
      *
@@ -152,6 +153,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         LocalizationSupport.initLocalizationSupport();
         try {
             mySplashCanvas = new SplashCanvas(this);
+            mySplashCanvas.setFullScreenMode(true);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -176,34 +178,28 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         myCanvas.project();
         starting = false;
         myRefreshTimer = new Timer();
-        myRefreshTimer.schedule(mySky, 1 * 10 * 1000, 1 * 10 * 1000);           // Every 10s for now
+        myRefreshTimer.schedule(mySky, REFRESH_TIME_CALC, 1 * 10 * 1000);           // Every 10s for now
     }
 
     protected void pauseApp() {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public void commandAction(Command c, Displayable d) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public void commandAction(Command c, Item item) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public void itemStateChanged(Item item) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
      *
      */
     public void EndOfLocateMe() {
-        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     /**

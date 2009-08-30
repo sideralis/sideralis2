@@ -13,7 +13,7 @@ public class SkyObject {
     /** Reference ID */
     protected String name;
     /** Magnitude apparente */
-    protected short mag;
+    protected float mag;
 
     /**
      * Constructor for SkyObject
@@ -22,7 +22,7 @@ public class SkyObject {
      * @param name
      * @param mag
      */
-    public SkyObject(float asc, float dec, String name, short mag) {
+    public SkyObject(float asc, float dec, String name, float mag) {
         this.asc = asc;
         this.dec = dec;
         this.name = name;
@@ -62,6 +62,13 @@ public class SkyObject {
      */
     public String getName() {
         return name;
+    }
+    /**
+     * Return the magnitude of this star
+     * @return magnitude of the star
+     */
+    public float getMag() {
+        return mag;
     }
 
 

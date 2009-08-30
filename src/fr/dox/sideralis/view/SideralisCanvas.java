@@ -15,10 +15,10 @@ import fr.dox.sideralis.Sideralis;
 import fr.dox.sideralis.data.ConstellationCatalog;
 import fr.dox.sideralis.data.MessierCatalog;
 import fr.dox.sideralis.data.Sky;
-import fr.dox.sideralis.data.StarCatalog;
 import fr.dox.sideralis.object.ConstellationObject;
 import fr.dox.sideralis.object.ScreenCoord;
 import fr.dox.sideralis.projection.plane.Zenith;
+import fr.dox.sideralis.projection.sphere.StarProj;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
@@ -47,6 +47,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
     private final Zenith myProjection;
     /** Table to store x and y position on screen of stars */
     private ScreenCoord[] screenCoordStar;
+    private ScreenCoord[] screenCoordStarMag;
     private ScreenCoord[] screenCoordMessier;
 
     private final Font myFont;
@@ -72,15 +73,14 @@ public class SideralisCanvas extends Canvas implements Runnable {
     public void init() {
         idxClosestStar = idxClosestConst = -1;
         colorClosestConst = 0;
-        screenCoordStar = new ScreenCoord[StarCatalog.getNumberOfStars()];
+        screenCoordStar = new ScreenCoord[mySky.getStarsProj().length];
         screenCoordMessier = new ScreenCoord[MessierCatalog.getNumberOfObjects()];
-        for (int k = 0; k < StarCatalog.getNumberOfStars(); k++) {
+        for (int k = 0; k < screenCoordStar.length; k++) {
             screenCoordStar[k] = new ScreenCoord();
         }
         for (int k = 0; k < MessierCatalog.getNumberOfObjects(); k++) {
             screenCoordMessier[k] = new ScreenCoord();
         }
-
     }
 
     /**
@@ -172,7 +172,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
         if (rMyParam.isConstDisplayed() || rMyParam.isConstNamesDisplayed() || rMyParam.isConstNamesLatinDisplayed()) {
             // If constellations should be displayed
             for (i = 0; i < ConstellationCatalog.getNumberOfConstellations(); i++) {
-                co = rMyConstellations.getOptConstellation(i);
+                co = ConstellationCatalog.getConstellation(i);
                 // For all constellations
                 int col = 0;                                                    // The color of the constellation drawing
                 for (j = 0; j < co.getSizeOfConstellation(); j += 2) {
@@ -231,7 +231,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      * @param g the Graphics object
      */
     private void drawStars(Graphics g) {
-        int nbOfStars = StarCatalog.getNumberOfStars();
+        int nbOfStars = mySky.getStarsProj().length;
         boolean isStarColored = myMidlet.getMyParameter().isStarColored();
         boolean isStarShownAsCircle = myMidlet.getMyParameter().isStarShownAsCircle();
         float maxMag = myMidlet.getMyParameter().getMaxMag();
@@ -239,8 +239,9 @@ public class SideralisCanvas extends Canvas implements Runnable {
         for (int k = 0; k < nbOfStars; k++) {
             if (screenCoordStar[k].isVisible()) {
                 // Star is above horizon
-                if (StarCatalog.getStar(k).getMag() < maxMag) {
-                    int mag = (int) (StarCatalog.getStar(k).getMag());
+                float magf = mySky.getStar(k).getObject().getMag();
+                if (magf < maxMag) {
+                    int mag = (int) (magf);
                     if (mag > 5) {
                         mag = 5;
                     }
@@ -376,7 +377,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     public void project() {
         // === Stars ===
-        for (int k = 0; k < StarCatalog.getNumberOfStars(); k++) {
+        for (int k = 0; k < screenCoordStar.length; k++) {
             screenCoordStar[k].setVisible(false);
                 // For a zenith view
             if (mySky.getStar(k).getHeight() > 0) {

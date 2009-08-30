@@ -5,7 +5,6 @@ import java.util.Calendar;
 import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.math.MathFunctions;
 import fr.dox.sideralis.object.SkyObject;
-import fr.dox.sideralis.view.SideralisCanvas;
 
 /**
  * This is the parent class for all object in the sky.
@@ -32,6 +31,7 @@ public class Projection {
     protected double dAlpha,dDelta; 
     /** Angle horaire */
     protected double H;
+
 
     /**
      * Creates a new instance of Projection
@@ -164,8 +164,12 @@ public class Projection {
      */
     public void calculatePrecession(double alpha,double delta) {
         double m,n,T;
+        Calendar cal;
+
         // Calculate precession
-        T = (myPosition.getTemps().getDate().get(Calendar.YEAR)-1900)/100;
+        cal = myPosition.getTemps().getCalendar();
+
+        T = (cal.get(Calendar.YEAR)-1900)/100;
         m = 3.07234+0.00186*T;
         n = 20.0468 - 0.0085*T;
         dAlpha = m+n/15*Math.sin(Math.toRadians(alpha*15))*Math.tan(Math.toRadians(delta));
@@ -182,12 +186,15 @@ public class Projection {
         double sinH,cosH,sinT,tanD,cosT,cosD,sinHau;
         double sinD, tanA;
         double T;
+        Calendar cal;
+
         // Get Sideral hour
         HS = myPosition.getTemps().getHS();
         if (precession) {
             calculatePrecession(alpha,delta);
             // Modify alpha and delta values
-            T = (myPosition.getTemps().getDate().get(Calendar.YEAR)-2000);
+            cal = myPosition.getTemps().getCalendar();
+            T = (cal.get(Calendar.YEAR)-2000);
             alpha += dAlpha*T/3600;                                                 // dAlpha is given in s
             delta += dDelta*T/3600;                                                 // dDelta is given in s too
         }

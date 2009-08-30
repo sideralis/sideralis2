@@ -10,7 +10,7 @@ public class StarObject extends SkyObject {
     /** Reference ID */
     private short HR;
     /** Distance from earth */
-    private short dist;
+    private float dist;
     /** bayerName + constName */
     private short bayerNameConstName;
     
@@ -34,7 +34,7 @@ public class StarObject extends SkyObject {
      * @param di Distance from earth
      * @param n Name
      */
-    public StarObject(float asc, float dec, short mag, short HR,short bayerNameConstName, short dist, String name) {
+    public StarObject(float asc, float dec, float mag, short HR,short bayerNameConstName, float dist, String name) {
         super(asc,dec,name,mag);
         this.HR = HR;
         this.dist = dist;
@@ -46,13 +46,6 @@ public class StarObject extends SkyObject {
      */
     public short getHR() {
         return HR;
-    }
-    /**
-     * Return the magnitude of this star
-     * @return magnitude of the star
-     */
-    public float getMag() {
-        return ((float)mag)/100;
     }
     /** 
      * Return the bayer name of the star
@@ -79,7 +72,7 @@ public class StarObject extends SkyObject {
      * Return the distance from earth for this star
      * @return distance from earth in light year
      */
-    public short getDistance() {
+    public float getDistance() {
         return dist;
     }
 }

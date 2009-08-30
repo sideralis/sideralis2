@@ -69,11 +69,15 @@ public class Sky extends TimerTask {
      * @param pos the position of the user
      */
     public Sky(Position pos) {
-        // Create all stars
-        starsProj = new StarProj[StarCatalog.getNumberOfStars()];
-        for (int i=0;i<starsProj.length;i++)
-            starsProj[i] = new StarProj(StarCatalog.getStar(i), pos);
-
+        int i,i1,i2;
+        // Create all stars - We cumulate the catalog
+        starsProj = new StarProj[StarCatalogConst.getNumberOfStars()+StarCatalogMag.getNumberOfStars()];
+        for (i=i1=i2=0;i<starsProj.length;i++) {
+            if (i<StarCatalogConst.getNumberOfStars())
+                starsProj[i] = new StarProj(StarCatalogConst.getStar(i1++), pos);
+            else
+                starsProj[i] = new StarProj(StarCatalogMag.getStar(i2++), pos);
+        }
         // Create the constellations
         myConstellations = new ConstellationCatalog();
 
@@ -137,7 +141,7 @@ public class Sky extends TimerTask {
 
         // Create the messier objects
         messierProj = new MessierProj[MessierCatalog.getNumberOfObjects()];
-        for (int i=0;i<messierProj.length;i++) {
+        for (i=0;i<messierProj.length;i++) {
             messierProj[i] = new MessierProj(MessierCatalog.getObject(i), pos);
         }
         
@@ -153,22 +157,6 @@ public class Sky extends TimerTask {
         return myConstellations;
     }
     /**
-     * Return the number of projected stars
-     * @deprecated
-     * @return the number of stars
-     */
-    public int getNumberOfStars() {
-        return starsProj.length;
-    }
-    /**
-     * Return the number of Messier objects
-     * @deprecated
-     * @return the number of Messier objects
-     */
-    public int getNumberOfMessierObjects() {
-        return messierProj.length;
-    }
-    /**
      * Return one of the star from all stars
      * @param i the index of the star required
      * @return the ith star in the list of star
@@ -176,6 +164,14 @@ public class Sky extends TimerTask {
     public StarProj getStar(int i) {
         return starsProj[i];
     }
+    /**
+     * Return all stars
+     * @return a reference to the starsProj object
+     */
+    public StarProj[] getStarsProj() {
+        return starsProj;
+    }
+
     /**
      * Return one of the Messier object from the catalog
      * @param i the index of the Messier object required
