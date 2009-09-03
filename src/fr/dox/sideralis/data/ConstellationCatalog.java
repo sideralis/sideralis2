@@ -8,8 +8,6 @@ import fr.dox.sideralis.object.ConstellationObject;
  * @author Bernard
  */
 public class ConstellationCatalog {
-    // The optimised constellations where the hr number of stars are replaced by an index
-//    private ConstellationObject[] optConstellations;    // The various field in the table below
     public static short ABBR = 0;
     public static short LATIN = 1;
     public static short NAME = 2;

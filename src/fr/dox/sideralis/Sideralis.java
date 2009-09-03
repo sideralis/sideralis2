@@ -114,14 +114,25 @@ package fr.dox.sideralis;
  * SE P910
  * Nokia 6680
  */
+import fr.dox.sideralis.data.ConstellationCatalog;
+import fr.dox.sideralis.data.MessierCatalog;
 import fr.dox.sideralis.data.Sky;
+import fr.dox.sideralis.data.StarCatalogConst;
+import fr.dox.sideralis.data.StarCatalogMag;
 import fr.dox.sideralis.location.Position;
+import fr.dox.sideralis.object.CityObject;
+import fr.dox.sideralis.view.GlobeCanvas;
 import fr.dox.sideralis.view.SideralisCanvas;
 import fr.dox.sideralis.view.SplashCanvas;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Timer;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
+import javax.microedition.rms.RecordStore;
 
 /**
  * The MIDlet class. This is the first class called.
@@ -136,16 +147,81 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     
     private Position myPosition;
     private Sky mySky;
+    /** All the canvas */
     private SideralisCanvas myCanvas;
     private SplashCanvas mySplashCanvas;
+    private GlobeCanvas globeCanvas;
+
     private Display myDisplay;
     private boolean starting;
     private Timer myRefreshTimer;
     private ConfigParameters myParameter;
     public static final long REFRESH_TIME_CALC = 1 * 10 * 1000;                 // How often the calculation of position is refreshed
 
+    /** The position form */
+    private Form positionForm;
+    /** The form used to select a city */
+    private Form cityForm;
+    /** The form used to display display options */
+    private Form displayOptionsForm;
+    /** The help form */
+    private Form helpForm;
+    /** The info form */
+    private Form infoForm;
+    /** The dico form */
+    private Form dicoForm;
+    /** The language form */
+    private Form langForm;
+    /** The locate me form */
+    private Form locateMeForm;
+    /** The search form */
+    private Form searchForm;
+
+    /** Some commands */
+    private Command exitCommand;
+    private Command displayCommand;
+    private Command positionCommand;
+    private Command cancelCommand;
+    private Command globeCommand;
+    private Command cityCommand;
+    private Command autoPositionCommand;
+    private Command okCommand;
+    private Command helpCommand;
+    private Command infoCommand;
+    private Command backCommand;
+    private Command dicoCommand;
+    private Command langCommand;
+    private Command searchCommand;
+    /** Some item in the position Form */
+    private TextField latTextField;
+    private TextField longTextField;
+    private TextField posName;
+    private StringItem posStore,pos1Restore,pos2Restore;
+    private DateField dateField;
+    private StringItem realTimeButton;
+    private Gauge positionGauge;
+    /** Some items in the city form */
+    private StringItem cityStringItem;
+    private ChoiceGroup cityChoiceGroup;
+    /** Some items in the display options form */
+    private StringItem displayOptionsStringItem;
+    private TextField displayOptionsTextMaxMag;
+    private TextField searchTextSearch;
+    private StringItem searchItemSearch;
+    private StringItem searchItemCancelSearch;
+    private ChoiceGroup displayOptionsChoiceGroup;
+    /** Some items for the help form */
+    private StringItem[] helpStringItem;
+    /** Some items for the info form */
+    private StringItem[] infoStringItem;
+    /** Some items for the dico form */
+    private StringItem[] dicoStringItem;
+    /** Some items for the language form */
+    private StringItem langStringItem;
+    private ChoiceGroup langChoiceGroup;
+
     /**
-     *
+     * All codes codes which should be executed before creating main objects
      */
     public Sideralis() {
         System.out.println("Constructor");
@@ -161,10 +237,10 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         myDisplay.setCurrent(mySplashCanvas);
     }
     /**
-     *
+     * Creation of main objects (it takes time)
      * @throws MIDletStateChangeException
      */
-    protected void startApp() throws MIDletStateChangeException {
+    protected void startApp() {
         System.out.println("Startup");
         // Load position and parameters
         myParameter = new ConfigParameters();
@@ -176,18 +252,368 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         myCanvas.setFullScreenMode(true);
         myCanvas.init();
         myCanvas.project();
-        starting = false;
+
+        createGUI();
+
         myRefreshTimer = new Timer();
         myRefreshTimer.schedule(mySky, REFRESH_TIME_CALC, 1 * 10 * 1000);           // Every 10s for now
+
+        starting = false;
+    }
+    /**
+     * Create user interface
+     * This will be called after having launch the splash screen in order to accelerate start time
+     */
+    public void createGUI() {
+        // Initialize star Canvas
+
+        // Create components
+        exitCommand = new Command(LocalizationSupport.getMessage("CMD_EXIT"), Command.EXIT, 99);
+        displayCommand = new Command(LocalizationSupport.getMessage("CMD_OPTIONS"), Command.SCREEN, 1);
+        positionCommand = new Command(LocalizationSupport.getMessage("CMD_POS_TIME"), Command.SCREEN, 2);
+        searchCommand = new Command(LocalizationSupport.getMessage("PARAM_SEARCH"),Command.SCREEN,3);
+        dicoCommand = new Command(LocalizationSupport.getMessage("CMD_DICTIONARY"), Command.SCREEN, 4);
+        infoCommand = new Command(LocalizationSupport.getMessage("CMD_INFO"), Command.SCREEN, 5);
+        langCommand = new Command(LocalizationSupport.getMessage("CMD_LANGUAGE"), Command.SCREEN, 6);
+        helpCommand = new Command(LocalizationSupport.getMessage("CMD_HELP"), Command.SCREEN, 7);
+
+        myCanvas.addCommand(exitCommand);
+        myCanvas.addCommand(displayCommand);
+        myCanvas.addCommand(positionCommand);
+        myCanvas.addCommand(searchCommand);
+        myCanvas.addCommand(helpCommand);
+        myCanvas.addCommand(infoCommand);
+        myCanvas.addCommand(dicoCommand);
+        myCanvas.addCommand(langCommand);
+        myCanvas.setCommandListener(this);
+
+        // Create a position form
+        positionForm = new Form(LocalizationSupport.getMessage("POS_FORM_POSITION"));
+        latTextField = new TextField(LocalizationSupport.getMessage("A2"), "0", 15, TextField.DECIMAL);
+        longTextField = new TextField(LocalizationSupport.getMessage("A3"), "0", 15, TextField.DECIMAL);
+        posStore = new StringItem("",LocalizationSupport.getMessage("POS_FORM_STORE"),StringItem.BUTTON);
+        posName = new TextField("",LocalizationSupport.getMessage("POS_FORM_NAME"),15,TextField.NON_PREDICTIVE);
+        posStore.setDefaultCommand(new Command(LocalizationSupport.getMessage("POS_FORM_STORE"),Command.ITEM,1));
+        pos1Restore = new StringItem("",myParameter.getCity1().getName(),StringItem.BUTTON);
+        pos1Restore.setDefaultCommand(new Command(LocalizationSupport.getMessage("POS_FORM_RESTORE"),Command.ITEM,1));
+        pos2Restore = new StringItem("",myParameter.getCity2().getName(),StringItem.BUTTON);
+        pos2Restore.setDefaultCommand(new Command(LocalizationSupport.getMessage("POS_FORM_RESTORE"),Command.ITEM,1));
+        dateField = new DateField(LocalizationSupport.getMessage("A4"), DateField.DATE_TIME);
+        realTimeButton = new StringItem("",LocalizationSupport.getMessage("A6"),StringItem.BUTTON);
+        realTimeButton.setDefaultCommand(new Command(LocalizationSupport.getMessage("A6"),Command.ITEM,1));
+        globeCommand = new Command(LocalizationSupport.getMessage("A8"), Command.SCREEN, 1);
+        cityCommand = new Command(LocalizationSupport.getMessage("A9"), Command.SCREEN, 2);
+        autoPositionCommand = new Command(LocalizationSupport.getMessage("POS_FORM_LOCATE"), Command.SCREEN, 3);
+        cancelCommand = new Command(LocalizationSupport.getMessage("AA"), Command.CANCEL, 1);
+        okCommand = new Command(LocalizationSupport.getMessage("OK"), Command.BACK, 1);
+        positionForm.append(latTextField);
+        positionForm.append(longTextField);
+        positionForm.append(new Spacer(400, 10));
+        positionForm.append(posStore);
+        positionForm.append(posName);
+        positionForm.append(pos1Restore);
+        positionForm.append(pos2Restore);
+        positionForm.append(new Spacer(400, 10));
+        positionForm.append(dateField);
+        positionForm.append(realTimeButton);
+        positionForm.addCommand(globeCommand);
+        positionForm.addCommand(cityCommand);
+        if ((System.getProperty("microedition.location.version") != null) && (System.getProperty("microedition.location.version").equals("1.0"))) {// If API location exists on the phone
+            positionForm.addCommand(autoPositionCommand);
+        }
+        positionForm.addCommand(cancelCommand);
+        positionForm.addCommand(okCommand);
+        positionForm.setCommandListener(this);
+        posStore.setItemCommandListener(this);
+        pos1Restore.setItemCommandListener(this);
+        pos2Restore.setItemCommandListener(this);
+        realTimeButton.setItemCommandListener(this);
+        positionForm.setItemStateListener(this);
+
+        // Create a locate me gauge form
+        locateMeForm = new Form(LocalizationSupport.getMessage("LOCATE_FORM_LOC"));
+        positionGauge = new Gauge(LocalizationSupport.getMessage("LOCATE_FORM_WAIT"), false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING);
+        locateMeForm.addCommand(cancelCommand);
+        locateMeForm.append(positionGauge);
+        locateMeForm.setCommandListener(this);
+
+        // Create globe canvas
+        globeCanvas = new GlobeCanvas(myPosition);
+        globeCanvas.addCommand(cancelCommand);
+        globeCanvas.addCommand(okCommand);
+        globeCanvas.setCommandListener(this);
+
+        // Create a city selection form
+        cityForm = new Form(LocalizationSupport.getMessage("AB"));
+        cityStringItem = new StringItem(LocalizationSupport.getMessage("AC"), "");
+        cityChoiceGroup = new ChoiceGroup(LocalizationSupport.getMessage("AD"), ChoiceGroup.EXCLUSIVE, Position.getCityList(), null);
+        cityForm.append(cityStringItem);
+        cityForm.append(cityChoiceGroup);
+        cityForm.addCommand(cancelCommand);
+        cityForm.addCommand(okCommand);
+        cityForm.setCommandListener(this);
+
+        // Create a search form
+        searchForm = new Form(LocalizationSupport.getMessage("PARAM_SEARCH"));
+        searchTextSearch = new TextField("", "", 40, TextField.NON_PREDICTIVE);
+        searchItemSearch = new StringItem(LocalizationSupport.getMessage("PARAM_SEARCH"),"?",StringItem.BUTTON);
+        searchItemSearch.setDefaultCommand(new Command(LocalizationSupport.getMessage("PARAM_SEARCH"),Command.ITEM,1));
+        searchItemCancelSearch = new StringItem("",LocalizationSupport.getMessage("PARAM_SSEARCH"),StringItem.BUTTON);
+        searchItemCancelSearch.setDefaultCommand(new Command(LocalizationSupport.getMessage("PARAM_SSEARCH"),Command.ITEM,1));
+        searchForm.append(searchItemSearch);
+        searchForm.append(searchTextSearch);
+        searchForm.append(searchItemCancelSearch);
+        searchItemSearch.setItemCommandListener(this);
+        searchItemCancelSearch.setItemCommandListener(this);
+        searchForm.setItemStateListener(this);
+
+        // Create a display options form
+        displayOptionsForm = new Form(LocalizationSupport.getMessage("AE"));
+        displayOptionsStringItem = new StringItem(LocalizationSupport.getMessage("AF"), "");
+        displayOptionsChoiceGroup = new ChoiceGroup(LocalizationSupport.getMessage("AG"), ChoiceGroup.MULTIPLE, ConfigParameters.getParamNames(), null);
+        displayOptionsTextMaxMag = new TextField(ConfigParameters.getName(ConfigParameters.MAX_MAG), Float.toString(myParameter.getMaxMag()), 15, TextField.DECIMAL);
+        displayOptionsForm.append(displayOptionsStringItem);
+        displayOptionsForm.append(displayOptionsChoiceGroup);
+        displayOptionsForm.append(displayOptionsTextMaxMag);
+        displayOptionsForm.addCommand(cancelCommand);
+        displayOptionsForm.addCommand(okCommand);
+        displayOptionsForm.setCommandListener(this);
+        displayOptionsForm.setItemStateListener(this);
+
+        // Create the help form
+        helpForm = new Form(LocalizationSupport.getMessage("AH"));
+        helpStringItem = new StringItem[]{
+                    new StringItem("Sideralis " + VERSION, " © DoX - 2009"),
+                    new StringItem(LocalizationSupport.getMessage("AI"), "© Luc Bianco -- http://lucbianco.free.fr --"),
+                    new StringItem(LocalizationSupport.getMessage("AJ"), LocalizationSupport.getMessage("AK")),
+                    new StringItem("Sideralis ", LocalizationSupport.getMessage("AL")),
+                    new StringItem(LocalizationSupport.getMessage("AM"), ""),
+                    new StringItem(LocalizationSupport.getMessage("AN"), LocalizationSupport.getMessage("AO")),
+                    new StringItem(LocalizationSupport.getMessage("AP"), LocalizationSupport.getMessage("AQ")),
+                    new StringItem(LocalizationSupport.getMessage("AR"), LocalizationSupport.getMessage("AS")),
+                    new StringItem("0:", LocalizationSupport.getMessage("AT")),
+                    new StringItem(LocalizationSupport.getMessage("AU"), LocalizationSupport.getMessage("AV")),
+                    new StringItem("#:", LocalizationSupport.getMessage("AW")),
+                    new StringItem(LocalizationSupport.getMessage("AX"), "-- sideralis@free.fr -- http://sideralis.free.fr --"),
+                };
+        for (int i = 0; i < helpStringItem.length; i++) {
+            if (i == 4) {// Add a spacer before commands text.
+                helpForm.append(new Spacer(400, 10));
+            }
+            helpForm.append(helpStringItem[i]);
+        }
+        backCommand = new Command(LocalizationSupport.getMessage("A0"), Command.BACK, 0);
+        helpForm.addCommand(backCommand);
+        helpForm.setCommandListener(this);
+
+        // Create the info form
+        infoForm = new Form(LocalizationSupport.getMessage("AY"));
+        infoStringItem = new StringItem[]{
+                    new StringItem(LocalizationSupport.getMessage("AZ"), (new Integer(StarCatalogConst.getNumberOfStars()+StarCatalogMag.getNumberOfStars()).toString())),
+                    new StringItem(LocalizationSupport.getMessage("B0"), new Integer(ConstellationCatalog.getNumberOfConstellations()).toString()),
+                    new StringItem(LocalizationSupport.getMessage("B1"), new Integer(Sky.NB_OF_SYSTEM_SOLAR_OBJECTS).toString()),
+                    new StringItem(LocalizationSupport.getMessage("B2"), "1"),
+                    new StringItem(LocalizationSupport.getMessage("B3"), new Integer(MessierCatalog.getNumberOfObjects()).toString()),
+                };
+        for (int i = 0; i < infoStringItem.length; i++) {
+            infoForm.append(infoStringItem[i]);
+        }
+        infoForm.addCommand(backCommand);
+        infoForm.setCommandListener(this);
+
+        // Create the dico form
+        dicoForm = new Form(LocalizationSupport.getMessage("B4"));
+        dicoStringItem = new StringItem[]{
+                    new StringItem(LocalizationSupport.getMessage("B5"), LocalizationSupport.getMessage("B6")),
+                    new StringItem(LocalizationSupport.getMessage("B7"), LocalizationSupport.getMessage("B8")),
+                    new StringItem(LocalizationSupport.getMessage("B9"), LocalizationSupport.getMessage("BA")),
+                    new StringItem(LocalizationSupport.getMessage("BB"), LocalizationSupport.getMessage("BC")),
+                    new StringItem(LocalizationSupport.getMessage("BD"), LocalizationSupport.getMessage("BE")),
+                    new StringItem(LocalizationSupport.getMessage("BF"), LocalizationSupport.getMessage("BG")),
+                    new StringItem(LocalizationSupport.getMessage("BH"), LocalizationSupport.getMessage("BI")),
+                    new StringItem(LocalizationSupport.getMessage("BJ"), LocalizationSupport.getMessage("BK")),
+                    new StringItem(LocalizationSupport.getMessage("BL"), LocalizationSupport.getMessage("BM")),
+                    new StringItem(LocalizationSupport.getMessage("BN"), LocalizationSupport.getMessage("BP")),
+                    new StringItem(LocalizationSupport.getMessage("BQ"), LocalizationSupport.getMessage("BR")),
+                    new StringItem(LocalizationSupport.getMessage("BS"), LocalizationSupport.getMessage("BU")),
+                    new StringItem(LocalizationSupport.getMessage("BT"), LocalizationSupport.getMessage("BV")),
+                    new StringItem(LocalizationSupport.getMessage("BW"), LocalizationSupport.getMessage("BX")),
+                    new StringItem(LocalizationSupport.getMessage("BY"), LocalizationSupport.getMessage("BZ")),
+                };
+        for (int i = 0; i < dicoStringItem.length; i++) {
+            dicoForm.append(dicoStringItem[i]);
+        }
+        dicoForm.addCommand(backCommand);
+        dicoForm.setCommandListener(this);
+
+        // Create the language form
+        langForm = new Form(LocalizationSupport.getMessage("LANG_FORM_TITLE"));
+        langStringItem = new StringItem(LocalizationSupport.getMessage("LANG_FORM_SELECT"), "");
+        langChoiceGroup = new ChoiceGroup(LocalizationSupport.getMessage("LANG_FORM_LANG"), ChoiceGroup.EXCLUSIVE, LocalizationSupport.getLanguages(), null);
+        langForm.append(langStringItem);
+        langForm.append(langChoiceGroup);
+        langForm.addCommand(cancelCommand);
+        langForm.addCommand(okCommand);
+        langForm.setCommandListener(this);
+    }
+    /**
+     * React to user's choice.
+     * @param c the command of the user
+     * @param d the display
+     */
+    public void commandAction(Command c, Displayable d) {
+        // EXIT command
+        if (c == exitCommand) {
+            try {
+                // Exit
+                saveData();                                                     // Used mainly to save which view is used.
+                destroyApp(true);
+            } catch (MIDletStateChangeException ex) {
+                ex.printStackTrace();
+            }
+            notifyDestroyed();
+
+        // === Form selection commands ===
+        } else if (c == displayCommand) {
+            // Display display options
+            displayOptionsChoiceGroup.setSelectedFlags(myParameter.getSelectedFlags());
+            displayOptionsTextMaxMag.setString(String.valueOf(myParameter.getMaxMag()));
+            myDisplay.setCurrent(displayOptionsForm);
+//        } else if (c == searchCommand) {
+//            // Search command
+//            searchTextSearch.setString("");
+//            searchItemSearch.setText(mySearch.getNameOfSearchableObject(mySearch.getIndex()));
+//            myDisplay.setCurrent(searchForm);
+//        } else if (c == positionCommand) {
+//            try {
+//                mySky.cancel();
+//                mySky = null;
+//                myRefreshTimer.cancel();
+//                myRefreshTimer = null;
+//                // Store current time in case of cancellation.
+//                myOffsetForCancellation = myPosition.getTemps().getTimeOffset();
+//                // To select position
+//                myPosition.getTemps().adjustDate();
+//                dateField.setDate(myPosition.getTemps().getDate().getTime());
+//                latTextField.setString(new Double(myPosition.getLatitude()).toString());
+//                longTextField.setString(new Double(myPosition.getLongitude()).toString());
+//
+//                myDisplay.setCurrent(positionForm);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+
+//        } else if (c == autoPositionCommand) {
+//            tempPos = new Position();
+//            whereAmI = new LocateMe(tempPos, this);
+//            whereAmI.start();
+//            myDisplay.setCurrent(locateMeForm);
+//        } else if (c == cityCommand) {
+//            // To select city selection
+//            cityChoiceGroup.setSelectedIndex(myPosition.getSelectedCity(), true);
+//            myDisplay.setCurrent(cityForm);
+//        } else if (c == globeCommand) {
+//            // To select position from globe
+//            globeCanvas.setPosition(myPosition);
+//            myDisplay.setCurrent(globeCanvas);
+//        } else if (c == helpCommand) {
+//            // To select help
+//            myDisplay.setCurrent(helpForm);
+//        } else if (c == infoCommand) {
+//            // To select info
+//            myDisplay.setCurrent(infoForm);
+//        } else if (c == dicoCommand) {
+//            // To select info
+//            myDisplay.setCurrent(dicoForm);
+//        } else if (c == langCommand) {
+//            // To select language */
+//            langChoiceGroup.setSelectedIndex(getLangAsInt(), true);
+//            myDisplay.setCurrent(langForm);
+//
+        // === CANCEL command ===
+        } else if (c == cancelCommand) {
+            // To come back
+//            if (myDisplay.getCurrent() == globeCanvas) {
+//                myDisplay.setCurrent(positionForm);
+//            } else if (myDisplay.getCurrent() == positionForm) {
+//                myPosition.getTemps().setTimeOffset(myOffsetForCancellation);
+//                myDisplay.setCurrent(myCanvas);
+//                mySky = new Sky(myPosition);                                    // Creates an empty sky
+//                mySky.setCanvas(myCanvas);                                    // Gives a ref to canvas for sky in order to ask for repaint
+//                myCanvas.setSky(mySky);
+//                myRefreshTimer = new Timer();
+//                myRefreshTimer.schedule(mySky, 500, MINUTE * 60 * 1000);
+//            } else if (myDisplay.getCurrent() == cityForm) {
+//                myDisplay.setCurrent(positionForm);
+            /*} else*/ if (myDisplay.getCurrent() == displayOptionsForm) {
+                myDisplay.setCurrent(myCanvas);
+//            } else if (myDisplay.getCurrent() == langForm) {
+//                myDisplay.setCurrent(myCanvas);
+//            } else if (myDisplay.getCurrent() == locateMeForm) {
+//                whereAmI = null;
+//                myDisplay.setCurrent(positionForm);
+            }
+        // ��� OK command
+        } else if (c == okCommand) {
+//            if (myDisplay.getCurrent() == positionForm) {
+//                // Select lat and long from data.
+//                myPosition.setLatitude(Double.parseDouble(latTextField.getString()));
+//                myPosition.setLongitude(Double.parseDouble(longTextField.getString()));
+//
+//                myDisplay.setCurrent(myCanvas);
+//                mySky = new Sky(myPosition);                                    // Creates an empty sky
+//                mySky.setCanvas(myCanvas);                                    // Gives a ref to canvas for sky in order to ask for repaint
+//                myCanvas.setSky(mySky);
+//                myRefreshTimer = new Timer();
+//                myRefreshTimer.schedule(mySky, 500, MINUTE * 60 * 1000);
+//                saveData();
+//
+//            } else if (myDisplay.getCurrent() == cityForm) {
+//                // Select lat and long from city
+//                int selCity;
+//                selCity = cityChoiceGroup.getSelectedIndex();
+//                myPosition.setCity(selCity);
+//                latTextField.setString(new Double(myPosition.getLatitude()).toString());
+//                longTextField.setString(new Double(myPosition.getLongitude()).toString());
+//                myDisplay.setCurrent(positionForm);
+//            } else if (myDisplay.getCurrent() == globeCanvas) {
+//                myPosition.setLatitude(globeCanvas.getLatitude());
+//                myPosition.setLongitude(globeCanvas.getLongitude());
+//                latTextField.setString(new Double(myPosition.getLatitude()).toString());
+//                longTextField.setString(new Double(myPosition.getLongitude()).toString());
+//                myDisplay.setCurrent(positionForm);
+            /*} else*/ if (myDisplay.getCurrent() == displayOptionsForm) {
+                boolean[] b = new boolean[displayOptionsChoiceGroup.size()];
+                displayOptionsChoiceGroup.getSelectedFlags(b);
+                myParameter.setSelectedFlags(b);
+                if (displayOptionsTextMaxMag.getString().length()!=0)
+                    myParameter.setMaxMag(Float.parseFloat(displayOptionsTextMaxMag.getString()));
+                else
+                    myParameter.setMaxMag(0);
+                myDisplay.setCurrent(myCanvas);
+                saveData();
+//            } else if (myDisplay.getCurrent() == langForm) {
+//                int selLang;
+//                selLang = langChoiceGroup.getSelectedIndex();
+//                setLang(selLang);
+//                Alert langAlert = new Alert(LocalizationSupport.getMessage("LANG_FORM_WARNING"), LocalizationSupport.getMessage("LANG_FORM_WARNING2"), null, AlertType.INFO);
+//                langAlert.setTimeout(Alert.FOREVER);
+//                myDisplay.setCurrent(langAlert, myCanvas);
+//                saveLanguage();
+//            } else if (myDisplay.getCurrent() == helpForm) {
+//                myDisplay.setCurrent(myCanvas);
+            }
+
+        } else if (c == backCommand) {
+            myDisplay.setCurrent(myCanvas);
+        }
+
     }
 
     protected void pauseApp() {
     }
 
     protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-    }
-
-    public void commandAction(Command c, Displayable d) {
     }
 
     public void commandAction(Command c, Item item) {
@@ -228,4 +654,112 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     public ConfigParameters getMyParameter() {
         return myParameter;
     }
+
+    /**
+     * Save position data in a record store so position will be used again when started again
+     */
+    public void saveData() {
+        RecordStore rs;
+        int count, i;
+        byte[] b;
+        boolean[] bParam;
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        DataOutputStream dout = new DataOutputStream(bout);
+
+        try {
+            dout.writeUTF(VERSION);
+            dout.writeDouble(myPosition.getLatitude());
+            dout.writeDouble(myPosition.getLongitude());
+            dout.writeLong((myPosition.getTemps().getTimeOffset()));
+            dout.writeBoolean(myParameter.isHorizontalView());
+            dout.writeFloat(myParameter.getMaxMag());
+            dout.writeUTF(myParameter.getCity1().getName());
+            dout.writeDouble(myParameter.getCity1().getLatitude());
+            dout.writeDouble(myParameter.getCity1().getLongitude());
+            dout.writeUTF(myParameter.getCity2().getName());
+            dout.writeDouble(myParameter.getCity2().getLatitude());
+            dout.writeDouble(myParameter.getCity2().getLongitude());
+            bParam = myParameter.getSelectedFlags();
+            for (i = 0; i < bParam.length; i++) {
+                dout.writeBoolean(bParam[i]);
+            }
+
+            b = bout.toByteArray();
+            dout.close();
+            bout.close();
+
+            rs = RecordStore.openRecordStore("position", true);
+            count = rs.getNumRecords();
+            if (count == 0) {
+                rs.addRecord(b, 0, b.length);
+            } else {
+                rs.setRecord(1, b, 0, b.length);
+            }
+
+            rs.closeRecordStore();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    /**
+     * Load position which were saved at last exit
+     */
+    private void loadData() {
+        RecordStore rs;
+        byte[] b;
+        boolean[] bParam;
+        boolean bb;
+        double d,la,lo;
+        float f;
+        long l;
+        String sv;
+        CityObject c;
+
+        int i;
+
+        try {
+            rs = RecordStore.openRecordStore("position", true);
+            b = rs.getRecord(1);                                                // will go to InvalideRecordIDException if record has not been created
+            ByteArrayInputStream bin = new ByteArrayInputStream(b);
+            DataInputStream din = new DataInputStream(bin);
+            sv = din.readUTF();
+            if (sv.equals(VERSION)) {
+                d = din.readDouble();
+                myPosition.setLatitude(d);                                      // Set latitude
+                d = din.readDouble();
+                myPosition.setLongitude(d);                                     // Set longitude
+                l = din.readLong();
+                myPosition.getTemps().setTimeOffset(l);                         // Set time offset
+                bb = din.readBoolean();
+                myParameter.setHorizontalView(bb);
+                f = din.readFloat();                                            // Set max mag display
+                myParameter.setMaxMag(f);
+                sv = din.readUTF();
+                la = din.readDouble();
+                lo = din.readDouble();
+                c = new CityObject(sv,la,lo);
+                myParameter.setCity1(c);                                        // Set store city1
+                sv = din.readUTF();
+                la = din.readDouble();
+                lo = din.readDouble();
+                c = new CityObject(sv,la,lo);
+                myParameter.setCity2(c);                                        // Set store city2
+                bParam = myParameter.getSelectedFlags();
+                for (i = 0; i < bParam.length; i++) {
+                    bb = din.readBoolean();
+                    bParam[i] = bb;
+                }
+
+                myParameter.setSelectedFlags(bParam);
+            }
+
+            din.close();
+            bin.close();
+            rs.closeRecordStore();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
 }

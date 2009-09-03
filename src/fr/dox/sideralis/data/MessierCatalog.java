@@ -119,12 +119,6 @@ public class MessierCatalog {
         new MessierObject(0.673333333333333F,41.6833333333333F,(short)80,2200F,"M 110"),
     };
 
-    /** 
-     * Creates a new instance of Messier 
-     */
-    public MessierCatalog() {
-    }
-
     /**
      * Return the number of object in the catalog
      * @return number of objects in catalog

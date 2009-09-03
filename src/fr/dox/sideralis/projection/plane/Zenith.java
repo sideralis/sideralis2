@@ -79,7 +79,9 @@ public class Zenith {
     public void incShiftY() {
         shiftY += (zoom-1)/10;
     }
-
+    public float getZoom() {
+        return zoom;
+    }
     public void setZoom(float zoom) {
         this.zoom = zoom;
     }

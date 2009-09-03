@@ -113,6 +113,7 @@ public class Temps {
         long lDate = myDate.getTime();
         lDate += offsetTime ;                                                   // Add time offset from current date.
         myDate.setTime(lDate);
+        System.out.println(myDate);
     }
     /**
      * Calculates the Jour Julien

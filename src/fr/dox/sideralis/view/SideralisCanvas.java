@@ -18,7 +18,8 @@ import fr.dox.sideralis.data.Sky;
 import fr.dox.sideralis.object.ConstellationObject;
 import fr.dox.sideralis.object.ScreenCoord;
 import fr.dox.sideralis.projection.plane.Zenith;
-import fr.dox.sideralis.projection.sphere.StarProj;
+import fr.dox.sideralis.projection.sphere.MoonProj;
+import fr.dox.sideralis.view.color.Color;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
@@ -47,14 +48,20 @@ public class SideralisCanvas extends Canvas implements Runnable {
     private final Zenith myProjection;
     /** Table to store x and y position on screen of stars */
     private ScreenCoord[] screenCoordStar;
-    private ScreenCoord[] screenCoordStarMag;
     private ScreenCoord[] screenCoordMessier;
+    private ScreenCoord screenCoordSun;
+    private ScreenCoord screenCoordMoon;
+    private ScreenCoord[] screenCoordPlanets;
 
     private final Font myFont;
     
     private int idxClosestConst;
     private int idxClosestStar;
     private int colorClosestConst;
+
+    /** Default size in pixel for Moon and Sun */
+    private final short SIZE_MOON_SUN = 4;
+
 
     /**
      * 
@@ -73,14 +80,19 @@ public class SideralisCanvas extends Canvas implements Runnable {
     public void init() {
         idxClosestStar = idxClosestConst = -1;
         colorClosestConst = 0;
-        screenCoordStar = new ScreenCoord[mySky.getStarsProj().length];
         screenCoordMessier = new ScreenCoord[MessierCatalog.getNumberOfObjects()];
-        for (int k = 0; k < screenCoordStar.length; k++) {
-            screenCoordStar[k] = new ScreenCoord();
-        }
-        for (int k = 0; k < MessierCatalog.getNumberOfObjects(); k++) {
+        for (int k = 0; k < MessierCatalog.getNumberOfObjects(); k++)
             screenCoordMessier[k] = new ScreenCoord();
-        }
+
+        screenCoordStar = new ScreenCoord[mySky.getStarsProj().length];
+        for (int k = 0; k < screenCoordStar.length; k++)
+            screenCoordStar[k] = new ScreenCoord();
+
+        screenCoordSun = new ScreenCoord();
+        screenCoordMoon = new ScreenCoord();
+        screenCoordPlanets = new ScreenCoord[Sky.NB_OF_SYSTEM_SOLAR_OBJECTS];
+        for (int k=0;k<Sky.NB_OF_SYSTEM_SOLAR_OBJECTS;k++)
+            screenCoordPlanets[k] = new ScreenCoord();
     }
 
     /**
@@ -88,9 +100,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
      * @param g
      */
     protected void paint(Graphics g) {
+
         // ----------------------------
         // -----   Clear screen   -----
-        g.setColor(color[COL_BACKGROUND]);
+        g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_BACKGROUND]);
         g.fillRect(0, 0, getWidth, getHeight);
         
         if (mySky.isCalculationDone()) {
@@ -113,6 +126,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
             // ------------------------------------
             // ------ Display Messier objects -----
             drawMessier(g);
+
+            // --------------------------------------
+            // ------ Draw system solar objects -----
+            drawSystemSolarObjects(g);
          }
 
     }
@@ -126,7 +143,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
         // Zenith view
         // Draw circle
-        g.setColor(color[COL_ZENITH_BACKGROUND]);
+        g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_ZENITH_BACKGROUND]);
 
         x1 = myProjection.getX(-1);
         y1 = myProjection.getY(-1);
@@ -144,12 +161,12 @@ public class SideralisCanvas extends Canvas implements Runnable {
         y3 = myProjection.getY(Math.sin(rot + Math.PI / 2) * .95);
         x4 = myProjection.getX(Math.cos(rot + 3 * Math.PI / 2) * .95);
         y4 = myProjection.getY(Math.sin(rot + 3 * Math.PI / 2) * .95);
-        g.setColor(color[COL_CROSS]);
+        g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_CROSS]);
         g.setStrokeStyle(Graphics.DOTTED);
         g.drawLine((int) x1, (int) y1, (int) x2, (int) y2);
         g.drawLine((int) x3, (int) y3, (int) x4, (int) y4);
         g.setStrokeStyle(Graphics.SOLID);
-        g.setColor(color[COL_N_S_E_O]);
+        g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_N_S_E_O]);
         g.drawString(LocalizationSupport.getMessage("WEST"), (int) x1, (int) y1 - myFont.getHeight() / 2, Graphics.HCENTER | Graphics.TOP);
         g.drawString(LocalizationSupport.getMessage("EAST"), (int) x2, (int) y2 - myFont.getHeight() / 2, Graphics.HCENTER | Graphics.TOP);
         g.drawString(LocalizationSupport.getMessage("SOUTH"), (int) x3, (int) y3 - myFont.getHeight() / 2, Graphics.HCENTER | Graphics.TOP);
@@ -166,7 +183,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
         int i,  j;
         ConstellationObject co;
         ConfigParameters rMyParam = myMidlet.getMyParameter();
-        ConstellationCatalog rMyConstellations = mySky.getConstellations();
+        int[] color = rMyParam.getColor();
 
 
         if (rMyParam.isConstDisplayed() || rMyParam.isConstNamesDisplayed() || rMyParam.isConstNamesLatinDisplayed()) {
@@ -185,23 +202,23 @@ public class SideralisCanvas extends Canvas implements Runnable {
                             // This constellation is blinking (cursor close to it)
                             if (!flagInc) {
                                 // Calculate the color of the constellation. This is done only for the first branch of the constellation.
-                                col = colorClosestConst > color[COL_CONST_MAX] / 2 ? color[COL_CONST_MAX] - colorClosestConst : colorClosestConst;
-                                colorClosestConst += color[COL_CONST_INC];
-                                if (colorClosestConst > color[COL_CONST_MAX]) {
+                                col = colorClosestConst > color[Color.COL_CONST_MAX] / 2 ? color[Color.COL_CONST_MAX] - colorClosestConst : colorClosestConst;
+                                colorClosestConst += color[Color.COL_CONST_INC];
+                                if (colorClosestConst > color[Color.COL_CONST_MAX]) {
                                     colorClosestConst = 0;
                                 }
                                 flagInc = true;
                             }
-                            g.setColor(col + color[COL_CONST_MIN]);
+                            g.setColor(col + color[Color.COL_CONST_MIN]);
                         } else {
-                            g.setColor(color[COL_CONST_MAX] / 2);
+                            g.setColor(color[Color.COL_CONST_MAX] / 2);
                         }
                         if (rMyParam.isConstDisplayed())
                             g.drawLine(screenCoordStar[kStar1].x, screenCoordStar[kStar1].y, screenCoordStar[kStar2].x, screenCoordStar[kStar2].y);
                     }
                 }
                 if (rMyParam.isConstNamesDisplayed() || rMyParam.isConstNamesLatinDisplayed()) {
-                    g.setColor(color[COL_CONST_NAME_MAX] / 2);
+                    g.setColor(color[Color.COL_CONST_NAME_MAX] / 2);
                     // Display the name of the constellation
                     kStar1 = co.getRefStar4ConstellationName();
                     if (!screenCoordStar[kStar1].isVisible()) {
@@ -214,13 +231,13 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     }
                     if (screenCoordStar[kStar1].isVisible()) {
                         if (rMyParam.isConstNamesDisplayed() && rMyParam.isConstNamesLatinDisplayed()) {
-                            g.drawString(rMyConstellations.getConstellation(i).getName(), screenCoordStar[kStar1].x, screenCoordStar[kStar1].y-myFont.getHeight()/2, Graphics.TOP | Graphics.HCENTER);
-                            g.drawString(rMyConstellations.getConstellation(i).getLatinName(), screenCoordStar[kStar1].x, screenCoordStar[kStar1].y+myFont.getHeight()/2, Graphics.TOP | Graphics.HCENTER);
+                            g.drawString(ConstellationCatalog.getConstellation(i).getName(), screenCoordStar[kStar1].x, screenCoordStar[kStar1].y-myFont.getHeight()/2, Graphics.TOP | Graphics.HCENTER);
+                            g.drawString(ConstellationCatalog.getConstellation(i).getLatinName(), screenCoordStar[kStar1].x, screenCoordStar[kStar1].y+myFont.getHeight()/2, Graphics.TOP | Graphics.HCENTER);
                         }
                         else if (rMyParam.isConstNamesDisplayed())
-                            g.drawString(rMyConstellations.getConstellation(i).getName(), screenCoordStar[kStar1].x, screenCoordStar[kStar1].y, Graphics.TOP | Graphics.HCENTER);
+                            g.drawString(ConstellationCatalog.getConstellation(i).getName(), screenCoordStar[kStar1].x, screenCoordStar[kStar1].y, Graphics.TOP | Graphics.HCENTER);
                         else
-                            g.drawString(rMyConstellations.getConstellation(i).getLatinName(), screenCoordStar[kStar1].x, screenCoordStar[kStar1].y, Graphics.TOP | Graphics.HCENTER);
+                            g.drawString(ConstellationCatalog.getConstellation(i).getLatinName(), screenCoordStar[kStar1].x, screenCoordStar[kStar1].y, Graphics.TOP | Graphics.HCENTER);
                     }
                 }
             }
@@ -235,6 +252,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
         boolean isStarColored = myMidlet.getMyParameter().isStarColored();
         boolean isStarShownAsCircle = myMidlet.getMyParameter().isStarShownAsCircle();
         float maxMag = myMidlet.getMyParameter().getMaxMag();
+        int[] color = myMidlet.getMyParameter().getColor();
 
         for (int k = 0; k < nbOfStars; k++) {
             if (screenCoordStar[k].isVisible()) {
@@ -250,10 +268,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     // Select color of star
                     }
                     if (isStarColored) {
-                        int col = color[COL_STAR_MAX] - mag * color[COL_STAR_INC];
+                        int col = color[Color.COL_STAR_MAX] - mag * color[Color.COL_STAR_INC];
                         g.setColor(col);
                     } else {
-                        g.setColor(color[COL_STAR_MAX]);
+                        g.setColor(color[Color.COL_STAR_MAX]);
                     }
                     // Represent star as a filled circle or as a dot
                     if (isStarShownAsCircle) {
@@ -282,16 +300,72 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     private void drawMessier(Graphics g) {
         ConfigParameters rMyParam = myMidlet.getMyParameter();
+        int[] color = rMyParam.getColor();
 
         if (rMyParam.isMessierDisplayed() || rMyParam.isMessierNameDisplayed()) {
             for (int k = 0; k < MessierCatalog.getNumberOfObjects(); k++) {
                 if (screenCoordMessier[k].isVisible()) {
                     // Messier object is above horizon
-                    g.setColor(color[COL_MESSIER]);
+                    g.setColor(color[Color.COL_MESSIER]);
                     if (rMyParam.isMessierDisplayed())
                         g.drawLine(screenCoordMessier[k].x, screenCoordMessier[k].y, screenCoordMessier[k].x, screenCoordMessier[k].y);
                     if (rMyParam.isMessierNameDisplayed())
                         g.drawString(mySky.getMessier(k).getObject().getName(), screenCoordMessier[k].x, screenCoordMessier[k].y, Graphics.TOP | Graphics.HCENTER);
+                }
+            }
+        }
+    }
+    private void drawSystemSolarObjects(Graphics g) {
+        ConfigParameters rMyParam = myMidlet.getMyParameter();
+        int[] color = rMyParam.getColor();
+
+        // -------------------------
+        // ------ Display moon -----
+        if (screenCoordMoon.isVisible()) {
+            g.setColor(color[Color.COL_MOON]);
+            int z = (int) (myProjection.getZoom() * SIZE_MOON_SUN);
+            if (rMyParam.isPlanetDisplayed()) {
+                switch (mySky.getMoon().getPhase()) {
+                    case MoonProj.FIRST:
+                        g.fillArc((int) screenCoordMoon.x - z, (int) screenCoordMoon.y - z, 2 * z, 2 * z, -100, 200);
+                        break;
+                    case MoonProj.LAST:
+                        g.fillArc((int) screenCoordMoon.x - z, (int) screenCoordMoon.y - z, 2 * z, 2 * z, 80, 200);
+                        break;
+                    case MoonProj.NEW:
+                        g.drawArc((int) screenCoordMoon.x - z, (int) screenCoordMoon.y - z, 2 * z, 2 * z, 0, 360);
+                        break;
+                    case MoonProj.FULL:
+                        g.fillArc((int) screenCoordMoon.x - z, (int) screenCoordMoon.y - z, 2 * z, 2 * z, 0, 360);
+                        break;
+                }
+            }
+            if (rMyParam.isPlanetNameDisplayed()) {
+                g.drawString(LocalizationSupport.getMessage("NAME_MOON"), (int) screenCoordMoon.x, (int) screenCoordMoon.y - myFont.getHeight() - z, Graphics.TOP | Graphics.HCENTER);
+            }
+        }
+        // -------------------------
+        // ------ Display sun -----
+        if (screenCoordSun.isVisible()) {
+            g.setColor(color[Color.COL_SUN]);
+            int z = (int) (myProjection.getZoom() * SIZE_MOON_SUN);
+            if (rMyParam.isPlanetDisplayed()) {
+                g.fillArc((int) screenCoordSun.x - z, (int) screenCoordSun.y - z, 2 * z, 2 * z, 0, 360);
+            }
+            if (rMyParam.isPlanetNameDisplayed()) {
+                g.drawString(LocalizationSupport.getMessage("NAME_SUN"), (int) screenCoordSun.x, (int) screenCoordSun.y - myFont.getHeight() - z, Graphics.TOP | Graphics.HCENTER);
+            }
+        }
+        // ---------------------------
+        // ------ Display planets -----
+        for (int k=0;k<screenCoordPlanets.length;k++) {
+            if (screenCoordPlanets[k].isVisible()) {
+                g.setColor(color[(Color.COL_PLANET)+k]);
+                if (rMyParam.isPlanetDisplayed()) {
+                    g.fillArc((int) screenCoordPlanets[k].x - 2, (int) screenCoordPlanets[k].y - 2, 4, 4, 0, 360);
+                }
+                if (rMyParam.isPlanetNameDisplayed()) {
+                    g.drawString(LocalizationSupport.getMessage("NAME_MERCURY"), (int) screenCoordPlanets[k].x, (int) screenCoordPlanets[k].y - myFont.getHeight(), Graphics.TOP | Graphics.HCENTER);
                 }
             }
         }
@@ -389,7 +463,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
         }
 
         // === Messiers ===
-        for (int k = 0; k < MessierCatalog.getNumberOfObjects(); k++) {
+        for (int k = 0; k < screenCoordMessier.length; k++) {
             screenCoordMessier[k].setVisible(false);
                 // For a zenith view
             if (mySky.getMessier(k).getHeight() > 0) {
@@ -397,6 +471,33 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 screenCoordMessier[k].setVisible(true);
                 screenCoordMessier[k].x = (short)myProjection.getX(myProjection.getVirtualX(mySky.getMessier(k).getAzimuth(), mySky.getMessier(k).getHeight()));
                 screenCoordMessier[k].y = (short)myProjection.getY(myProjection.getVirtualY(mySky.getMessier(k).getAzimuth(), mySky.getMessier(k).getHeight()));
+            }
+        }
+        // === Sun ===
+        screenCoordSun.setVisible(false);
+        if (mySky.getSun().getHeight() > 0) {
+            screenCoordSun.setVisible(true);
+            screenCoordSun.x = (short)myProjection.getX(myProjection.getVirtualX(mySky.getSun().getAzimuth(), mySky.getSun().getHeight()));
+            screenCoordSun.y = (short)myProjection.getY(myProjection.getVirtualY(mySky.getSun().getAzimuth(), mySky.getSun().getHeight()));
+        }
+
+        // === Moon ===
+        screenCoordMoon.setVisible(false);
+        if (mySky.getSun().getHeight() > 0) {
+            screenCoordMoon.setVisible(true);
+            screenCoordMoon.x = (short)myProjection.getX(myProjection.getVirtualX(mySky.getMoon().getAzimuth(), mySky.getMoon().getHeight()));
+            screenCoordMoon.y = (short)myProjection.getY(myProjection.getVirtualY(mySky.getMoon().getAzimuth(), mySky.getMoon().getHeight()));
+        }
+
+        // === Planets ===
+        for (int k = 0; k < screenCoordPlanets.length; k++) {
+            screenCoordPlanets[k].setVisible(false);
+                // For a zenith view
+            if (mySky.getPlanet(k).getHeight() > 0) {
+                // Star is above horizon
+                screenCoordPlanets[k].setVisible(true);
+                screenCoordPlanets[k].x = (short)myProjection.getX(myProjection.getVirtualX(mySky.getPlanet(k).getAzimuth(), mySky.getPlanet(k).getHeight()));
+                screenCoordPlanets[k].y = (short)myProjection.getY(myProjection.getVirtualY(mySky.getPlanet(k).getAzimuth(), mySky.getPlanet(k).getHeight()));
             }
         }
     }
@@ -425,86 +526,4 @@ public class SideralisCanvas extends Canvas implements Runnable {
         project();
         repaint();
     }
-
-    // -------------------------------------------------------------------------
-    /** TODO should be moved to a property file */
-    /** Color reference */
-    /** TODO use enum */
-//    public enum COL { BACKGOUND,
-//               HELP,
-//               MOON,
-//               SUN,
-//               MERCURY,
-//               VENUS,
-//               MARS,
-//               JUPITER,
-//               SATURN,
-//    };
-    public static final  short COL_BACKGROUND = 0,
-                    COL_HELP = COL_BACKGROUND + 1,
-                    COL_MOON = COL_HELP + 1,
-                    COL_SUN = COL_MOON + 1,
-                    COL_MERCURY = COL_SUN + 1,
-                    COL_VENUS = COL_MERCURY + 1,
-                    COL_MARS = COL_VENUS + 1,
-                    COL_JUPITER = COL_MARS + 1,
-                    COL_SATURN = COL_JUPITER + 1,
-                    COL_HISTORY = COL_SATURN + 1,
-                    COL_INFO = COL_HISTORY + 1,
-                    COL_ANGLE = COL_INFO + 1,
-                    COL_ZENITH_BACKGROUND = COL_ANGLE + 1,
-                    COL_ZENITH_EDGE = COL_ZENITH_BACKGROUND + 1,
-                    COL_CROSS = COL_ZENITH_EDGE + 1,
-                    COL_N_S_E_O = COL_CROSS + 1,
-                    COL_CONST_MIN = COL_N_S_E_O + 1,
-                    COL_CONST_MAX = COL_CONST_MIN + 1, // Should be a multiple of 2 and a multiple of INC
-                    COL_CONST_INC = COL_CONST_MAX + 1,
-                    COL_CONST_NAME_MIN = COL_CONST_INC + 1,
-                    COL_CONST_NAME_MAX = COL_CONST_NAME_MIN + 1,
-                    COL_CONST_NAME_INC = COL_CONST_NAME_MAX + 1,
-                    COL_STAR_MAX = COL_CONST_NAME_INC + 1,
-                    COL_STAR_INC = COL_STAR_MAX + 1,
-                    COL_CURSOR = COL_STAR_INC + 1,
-                    COL_BOX_TEXT = COL_CURSOR + 1,
-                    COL_BOX = COL_BOX_TEXT + 1,
-                    COL_MENUBAR = COL_BOX + 1,
-                    COL_MENUBAR2 = COL_MENUBAR + 1,
-                    COL_MESSIER = COL_MENUBAR2 + 1,
-                    COL_HIGHLIGHT = COL_MESSIER + 1;
-    /** Definition of color */
-    private static final int[] color = {
-        /* /\/\/\/\ Normal simplified color /\/\/\/\*/
-            /* BACKGROUND */    0x00000000,
-            /* HELP       */    0x00ffffff,
-            /* MOON       */    0x00dcdcdc,
-            /* SUN        */    0x00ffff00,
-            /* MERCURY    */    0x00ff00ff,
-            /* VENUS      */    0x0000ff00,
-            /* MARS       */    0x00ff0000,
-            /* JUPITER    */    0x00ffff00,
-            /* SATURN     */    0x0000ffff,
-            /* HISTORY    */    0x00ffffff,
-            /* INFO       */    0x00ff0000,
-            /* HORIZON    */    0x00ff0000,
-            /* ZENITH_BCK */    0x00000030,
-            /* ZENITH_EDGE*/    0x00000005,
-            /* CROSS      */    0x003c3c3c,
-            /* N_S_E_O    */    0x007f00ff,
-            /* CONST_MIN  */    0x00000000,
-            /* CONST_MAX  */    0x008c8c8c,
-            /* CONST_INC  */    0x00040404,
-            /* CONST_NAME_MIN */0x00000000,
-            /* CONST_NAME_MAX */0x0046d246,
-            /* CONST_NAME_INC */0x00020602,
-            /* STAR_MAX   */    0x00ffffff,
-            /* STAR_INC   */    0x00303030,
-            /* CURSOR     */    0x00ff0000,
-            /* BOX_TEXT   */    0x00ffffff,
-            /* BOX        */    0x000000c8,
-            /* MENUBAR    */    0x00FB16FF,
-            /* MENUBAR2   */    0x00803A7D,
-            /* MESSIER    */    0x00ffff00,
-            /* HIGHLIGHT  */    0x000080ff,
-        };
-
 }

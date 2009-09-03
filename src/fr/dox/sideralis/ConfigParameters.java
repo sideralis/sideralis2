@@ -11,6 +11,7 @@
 package fr.dox.sideralis;
 
 import fr.dox.sideralis.object.CityObject;
+import fr.dox.sideralis.view.color.Color;
 
 /**
  *
@@ -31,6 +32,8 @@ public class ConfigParameters {
     private float maxMag;
     /** */
     private CityObject city1,city2;
+    /** The color object containing all definitions */
+    private int[] color;
     
     /** A table storing the names of all parameters */
     private static String[] paramNames = new String[] {LocalizationSupport.getMessage("PARAM_CONST"),
@@ -72,6 +75,7 @@ public class ConfigParameters {
         constStory = false;
         horizontalView = true;
 
+
         // Boolean parameters
         parameters = new boolean[paramNames.length];
         parameters[CONSTELLATIONS_NAME_DISPLAYED] = false;
@@ -90,6 +94,8 @@ public class ConfigParameters {
         maxMag = 5.0F;
         city1 = new CityObject(LocalizationSupport.getMessage("CITY_EMPTY"),0,0);
         city2 = new CityObject(LocalizationSupport.getMessage("CITY_EMPTY"),0,0);
+
+        color = Color.colorDay;
     }
     public CityObject getCity1() {
         return city1;
@@ -266,21 +272,9 @@ public class ConfigParameters {
      * Return the color mode the display should use
      * @return COLOR_NORMAL or COLOR_RED
      */
-//    public short getColor() {
-//        short color;
-//        if (isNightView() == true) {
-//            if (isHorizontalView())
-//                color = SideralisCanvas.COLOR_RED;
-//            else
-//                color = SideralisCanvas.COLOR_IMP_RED;
-//        } else {
-//            if (isHorizontalView())
-//                color = SideralisCanvas.COLOR_NORMAL;                           // @todo: maybe was COLOR_NORMAL
-//            else
-//                color = SideralisCanvas.COLOR_IMP_NORMAL;
-//        }
-//        return color;
-//    }
+    public int[] getColor() {
+        return color;
+    }
     /**
      * Return the names of the parameters. For use in ChoiceGroup
      * @return a table of String representing the names of all parameters
@@ -323,19 +317,10 @@ public class ConfigParameters {
         // Copy
         for (int i=0;i<b.length;i++)
             parameters[i] = b[i];
-        // Check validity
-//        checkValidity();
-    }
-    /**
-     * Check validity of all parameters
-     */
-    private void checkValidity() {
-        if (parameters[PLANETS_NAME_DISPLAYED] == true)
-            parameters[PLANETS_DISPLAYED] = true;
-        if (parameters[CONSTELLATIONS_NAME_DISPLAYED] == true || parameters[CONSTELLATIONS_NAME_LATIN_DISPLAYED] == true)
-            parameters[CONSTELLATIONS_DISPLAYED] = true;
-        if (parameters[MESSIER_NAME_DISPLAYED] == true)
-            parameters[MESSIER_DISPLAYED] = true;        
+        if (parameters[NIGHT_VIEW] == true)
+            color = Color.colorNight;
+        else
+            color = Color.colorDay;
     }
     /**
      * Return the value of parameter maximum magnitude
