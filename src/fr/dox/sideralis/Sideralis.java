@@ -95,6 +95,7 @@ package fr.dox.sideralis;
  *          have Equatorial/ecliptic  line/grid option
  *          Add all missing constellations informations
  *          Add globular cluster , nebula , etc .
+ *          Add ISS position
  *
  *  CODE IMPROVEMENT:
  *  - A SkyObject object father of all objects.                                 Done
@@ -129,7 +130,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Timer;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 import javax.microedition.rms.RecordStore;
@@ -154,7 +154,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
 
     private Display myDisplay;
     private boolean starting;
-    private Timer myRefreshTimer;
     private ConfigParameters myParameter;
     public static final long REFRESH_TIME_CALC = 1 * 10 * 1000;                 // How often the calculation of position is refreshed
 
@@ -219,6 +218,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     /** Some items for the language form */
     private StringItem langStringItem;
     private ChoiceGroup langChoiceGroup;
+    private long myOffsetForCancellation;
 
     /**
      * All codes codes which should be executed before creating main objects
@@ -254,9 +254,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         myCanvas.project();
 
         createGUI();
-
-        myRefreshTimer = new Timer();
-        myRefreshTimer.schedule(mySky, REFRESH_TIME_CALC, 1 * 10 * 1000);           // Every 10s for now
 
         starting = false;
     }
@@ -484,24 +481,20 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
 //            searchTextSearch.setString("");
 //            searchItemSearch.setText(mySearch.getNameOfSearchableObject(mySearch.getIndex()));
 //            myDisplay.setCurrent(searchForm);
-//        } else if (c == positionCommand) {
-//            try {
-//                mySky.cancel();
-//                mySky = null;
-//                myRefreshTimer.cancel();
-//                myRefreshTimer = null;
-//                // Store current time in case of cancellation.
-//                myOffsetForCancellation = myPosition.getTemps().getTimeOffset();
-//                // To select position
-//                myPosition.getTemps().adjustDate();
-//                dateField.setDate(myPosition.getTemps().getDate().getTime());
-//                latTextField.setString(new Double(myPosition.getLatitude()).toString());
-//                longTextField.setString(new Double(myPosition.getLongitude()).toString());
-//
-//                myDisplay.setCurrent(positionForm);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+        } else if (c == positionCommand) {
+            try {
+                // Store current time in case of cancellation.
+                myOffsetForCancellation = myPosition.getTemps().getTimeOffset();
+                // Update date before display
+                myPosition.getTemps().adjustDate();
+                dateField.setDate(myPosition.getTemps().getMyDate());
+                latTextField.setString(new Double(myPosition.getLatitude()).toString());
+                longTextField.setString(new Double(myPosition.getLongitude()).toString());
+
+                myDisplay.setCurrent(positionForm);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
 //        } else if (c == autoPositionCommand) {
 //            tempPos = new Position();
@@ -533,19 +526,14 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         // === CANCEL command ===
         } else if (c == cancelCommand) {
             // To come back
-//            if (myDisplay.getCurrent() == globeCanvas) {
-//                myDisplay.setCurrent(positionForm);
-//            } else if (myDisplay.getCurrent() == positionForm) {
-//                myPosition.getTemps().setTimeOffset(myOffsetForCancellation);
-//                myDisplay.setCurrent(myCanvas);
-//                mySky = new Sky(myPosition);                                    // Creates an empty sky
-//                mySky.setCanvas(myCanvas);                                    // Gives a ref to canvas for sky in order to ask for repaint
-//                myCanvas.setSky(mySky);
-//                myRefreshTimer = new Timer();
-//                myRefreshTimer.schedule(mySky, 500, MINUTE * 60 * 1000);
+            /*if (myDisplay.getCurrent() == globeCanvas) {
+                myDisplay.setCurrent(positionForm);
+            } else*/ if (myDisplay.getCurrent() == positionForm) {
+                myPosition.getTemps().setTimeOffset(myOffsetForCancellation);
+                myDisplay.setCurrent(myCanvas);
 //            } else if (myDisplay.getCurrent() == cityForm) {
 //                myDisplay.setCurrent(positionForm);
-            /*} else*/ if (myDisplay.getCurrent() == displayOptionsForm) {
+            } else if (myDisplay.getCurrent() == displayOptionsForm) {
                 myDisplay.setCurrent(myCanvas);
 //            } else if (myDisplay.getCurrent() == langForm) {
 //                myDisplay.setCurrent(myCanvas);
@@ -555,19 +543,13 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             }
         // ��� OK command
         } else if (c == okCommand) {
-//            if (myDisplay.getCurrent() == positionForm) {
-//                // Select lat and long from data.
-//                myPosition.setLatitude(Double.parseDouble(latTextField.getString()));
-//                myPosition.setLongitude(Double.parseDouble(longTextField.getString()));
-//
-//                myDisplay.setCurrent(myCanvas);
-//                mySky = new Sky(myPosition);                                    // Creates an empty sky
-//                mySky.setCanvas(myCanvas);                                    // Gives a ref to canvas for sky in order to ask for repaint
-//                myCanvas.setSky(mySky);
-//                myRefreshTimer = new Timer();
-//                myRefreshTimer.schedule(mySky, 500, MINUTE * 60 * 1000);
-//                saveData();
-//
+            if (myDisplay.getCurrent() == positionForm) {
+                // Select lat and long from data.
+                myPosition.setLatitude(Double.parseDouble(latTextField.getString()));
+                myPosition.setLongitude(Double.parseDouble(longTextField.getString()));
+                myCanvas.setCounter(0);                                         // To activate a calculation position
+                myDisplay.setCurrent(myCanvas);
+                saveData();
 //            } else if (myDisplay.getCurrent() == cityForm) {
 //                // Select lat and long from city
 //                int selCity;
@@ -582,7 +564,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
 //                latTextField.setString(new Double(myPosition.getLatitude()).toString());
 //                longTextField.setString(new Double(myPosition.getLongitude()).toString());
 //                myDisplay.setCurrent(positionForm);
-            /*} else*/ if (myDisplay.getCurrent() == displayOptionsForm) {
+            } else if (myDisplay.getCurrent() == displayOptionsForm) {
                 boolean[] b = new boolean[displayOptionsChoiceGroup.size()];
                 displayOptionsChoiceGroup.getSelectedFlags(b);
                 myParameter.setSelectedFlags(b);
@@ -761,5 +743,4 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         }
 
     }
-
 }
