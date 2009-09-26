@@ -61,6 +61,8 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
     /** Default size in pixel for Moon and Sun */
     private final short SIZE_MOON_SUN = 4;
+    private int counter;
+    private static final int COUNTER = 100;
 
 
     /**
@@ -94,6 +96,13 @@ public class SideralisCanvas extends Canvas implements Runnable {
         for (int k=0;k<Sky.NB_OF_SYSTEM_SOLAR_OBJECTS;k++)
             screenCoordPlanets[k] = new ScreenCoord();
     }
+    /**
+     *
+     * @param counter
+     */
+    public void setCounter(int counter) {
+        this.counter = counter;
+    }
 
     /**
      *
@@ -108,7 +117,9 @@ public class SideralisCanvas extends Canvas implements Runnable {
         
         if (mySky.isCalculationDone()) {
             mySky.setCalculationDone(false);
+            mySky.setProgress(0);
             g.drawString("Wait",10,10,Graphics.TOP|Graphics.LEFT);
+            System.out.println("Wait, projecting");
             project();
         } else {
             // ----------------------------
@@ -130,6 +141,11 @@ public class SideralisCanvas extends Canvas implements Runnable {
             // --------------------------------------
             // ------ Draw system solar objects -----
             drawSystemSolarObjects(g);
+
+            // -------------------------------
+            // ------ Draw progress bar ------
+            g.setColor(0x00ff0000);
+            g.drawLine(0, 0, mySky.getProgress()*getHeight/100, 0);
          }
 
     }
@@ -431,7 +447,15 @@ public class SideralisCanvas extends Canvas implements Runnable {
         getWidth = getWidth();                                                  // Due to bug of 6680 and 6630
         while (running) {
             cycleStartTime = System.currentTimeMillis();
-
+            // Check if we need to calculate position
+            if (counter == 0) {
+                // Yes, do it in a separate thread
+                new Thread(mySky).start();
+                counter = COUNTER;
+            } else {
+                // No, decrease counter
+                counter--;
+            }
             repaint();
 
             /* Thread is set to sleep if it remains some time before next frame */
