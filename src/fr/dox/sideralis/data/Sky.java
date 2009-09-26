@@ -10,7 +10,6 @@ import fr.dox.sideralis.projection.sphere.PlanetProj;
 import fr.dox.sideralis.projection.sphere.Projection;
 import fr.dox.sideralis.projection.sphere.StarProj;
 import fr.dox.sideralis.projection.sphere.SunProj;
-import java.util.TimerTask;
 
 
 /**
@@ -18,7 +17,8 @@ import java.util.TimerTask;
  * Input are the catalog and position. Output is the X and Y coordinate on a virtual screen of each stars.
  * @author Bernard
  */
-public class Sky extends TimerTask {
+public class Sky implements Runnable {
+    private int progress;
     /** The projection (height, azimuth) of all my stars */
     private StarProj[] starsProj;
     /** The projection of the moon */
@@ -32,9 +32,6 @@ public class Sky extends TimerTask {
     
     /** a reference to my position and time */
     private Position myPosition;
-    
-    /** flag to indicate calculation on going */
-    boolean flagCalcul;
 
     /** The moon description */
     private SkyObject moonObject;
@@ -142,7 +139,6 @@ public class Sky extends TimerTask {
         }
         
         this.myPosition = myPosition;
-        flagCalcul = false;
 
     }
     /**
@@ -199,13 +195,6 @@ public class Sky extends TimerTask {
         return planetProj[i];
     }
     /**
-     * Return the flag calcul which indicates if the mobile is doing star position calculation
-     * @return true if the system is doing calculation, else false
-     */
-    public boolean getFlagCalcul() {
-        return flagCalcul;
-    }
-    /**
      *
      * @return
      */
@@ -231,19 +220,23 @@ public class Sky extends TimerTask {
      * Add time, calculate new time variables and calculates the star position and other objects
      */
     public void calculate() {
-        flagCalcul = true;
+    	setProgress(0);
+        
         // ---------------------------------------------------
         // --- Recalculate global variables linked to time ---
         myPosition.getTemps().adjustDate();
         myPosition.getTemps().calculateJourJulien();
         myPosition.getTemps().calculateHS();
-        
         Projection.calculateParamSun();
-        
+    	setProgress(10);
+
         // -----------------------------------
         // --- Calculate position of stars ---
-        for (int i=0;i<starsProj.length;i++)
+        for (int i=0;i<starsProj.length;i++) {
             starsProj[i].calculate();
+            if (i%100 == 0)
+            	setProgress(10+60*i/starsProj.length);
+        }
 
         // ----------------------------------
         // --- Calculate position of moon ---
@@ -258,13 +251,30 @@ public class Sky extends TimerTask {
         for (int i=0;i<planetProj.length;i++) {
             planetProj[i].calculate();
         }
+    	setProgress(75);
 
         // ---------------------------------------------
         // --- Calculate position of Messier objects ---
-        for (int i=0;i<messierProj.length;i++)
+        for (int i=0;i<messierProj.length;i++) {
             messierProj[i].calculate();
-        
-        flagCalcul = false;
+            if (i%20 == 0)
+            	setProgress(75+25*i/messierProj.length);
+        }
+    	setProgress(100);
+    }
+    /**
+     *
+     * @return
+     */
+    public int getProgress() {
+        return progress;
+    }
+    /**
+     *
+     * @param progress
+     */
+    public void setProgress(int progress) {
+        this.progress = progress;
     }
 
 }
