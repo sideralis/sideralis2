@@ -26,6 +26,14 @@ public class Temps {
         offsetTime = 0;
     }
 
+    /**
+     *
+     * @return
+     */
+    public Date getMyDate() {
+        return myDate;
+    }
+
 //    public String getInfo() {
 //        String ret;
 //        TimeZone tz;
@@ -33,6 +41,7 @@ public class Temps {
 //        ret = "ID:"+tz.getID() +" DayLight:"+tz.useDaylightTime()+" Offset:"+tz.getRawOffset();
 //        return ret;
 //    }
+
     /** 
      * Return the Jour Julien 
      * @return The jour julien
