@@ -22,6 +22,12 @@ public class Zenith {
     private int shiftXView;
     /** Y offset of view inside display */
     private int shiftYView;
+    /** All variables needed when dragging with touch screen */
+    private boolean scroll;
+    private float xDir,yDir;
+    private int xOrg,yOrg;
+    private long timeOffset;
+    private long timeBase;
 
 
 
@@ -79,6 +85,45 @@ public class Zenith {
     public void incShiftY() {
         shiftY += (zoom-1)/10;
     }
+    public void setScroll(int x, int y, int xPressed, int yPressed) {
+        if (scroll == false) {
+            scroll = true;
+            xDir = x-xPressed;
+            yDir = y-yPressed;
+            xOrg = xPressed;
+            yOrg = yPressed;
+            timeBase = System.currentTimeMillis();
+            timeOffset = 0;
+        } else {
+            xDir = x-xOrg;
+            yDir = y-yOrg;
+            xOrg = x;
+            yOrg = y;
+            timeOffset = System.currentTimeMillis() - timeBase;
+            timeBase = System.currentTimeMillis();
+        }
+        System.out.println("Init   - xDir: "+xDir+ " / yDir: "+yDir + " / TimeOffset: "+ timeOffset);
+    }
+    public void scroll(boolean screenPressed) {
+        shiftY += yDir/60*zoom;
+        shiftX += xDir/60*zoom;
+        yDir /= 1.5F;
+        xDir /= 1.5F;
+        if ((yDir < 0.2F) && (xDir <0.2F) && (screenPressed == false))          // If the user has released its touch and scroll is neglictible then scroll is stopped
+            scroll = false;
+        System.out.println("Scroll - xDir: "+xDir+ " / yDir: "+yDir);
+    }
+
+    public boolean isScroll() {
+        return scroll;
+    }
+
+    public void setScroll(boolean scroll) {
+        this.scroll = scroll;
+        System.out.println("---------------------");
+    }
+
+
     public float getZoom() {
         return zoom;
     }
@@ -183,4 +228,6 @@ public class Zenith {
 
         return y;
     }
+
+
 }
