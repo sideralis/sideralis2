@@ -217,6 +217,15 @@ public class Sky implements Runnable {
         calculationDone = true;
     }
     /**
+     * 
+     */
+    public void calculateTimeVariables() {
+        myPosition.getTemps().adjustDate();
+        myPosition.getTemps().calculateJourJulien();
+        myPosition.getTemps().calculateHS();
+        Projection.calculateParamSun();
+    }
+    /**
      * Add time, calculate new time variables and calculates the star position and other objects
      */
     public void calculate() {
@@ -224,11 +233,8 @@ public class Sky implements Runnable {
         
         // ---------------------------------------------------
         // --- Recalculate global variables linked to time ---
-        myPosition.getTemps().adjustDate();
-        myPosition.getTemps().calculateJourJulien();
-        myPosition.getTemps().calculateHS();
-        Projection.calculateParamSun();
-    	setProgress(10);
+    	calculateTimeVariables();
+        setProgress(10);
 
         // -----------------------------------
         // --- Calculate position of stars ---
