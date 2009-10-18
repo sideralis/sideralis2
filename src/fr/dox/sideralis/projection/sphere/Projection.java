@@ -245,7 +245,7 @@ public class Projection {
         tmp = (int)(Math.toDegrees(hau));
         s = new Integer(tmp).toString();
         tmp = (int)((Math.toDegrees(hau)-tmp)*60);
-        s = s + "�"+tmp+"'";
+        s = s + "°"+tmp+"'";
         return s;
     }
     /**
@@ -264,7 +264,7 @@ public class Projection {
         tmp = (int)(Math.toDegrees(az)+90);
         s = new Integer(tmp%360).toString();
         tmp = (int)((Math.toDegrees(az)+90-tmp)*60);
-        s = s + "d"+tmp+"'";
+        s = s + "°"+tmp+"'";
         return s;
     }
     /**
