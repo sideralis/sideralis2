@@ -15,14 +15,21 @@ import fr.dox.sideralis.Sideralis;
 import fr.dox.sideralis.data.ConstellationCatalog;
 import fr.dox.sideralis.data.MessierCatalog;
 import fr.dox.sideralis.data.Sky;
+import fr.dox.sideralis.math.MathFunctions;
 import fr.dox.sideralis.object.ConstellationObject;
+import fr.dox.sideralis.object.PlanetObject;
 import fr.dox.sideralis.object.ScreenCoord;
+import fr.dox.sideralis.object.SkyObject;
+import fr.dox.sideralis.object.StarObject;
 import fr.dox.sideralis.projection.plane.Zenith;
 import fr.dox.sideralis.projection.sphere.MoonProj;
+import fr.dox.sideralis.projection.sphere.Projection;
 import fr.dox.sideralis.view.color.Color;
+import java.io.IOException;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.Image;
 
 /**
  * A class derived from a Canvas to display the stars
@@ -55,15 +62,41 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
     private final Font myFont;
     
+    // ------------------
+    // --- For cursor ---
     private int idxClosestConst;
     private int idxClosestStar;
+    private int typeClosestObject;
     private int colorClosestConst;
+    /** The counter associated to this action: if the cursor does not move for sometime, it is not displayed anymore */
+    private short displayCursor;
+    /** The image for the cursor */
+    private Image cursorImage;
+    /** Position of cursor */
+    private int xCursor,  yCursor;
+    /** All informations about object */
+    private String starName,  magName,  distName,  azName,  heiName;
+    /** Number of lines which will be used to display informations on star */
+    private final short NB_OF_LINES = 5;
+    /** An variable used to modify the display of the const name */
+    private int shiftConstName;
+    private int colorConstName;
+    /** Name of the constellation which is shown by the cursor */
+    private String constName1,  constName2;
+    /** The offset of the text containing the info text */
+    private int xInfoText,yInfoText;
+    private int xInfoDest,  xInfo;
+    private int yInfoDest,  yInfo;
 
     /** Default size in pixel for Moon and Sun */
     private final short SIZE_MOON_SUN = 4;
     private int counter;
-    private static final int COUNTER = 100;
+    private static final int COUNTER = 1000;
 
+    private TouchScreen touchScreen;
+
+    /** The position of the circle around the selected or highlighted objects */
+    private short angle;
 
     /**
      * 
@@ -74,6 +107,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
         mySky = myMidlet.getMySky();
         myFont = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         myProjection = new Zenith(getHeight(),getWidth());
+        if (hasPointerEvents())
+            touchScreen = new TouchScreen();
+        else
+            touchScreen = null;
     }
 
     /**
@@ -95,6 +132,13 @@ public class SideralisCanvas extends Canvas implements Runnable {
         screenCoordPlanets = new ScreenCoord[Sky.NB_OF_SYSTEM_SOLAR_OBJECTS];
         for (int k=0;k<Sky.NB_OF_SYSTEM_SOLAR_OBJECTS;k++)
             screenCoordPlanets[k] = new ScreenCoord();
+
+        try {
+            cursorImage = Image.createImage("/Images/Cursor.png");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
     /**
      *
@@ -122,6 +166,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
             System.out.println("Wait, projecting");
             project();
         } else {
+            if (myProjection.isScroll()) {
+                myProjection.scroll(touchScreen.isScreenPressed());
+                project();
+            }
             // ----------------------------
             // -----   Draw horizon   -----
             drawHorizon(g);
@@ -141,6 +189,17 @@ public class SideralisCanvas extends Canvas implements Runnable {
             // --------------------------------------
             // ------ Draw system solar objects -----
             drawSystemSolarObjects(g);
+
+            // -----------------------------------
+            // ------ Draw touch screen bar ------
+            if (touchScreen != null)
+                touchScreen.paint(g);
+
+            // -----------------------------------
+            // ----- Display cursor and info -----
+            if (myMidlet.getMyParameter().isCursorDisplayed()) {
+                drawCursor(g);
+            }
 
             // -------------------------------
             // ------ Draw progress bar ------
@@ -331,6 +390,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
             }
         }
     }
+    /**
+     *
+     * @param g
+     */
     private void drawSystemSolarObjects(Graphics g) {
         ConfigParameters rMyParam = myMidlet.getMyParameter();
         int[] color = rMyParam.getColor();
@@ -387,52 +450,414 @@ public class SideralisCanvas extends Canvas implements Runnable {
         }
     }
     /**
+     * Draw cursors
+     * @param g2 the Graphics object
+     */
+    private void drawCursor(Graphics g2) {
+        int z;
+        ConfigParameters rMyParam = myMidlet.getMyParameter();
+        int[] color = rMyParam.getColor();
+
+        // -------------------------------
+        // --- Recalculate hei and az ----
+        if (counter % MAX_CPS == 0)
+            getUpdatedHeightAndAzimuth();
+
+        // -------------------------------
+        // --- Highlight selected star ---
+        g2.setColor(color[Color.COL_CURSOR]);
+        angle = (short) ((angle + 15) % 360);
+
+        azName = new String(LocalizationSupport.getMessage("CURSOR_AZIMUTH_ABBR"));
+        heiName = new String(LocalizationSupport.getMessage("CURSOR_HEIGHT_ABBR"));
+        switch (typeClosestObject) {
+            case SkyObject.STAR:
+                g2.drawArc(screenCoordStar[idxClosestStar].x - 4, screenCoordStar[idxClosestStar].y - 4, 8, 8, angle, 90);
+                g2.drawArc(screenCoordStar[idxClosestStar].x - 4, screenCoordStar[idxClosestStar].y - 4, 8, 8, angle + 180, 90);
+                azName += mySky.getStar(idxClosestStar).getRealAzimuthAsString();
+                heiName += mySky.getStar(idxClosestStar).getRealHeightAsString();
+                break;
+            case SkyObject.SUN:
+                z = (int) (myProjection.getZoom() * SIZE_MOON_SUN) + 2;
+                g2.drawArc((int) screenCoordSun.x - z, (int) screenCoordSun.y - z, 2 * z, 2 * z, angle, 90);
+                g2.drawArc((int) screenCoordSun.x - z, (int) screenCoordSun.y - z, 2 * z, 2 * z, angle + 180, 90);
+                azName += mySky.getSun().getRealAzimuthAsString();
+                heiName += mySky.getSun().getRealHeightAsString();
+                break;
+            case SkyObject.MOON:
+                z = (int) (myProjection.getZoom() * SIZE_MOON_SUN) + 2;
+                g2.drawArc((int) screenCoordMoon.x - z, (int) screenCoordMoon.y - z, 2 * z, 2 * z, angle, 90);
+                g2.drawArc((int) screenCoordMoon.x - z, (int) screenCoordMoon.y - z, 2 * z, 2 * z, angle + 180, 90);
+                azName += mySky.getMoon().getRealAzimuthAsString();
+                heiName += mySky.getMoon().getRealHeightAsString();
+                break;
+            case SkyObject.MESSIER:
+                g2.drawArc(screenCoordMessier[idxClosestStar].x - 4, screenCoordMessier[idxClosestStar].y - 4, 8, 8, angle, 90);
+                g2.drawArc(screenCoordMessier[idxClosestStar].x - 4, screenCoordMessier[idxClosestStar].y - 4, 8, 8, angle + 180, 90);
+                azName += mySky.getMessier(idxClosestStar).getRealAzimuthAsString();
+                heiName += mySky.getMessier(idxClosestStar).getRealHeightAsString();
+                break;
+            case SkyObject.PLANET:
+                g2.drawArc(screenCoordPlanets[idxClosestStar].x - 4, screenCoordPlanets[idxClosestStar].y - 4, 8, 8, angle, 90);
+                g2.drawArc(screenCoordPlanets[idxClosestStar].x - 4, screenCoordPlanets[idxClosestStar].y - 4, 8, 8, angle + 180, 90);
+                azName += mySky.getPlanet(idxClosestStar).getRealAzimuthAsString();
+                heiName += mySky.getPlanet(idxClosestStar).getRealHeightAsString();
+                break;
+        }
+        // -------------------
+        // --- Draw Cursor ---
+        if (displayCursor > 0) {
+            g2.drawImage(cursorImage, xCursor, yCursor, Graphics.HCENTER | Graphics.VCENTER);
+            displayCursor--;
+        }
+        // --------------------------
+        // --- Display info text  ---
+        int col = 0;
+        int maxl;
+        int vSize = NB_OF_LINES * myFont.getHeight() + 8;
+
+        // ----------------------------------
+        // --- Display constellation name ---
+        if (typeClosestObject == SkyObject.STAR) {
+            if (colorConstName < color[Color.COL_CONST_NAME_MAX]) {
+                col = (colorConstName > color[Color.COL_CONST_NAME_MAX] / 2) ? color[Color.COL_CONST_NAME_MAX] - colorConstName : colorConstName;
+                g2.setColor(color[Color.COL_CONST_NAME_MIN] + col);
+                colorConstName += color[Color.COL_CONST_NAME_INC];
+
+                if (yCursor < getHeight / 4 || (yCursor >= getHeight / 2 && yCursor < 3 * getHeight / 4)) { // Displayed below the cursor
+                    g2.drawString(constName2, xCursor, yCursor + 2 * myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                } else {// Displayed above the cursor
+                    g2.drawString(constName2, xCursor, yCursor - 3 * myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                }
+
+            } else {
+                // We have reached the point where we have to move from local language name to latin name or vice-versa
+                colorConstName = 0;
+                int oldPos = shiftConstName;
+                shiftConstName = constName1.indexOf("/", shiftConstName) + 1;
+                if (shiftConstName == 0) {
+                    oldPos = 0;
+                    shiftConstName = constName1.indexOf("/", shiftConstName) + 1;
+                }
+                constName2 = constName1.substring(oldPos, shiftConstName - 1);
+            }
+
+        }
+
+        // Find maximum length in pixel of text to be displayed;
+        maxl = 0;
+        if (myFont.stringWidth(magName) > maxl) {
+            maxl = myFont.stringWidth(magName);
+        }
+
+        if (myFont.stringWidth(distName) > maxl) {
+            maxl = myFont.stringWidth(distName);
+        }
+
+        if (myFont.stringWidth(azName) > maxl) {
+            maxl = myFont.stringWidth(azName);
+        }
+
+        if (myFont.stringWidth(heiName) > maxl) {
+            maxl = myFont.stringWidth(heiName);
+        }
+
+        if (myFont.stringWidth(starName) > maxl) {
+            maxl = myFont.stringWidth(starName);
+        }
+
+        maxl += 8;
+
+        // Calculate position of info box
+        if (yCursor < getHeight / 2) {
+            if (rMyParam.isHelpDisplayed()) {
+                yInfoDest = getHeight - vSize - myFont.getHeight() - 4;
+            } else {
+                yInfoDest = getHeight - vSize - 4;
+            }
+        } else {
+            yInfoDest = 6;
+        }
+
+        if (xCursor < getWidth / 2) {
+            xInfoDest = getWidth - maxl - 4;
+        } else {
+            xInfoDest = 6;
+        }
+
+        xInfo = xInfo + (xInfoDest - xInfo) / 4;
+        yInfo = yInfo + (yInfoDest - yInfo) / 4;
+        if ((xInfo + maxl + 4) > getWidth) {
+            xInfo = getWidth - maxl - 4;        // Get background image (behing info box) to do transparence
+        }
+
+        if ((yInfo + vSize) > getHeight) {
+            vSize = getHeight - yInfo;
+        }
+
+        // Display text in info box
+        g2.setColor(color[Color.COL_BOX_TEXT]);
+        g2.drawString(starName, xInfo + 4, yInfo + 4, Graphics.LEFT | Graphics.TOP);
+        g2.drawString(magName, xInfo + 4, yInfo + 1 * myFont.getHeight() + 4, Graphics.LEFT | Graphics.TOP);
+        g2.drawString(distName, xInfo + 4, yInfo + 2 * myFont.getHeight() + 4, Graphics.LEFT | Graphics.TOP);
+        g2.drawString(azName, xInfo + 4, yInfo + 3 * myFont.getHeight() + 4, Graphics.LEFT | Graphics.TOP);
+        g2.drawString(heiName, xInfo + 4, yInfo + 4 * myFont.getHeight() + 4, Graphics.LEFT | Graphics.TOP);
+        g2.setColor(color[Color.COL_BOX]);
+        g2.drawRoundRect(xInfo - 1, yInfo - 1, maxl + 1, vSize + 1, 8, 8);
+    }
+    /**
+     * Update height and Azimuth for object pointed by cursor
+     */
+    private void getUpdatedHeightAndAzimuth() {
+        mySky.calculateTimeVariables();
+
+        switch (typeClosestObject) {
+            case SkyObject.STAR:
+                mySky.getStar(idxClosestStar).calculate();
+                break;
+            case SkyObject.MESSIER:
+                mySky.getMessier(idxClosestStar).calculate();
+                break;
+            case SkyObject.SUN:
+                mySky.getSun().calculate();
+                break;
+            case SkyObject.MOON:
+                mySky.getMoon().calculate();
+                break;
+            case SkyObject.PLANET:
+                mySky.getPlanet(idxClosestStar).calculate();
+                break;
+
+        }
+    }
+    /**
+     * Find the closest star to the cursor
+     */
+    public void findClosestStar() {
+        int i,  j;
+        float maxMag;
+
+        double d;
+        double min = getWidth + getHeight;
+        j = -1;
+        // Look for closest star.
+        maxMag = myMidlet.getMyParameter().getMaxMag();
+        typeClosestObject = SkyObject.STAR;
+        for (i = 0; i < screenCoordStar.length; i++) {
+            if (screenCoordStar[i].isVisible() && mySky.getStar(i).getObject().getMag()<maxMag) {
+                d = Math.abs(xCursor - screenCoordStar[i].x) + Math.abs(yCursor - screenCoordStar[i].y);
+                if (d < min) {
+                    min = d;
+                    j = i;
+                }
+            }
+        }
+        // Look for closest messier object.
+        if (myMidlet.getMyParameter().isMessierDisplayed()) {
+            for (i = 0; i < screenCoordMessier.length; i++) {
+                if (screenCoordMessier[i].isVisible()) {
+                    d = Math.abs(xCursor - screenCoordMessier[i].x) + Math.abs(yCursor - screenCoordMessier[i].y);
+                    if (d < min) {
+                        min = d;
+                        j = i;
+                        typeClosestObject = SkyObject.MESSIER;
+                    }
+                }
+            }
+        }
+        if (myMidlet.getMyParameter().isPlanetDisplayed()) {
+            // Sun
+            d = Math.abs(xCursor - screenCoordSun.x) + Math.abs(yCursor - screenCoordSun.y);
+            if (d < min && screenCoordSun.isVisible()) {
+                min = d;
+                typeClosestObject = SkyObject.SUN;
+            }
+            // Moon
+            d = Math.abs(xCursor - screenCoordMoon.x) + Math.abs(yCursor - screenCoordMoon.y);
+            if (d < min && screenCoordMoon.isVisible()) {
+                min = d;
+                typeClosestObject = SkyObject.MOON;
+            }
+            // Planets
+            for (i=0;i<screenCoordPlanets.length;i++) {
+                d = Math.abs(xCursor - screenCoordPlanets[i].x) + Math.abs(yCursor - screenCoordPlanets[i].y);
+                if (d < min && screenCoordPlanets[i].isVisible()) {
+                    min = d;
+                    j = i;
+                    typeClosestObject = SkyObject.PLANET;
+                }
+            }
+        }
+        // Display star information
+        if (j == -1) {
+            myMidlet.getMyParameter().setCursor(false);                                          // Remove cursor is not close object found. Not too clean
+        } else if (j != idxClosestStar) {
+            // The closest star is a new star
+            idxClosestStar = (short) j;
+            switch (typeClosestObject) {
+                case SkyObject.SUN:
+                    starName = LocalizationSupport.getMessage("NAME_SUN");
+                    magName = new String(LocalizationSupport.getMessage("CURSOR_MAGNITUDE_ABBR")+"-26.7");
+                    distName = new String(LocalizationSupport.getMessage("CURSOR_DISTANCE_ABBR") + (int) MathFunctions.toMKm(Projection.getRSun()) + " mKm");
+                    break;
+                case SkyObject.MOON:
+                    starName = LocalizationSupport.getMessage("NAME_MOON");
+                    magName = new String(LocalizationSupport.getMessage("CURSOR_MAGNITUDE_ABBR")+"-12");
+                    distName = new String(LocalizationSupport.getMessage("CURSOR_DISTANCE_ABBR") + (int) mySky.getMoon().getDistance() + " km");
+                    break;
+                case SkyObject.PLANET:
+                    starName = mySky.getPlanet(j).getObject().getName();
+                    magName = new String(LocalizationSupport.getMessage("CURSOR_MAGNITUDE_ABBR")+mySky.getPlanet(j).getObject().getMag());
+                    distName = new String(LocalizationSupport.getMessage("CURSOR_DISTANCE_ABBR") + (int) mySky.getPlanet(j).getDistance() + " km");
+                    break;
+                case SkyObject.MESSIER:
+                    starName = new String(MessierCatalog.getObject(j).getName());
+                    magName = new String(LocalizationSupport.getMessage("CURSOR_MAGNITUDE_ABBR")+MessierCatalog.getObject(j).getMag());
+                    distName = new String(LocalizationSupport.getMessage("CURSOR_DISTANCE_ABBR")+MessierCatalog.getObject(j).getDist() + " k" + LocalizationSupport.getMessage("CURSOR_LIGHTYEAR_ABBR"));
+                    break;
+                case SkyObject.STAR:
+                    if (mySky.getStar(j).getObject().getName().length() == 0) {
+                        starName = new String("- " + ((StarObject)(mySky.getStar(j).getObject())).getBayerName() + " -");
+                    } else {
+                        starName = new String(mySky.getStar(j).getObject().getName());
+                    }
+
+                    magName = new String(LocalizationSupport.getMessage("CURSOR_MAGNITUDE_ABBR") + mySky.getStar(j).getObject().getMag());
+                    distName = new String(LocalizationSupport.getMessage("CURSOR_DISTANCE_ABBR") + ((StarObject)(mySky.getStar(j).getObject())).getDistance() + " " + LocalizationSupport.getMessage("CURSOR_LIGHTYEAR_ABBR"));
+                    // Is this star belongs to a new constellation ?
+
+                    if (((StarObject)(mySky.getStar(j).getObject())).getConstellation() != idxClosestConst) {
+                        idxClosestConst = ((StarObject)(mySky.getStar(j).getObject())).getConstellation();
+                        constName1 = ConstellationCatalog.constNames[idxClosestConst][ConstellationCatalog.NAME] + "/" + ConstellationCatalog.constNames[idxClosestConst][ConstellationCatalog.LATIN] + "/";
+                        constName2 = ConstellationCatalog.constNames[idxClosestConst][ConstellationCatalog.NAME];
+                        shiftConstName = constName1.indexOf("/", 0) + 1;
+                        colorClosestConst = 0;//color[rMyParam.getColor()][COL_CONST_MAX]/2;
+                        colorConstName = 0;//color[rMyParam.getColor()][COL_CONST_NAME]/2;
+                    }
+                    break;
+            }
+        }
+    }
+
+    /**
+     * The pointer is dragged
+     * @param x
+     * @param y
+     */
+    protected void pointerDragged(int x, int y) {
+        int keyCode;
+        keyCode = touchScreen.drag(x,y);
+
+        if (keyCode == TouchScreen.MOVE) {
+            myProjection.setScroll(x,y,touchScreen.getxPressed(),touchScreen.getyPressed());
+        }
+    }
+    /**
+     * The pointer is pressed
+     * @param x
+     * @param y
+     */
+    protected void pointerPressed(int x, int y) {
+        touchScreen.setPressed(x,y);
+        myProjection.setScroll(false);
+     }
+
+    /**
+     * The pointer is released
+     * @param x
+     * @param y
+     */
+    protected void pointerReleased(int x, int y) {
+        int keyCode;
+        keyCode = touchScreen.setReleased(x, y);
+        
+        if (keyCode == TouchScreen.ZOOM_IN) {
+            myProjection.incZoom();
+            project();
+            repaint();
+        }
+        if (keyCode == TouchScreen.ZOOM_OUT) {
+            myProjection.decZoom();
+            project();
+            repaint();
+        }
+        if (keyCode == TouchScreen.ROT_RIGHT) {
+            myProjection.incRot();
+            project();
+            repaint();
+        }
+        // Rotation
+        if (keyCode == TouchScreen.ROT_LEFT) {
+            myProjection.decRot();
+            project();
+            repaint();
+        }
+
+        if (keyCode == TouchScreen.CURSOR_ON) {
+            xCursor = x;
+            yCursor = y;
+            findClosestStar();
+            myMidlet.getMyParameter().setCursor(true);
+        }
+    }
+    /**
      *
      * @param keyCode
      */
     protected void keyPressed(int keyCode) {
+        // Rotation
         if (keyCode == KEY_NUM7) {
             myProjection.incRot();
             project();
             repaint();
         }
+        // Rotation
         if (keyCode == KEY_NUM9) {
             myProjection.decRot();
             project();
             repaint();
         }
+        // Zoom out
         if (keyCode == KEY_NUM1) {
             myProjection.decZoom();
             project();
             repaint();
         }
+        // Zoom in
         if (keyCode == KEY_NUM3) {
             myProjection.incZoom();
             project();
             repaint();
         }
+        // Shift Y
         if (getGameAction(keyCode) == UP) {
             myProjection.incShiftY();
             project();
             repaint();
         }
+        // Shift Y
         if (getGameAction(keyCode) == DOWN) {
             myProjection.decShiftY();
             project();
             repaint();
         }
+        // Shift X
         if (getGameAction(keyCode) == LEFT) {
             myProjection.incShiftX();
             project();
             repaint();
         }
+        // Shift X
         if (getGameAction(keyCode) == RIGHT) {
             myProjection.decShiftX();
             project();
             repaint();
         }
     }
-
+    /**
+     * A key is released
+     * @param keyCode the code of the key
+     */
     protected void keyReleased(int keyCode) {
         super.keyReleased(keyCode);
     }
@@ -451,6 +876,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             if (counter == 0) {
                 // Yes, do it in a separate thread
                 new Thread(mySky).start();
+                System.out.println("Start Sky Thread");
                 counter = COUNTER;
             } else {
                 // No, decrease counter
@@ -507,7 +933,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
         // === Moon ===
         screenCoordMoon.setVisible(false);
-        if (mySky.getSun().getHeight() > 0) {
+        if (mySky.getMoon().getHeight() > 0) {
             screenCoordMoon.setVisible(true);
             screenCoordMoon.x = (short)myProjection.getX(myProjection.getVirtualX(mySky.getMoon().getAzimuth(), mySky.getMoon().getHeight()));
             screenCoordMoon.y = (short)myProjection.getY(myProjection.getVirtualY(mySky.getMoon().getAzimuth(), mySky.getMoon().getHeight()));
