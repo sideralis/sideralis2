@@ -8,13 +8,13 @@ import fr.dox.sideralis.object.ConstellationObject;
  * @author Bernard
  */
 public class ConstellationCatalog {
-    public static short ABBR = 0;
-    public static short LATIN = 1;
-    public static short NAME = 2;
-    public static short HIST = 3;                   
+    public static final short ABBR = 0;
+    public static final short LATIN = 1;
+    public static final short NAME = 2;
+    public static final short HIST = 3;
     
     // The definition of constellations
-    static private ConstellationObject[] constellations = {
+    private static final ConstellationObject[] constellations = {
         new ConstellationObject(new short[]{348, 357, 357, 377, 377, 366, 366, 347, 347, 357}, 4, (short)366),
         new ConstellationObject(new short[]{0, 13, 13, 32}, 0, (short)13),
         new ConstellationObject(5, (short)304),
