@@ -1,6 +1,5 @@
 package fr.dox.sideralis.projection.sphere;
 
-import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.math.MathFunctions;
 import fr.dox.sideralis.object.SkyObject;
 
@@ -11,12 +10,12 @@ import fr.dox.sideralis.object.SkyObject;
 public class SunProj extends Projection {
     /**
      * Creates a new instance of Sun
-     * @param object the description of the object
+     * @param object the description of the sun object (name, mag, ...)
      * @param pos the position of the user
      */
-    public SunProj(SkyObject object, Position pos) {
-        super(object,pos);
-        calculate();
+    public SunProj(SkyObject object) {
+        super(object);
+        //calculate();                              // TODO confirm this line can be removed
     }
     /**
      *  Calculate Ascension, declinaison and then height and azimuth among others

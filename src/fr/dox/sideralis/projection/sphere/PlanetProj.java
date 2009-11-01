@@ -1,6 +1,5 @@
 package fr.dox.sideralis.projection.sphere;
 
-import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.math.MathFunctions;
 import fr.dox.sideralis.object.PlanetObject;
 
@@ -10,11 +9,17 @@ import fr.dox.sideralis.object.PlanetObject;
  */
 public class PlanetProj extends Projection {
     
-    /** Creates a new instance of Planet */
-    public PlanetProj(PlanetObject planet, Position pos) {
-        super(planet,pos);
+    /**
+     * Creates a new instance of Planet
+     * @param planet the planet object describing the planet (name, mag, ...)
+     * @param pos the position of the user
+     */
+    public PlanetProj(PlanetObject planet) {
+        super(planet);
     }
-    
+    /**
+     * Calculate the position of the planet
+     */
     public void calculate() {
         int k;
         double L,e,i,omega2,M1;

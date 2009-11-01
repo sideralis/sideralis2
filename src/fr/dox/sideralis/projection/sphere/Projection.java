@@ -11,10 +11,14 @@ import fr.dox.sideralis.object.SkyObject;
  * @author Bernard
  */
 public class Projection {
-    /** A reference to my position */
-    static protected Position myPosition;
+    /** A reference to my position (defined as static to save memory) */
+    protected static Position myPosition;
+    /** The time used to calculate the precession, defined as static to save computing time */
+    private static Calendar cal;
+    /** Various variables used several time in calculation, defined as static to save computing time */
+    private static double longitudeDiv15,latitudeInRad,HS;
     /** A reference to the object */
-    protected SkyObject object;
+    protected final SkyObject object;
     /** The calculated height*/
     protected double hau;
     /** The calculated azimuth */
@@ -38,13 +42,12 @@ public class Projection {
      * @param object the description of the object
      * @param pos the position of the user
      */
-    public Projection(SkyObject object, Position pos) {
-        myPosition = pos;
+    public Projection(SkyObject object) {
         this.object = object;
     }
     /**
-     * Return the object
-     * @return
+     * Return the object which was used to create the projection object
+     * @return the object linker with its projection
      */
     public SkyObject getObject() {
         return object;
@@ -93,13 +96,18 @@ public class Projection {
         return H;
     }
     /**
-     * Calculate the R and theta value for the sun
+     * Calculate horizontal coordinate of the star
      */
-    static public void calculateParamSun() {
+    public void calculate() {
+        calculateHorizontalCoordinate(object.getAscendance(),object.getDeclinaison(),true);
+    }
+    /**
+     * Calculate the R and theta value for the sun
+     * @param T the time
+     */
+    static public void calculateParamSun(double T) {
         int k;
-        // Calcul de T
-        double T;
-        T = myPosition.getTemps().getT();
+
         // Calcul de R et Omega du soleil
         double E0;
         double eSoleil,e0Soleil,ESoleil,MSoleil;
@@ -162,12 +170,10 @@ public class Projection {
      * @param alpha the alpha value of the object
      * @param delta the dela value of the object
      */
-    public void calculatePrecession(double alpha,double delta) {
+    private void calculatePrecession(double alpha,double delta) {
         double m,n,T;
-        Calendar cal;
 
         // Calculate precession
-        cal = myPosition.getTemps().getCalendar();
 
         T = (cal.get(Calendar.YEAR)-1900)/100;
         m = 3.07234+0.00186*T;
@@ -182,25 +188,20 @@ public class Projection {
      * @param precession true if precession should be calculated (for stars or Messier), else false (for planets and sun)
      */
     public void calculateHorizontalCoordinate(double alpha, double delta,boolean precession) {
-        double HS;
         double sinH,cosH,sinT,tanD,cosT,cosD,sinHau;
         double sinD, tanA;
         double T;
-        Calendar cal;
 
-        // Get Sideral hour
-        HS = myPosition.getTemps().getHS();
         if (precession) {
             calculatePrecession(alpha,delta);
             // Modify alpha and delta values
-            cal = myPosition.getTemps().getCalendar();
             T = (cal.get(Calendar.YEAR)-2000);
             alpha += dAlpha*T/3600;                                                 // dAlpha is given in s
             delta += dDelta*T/3600;                                                 // dDelta is given in s too
         }
 
         // Calculate hour angle
-        H = HS + myPosition.getLongitude()/15;
+        H = HS + longitudeDiv15;
         H = H - alpha;
         
         // Convert H in radian
@@ -210,9 +211,9 @@ public class Projection {
         // Calculate hauteur and azimuth of the star
         sinH = Math.sin(H);
         cosH = Math.cos(H);
-        sinT = Math.sin(myPosition.getLatitude()/ 180.0 * Math.PI);
+        sinT = Math.sin(latitudeInRad);
         tanD = Math.tan(delta / 180.0 * Math.PI);
-        cosT = Math.cos(myPosition.getLatitude() / 180.0 * Math.PI);
+        cosT = Math.cos(latitudeInRad);
         tanA = sinH/(cosH*sinT-tanD*cosT);                                      // (7.5)
         
         sinD = Math.sin(delta / 180.0 * Math.PI);
@@ -238,6 +239,7 @@ public class Projection {
     }
     /**
      * Return the real height as string
+     * @return the height as a string formatted like 45°10'
      */
     public String getRealHeightAsString() {
         String s;
@@ -268,109 +270,19 @@ public class Projection {
         return s;
     }
     /**
-     * Return the x position of the star on a horizontal projection
-     * @param rot the horizontal rotation of the screen
-     * @return the x projection of the star on a plane or 2 if star is behind us
-     * @deprecated
+     * Set the static field myPosition
+     * @param p a reference to the user position
      */
-//    public double getX(double rot) {
-//        double x;
-//        if (Math.cos((az+rot))<=0)                                              // Object is behind
-//            x = 2;
-//        else {
-//            x = az+rot;
-//            while (x>Math.PI)
-//                x -= Math.PI*2;
-//            while (x<-Math.PI)
-//                x += Math.PI*2;
-//            x = x/Math.toRadians(SideralisCanvas.AOV);
-////            x = Math.tan((az+rot))/1;
-//        }
-//
-//        return x;
-//    }
-    /**
-     * Return the y position of the star on a horizontal projection
-     * @param rot the vertical rotation of the screen
-     * @return the y projection of the star on a plane or 2 if star is behind us
-     * @deprecated
-     */
-//    public double getY(double rot) {
-//        double y;
-//
-//        if (Math.cos((hau+rot))<=0)
-//            y = 2;
-//        else {
-//            y  = (hau+rot)/Math.toRadians(45);
-//        }
-//        return y;
-//    }
-    /**
-     * Get the x coordinate on virtual screen
-     * @param rot rotation of the screen
-     * @return the x coordinate as double
-     * @deprecated
-     */
-    public double getVirtualX(double rot) {
-        double distL;
-        double x;
-        
-        // HorizontalCoordinate of the star on the skymap
-        distL = 1 - hau/(Math.PI/2);
-        x = -distL * Math.cos(az+rot);                                           // To have west on east and vice versa
-        
-        return x;
+    public static void setPosition(Position p) {
+        myPosition = p;
     }
     /**
-     * Get the x coordinate on virtual screen
-     * @param az the azimuth
-     * @param hau the height
-     * @param rot rotation of the screen
-     * @return the x coordinate as double
-     * @deprecated
+     * Set the static field cal
      */
-    public static double getVirtualX(double az,double hau,double rot) {
-        double dist;
-        double x;
-        
-        // HorizontalCoordinate of the star on the skymap
-        dist = 1 - hau/(Math.PI/2);
-        x = -dist * Math.cos(az+rot);                                           // To have west on east and vice versa
-        
-        return x;
-    }
-    /**
-     * Get the y coordinate on virtual screen
-     * @param rot rotation of the screen
-     * @return the y coordinate as double
-     * @deprecated
-     */
-    public double getVirtualY(double rot) {
-        double distL;
-        double y;
-        
-        // HorizontalCoordinate of the star on the skymap
-        distL = 1 - hau/(Math.PI/2);
-        y = distL * Math.sin(az+rot);
-        
-        return y;
-    }
-    /**
-     * Get the y coordinate on virtual screen
-     * @param az the azimuth
-     * @param hau the height
-     * @param rot rotation of the screen
-     * @return the y coordinate as double
-     * @deprecated
-     */
-    public static double getVirtualY(double az,double hau,double rot) {
-        double dist;
-        double y;
-        
-        // HorizontalCoordinate of the star on the skymap
-        dist = 1 - hau/(Math.PI/2);
-        y = dist * Math.sin(az+rot);
-        
-        return y;
+    public static void calcStaticVar() {
+        cal = myPosition.getTemps().getCalendar();
+        longitudeDiv15 = myPosition.getLongitude()/15;
+        latitudeInRad = Math.toRadians(myPosition.getLatitude());
+        HS = myPosition.getTemps().getHS();
     }
 }

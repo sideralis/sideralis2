@@ -1,6 +1,5 @@
 package fr.dox.sideralis.projection.sphere;
 
-import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.object.MessierObject;
 
 /**
@@ -9,14 +8,11 @@ import fr.dox.sideralis.object.MessierObject;
  */
 public class MessierProj extends Projection {
     /**
-     * 
-     * @param pos
+     * Construtor of the messier projection
+     * @param object the object describing the messier object (name, mag, ...)
+     * @param pos the position of the user
      */
-    public MessierProj(MessierObject object, Position pos) {
-        super(object,pos);
-    }
-
-    public void calculate() {
-        calculateHorizontalCoordinate(getObject().getAscendance(), getObject().getDeclinaison(),true);
+    public MessierProj(MessierObject object) {
+        super(object);
     }
 }

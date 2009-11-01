@@ -1,6 +1,5 @@
 package fr.dox.sideralis.projection.sphere;
 
-import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.math.MathFunctions;
 import fr.dox.sideralis.object.SkyObject;
 
@@ -10,16 +9,19 @@ import fr.dox.sideralis.object.SkyObject;
  * @author Bernard
  */
 public class MoonProj extends Projection {
-    
+    /** The different phase of the moon */
     public static final short NEW = 0;
     public static final short FIRST = 1;
     public static final short FULL = 2;
     public static final short LAST = 3;
     
-    /** Creates a new instance of Moon */
-    public MoonProj(SkyObject object, Position pos) {
-        super(object, pos);
-        calculate();
+    /**
+     * Creates a new instance of Moon
+     * @param object the moon object describing the moon
+     * @param pos the position of the user
+     */
+    public MoonProj(SkyObject object) {
+        super(object);
     }
     /**
      * From T we deduce Lambda and Beta (Chap 27) through L' and M
