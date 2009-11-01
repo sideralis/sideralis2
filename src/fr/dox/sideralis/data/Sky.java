@@ -20,39 +20,40 @@ import fr.dox.sideralis.projection.sphere.SunProj;
 public class Sky implements Runnable {
     private int progress;
     /** The projection (height, azimuth) of all my stars */
-    private StarProj[] starsProj;
+    private final StarProj[] starsProj;
     /** The projection of the moon */
-    private MoonProj moonProj;
+    private final MoonProj moonProj;
     /** The projection of the sun */
-    private SunProj sunProj;
+    private final SunProj sunProj;
     /** The projection of planets */
-    private PlanetProj mercuryProj,venusProj,marsProj,jupiterProj,saturnProj;
+    private final PlanetProj mercuryProj,venusProj,marsProj,jupiterProj,saturnProj;
     /** The Messier objects */
-    private MessierProj[] messierProj;
+    private final MessierProj[] messierProj;
     
     /** a reference to my position and time */
-    private Position myPosition;
+    private final Position myPosition;
 
     /** The moon description */
-    private SkyObject moonObject;
+    private final SkyObject moonObject;
     /** The sun description */
-    private SkyObject sunObject;
+    private final SkyObject sunObject;
     /** The Mercury planet description */
-    private PlanetObject mercuryObject;
+    private final PlanetObject mercuryObject;
     /** The Venus planet description */
-    private PlanetObject venusObject;
+    private final PlanetObject venusObject;
     /** The Mars planet description */
-    private PlanetObject marsObject;
+    private final PlanetObject marsObject;
     /** The Saturn planet description */
-    private PlanetObject saturnObject;
+    private final PlanetObject saturnObject;
     /** The Juptier planet description */
-    private PlanetObject jupiterObject;
+    private final PlanetObject jupiterObject;
 
-    private PlanetObject[] planetObjects;
-    private PlanetProj[] planetProj;
+    private final PlanetObject[] planetObjects;
+    private final PlanetProj[] planetProj;
 
     private boolean calculationDone;
 
+    /** All types of planet objects */
     public static final short MERCURY = 0;
     public static final short VENUS = 1;
     public static final short MARS = 2;
@@ -61,7 +62,7 @@ public class Sky implements Runnable {
     public static final short NB_OF_SYSTEM_SOLAR_OBJECTS = 5;
     /**
      * Creates a new instance of Sky (so all objects in the sky)
-     * @param pos the position of the user
+     * @param myPosition the position of the user
      */
     public Sky(Position myPosition) {
         int i,i1,i2;
@@ -69,53 +70,53 @@ public class Sky implements Runnable {
         starsProj = new StarProj[StarCatalogConst.getNumberOfStars()+StarCatalogMag.getNumberOfStars()];
         for (i=i1=i2=0;i<starsProj.length;i++) {
             if (i<StarCatalogConst.getNumberOfStars())
-                starsProj[i] = new StarProj(StarCatalogConst.getStar(i1++), myPosition);
+                starsProj[i] = new StarProj(StarCatalogConst.getStar(i1++));
             else
-                starsProj[i] = new StarProj(StarCatalogMag.getStar(i2++), myPosition);
+                starsProj[i] = new StarProj(StarCatalogMag.getStar(i2++));
         }
 
         // Creates a moon
         moonObject = new SkyObject(0F, 0F, LocalizationSupport.getMessage("NAME_MOON"), (short)-120);
-        moonProj = new MoonProj(moonObject,myPosition);
+        moonProj = new MoonProj(moonObject);
 
         // create a sun
         sunObject = new SkyObject(0F, 0F, LocalizationSupport.getMessage("NAME_SUN"), (short)-267);
-        sunProj = new SunProj(sunObject, myPosition);
+        sunProj = new SunProj(sunObject);
 
         // Create mercury
         mercuryObject = new PlanetObject(0F, 0F, LocalizationSupport.getMessage("NAME_MERCURY"), (short)-10,
                 178.179078, 149474.07078, 0.0003011, 0, 0.3870986, 0.20561421, 0.00002046, -0.000000030, 0,
                 7.002881, 0.0018608, -0.0000183, 0, 28.753753, 0.3702806, 0.0001208, 0,
                 47.145944, 1.1852083, 0.0001739, 0, 102.27938, 149472.51529, 0.000007);
-        mercuryProj = new PlanetProj(mercuryObject,myPosition);
+        mercuryProj = new PlanetProj(mercuryObject);
 
         // Create venus
         venusObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_VENUS"),(short)-40,
                 342.767053, 58519.21191, 0.0003097, 0, 0.7233316, 0.00682069, -0.00004774, 0.000000091, 0,
                 3.393631, 0.0010058, -0.0000010, 0, 54.384186, 0.5081861, -0.0013864, 0,
                 75.779647, 0.8998500, 0.0004100, 0, 212.60322, 58517.80387, 0.001286);
-        venusProj = new PlanetProj(venusObject,myPosition);
+        venusProj = new PlanetProj(venusObject);
 
         // Create Mars
         marsObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_MARS"),(short)15,
                 293.737334, 19141.69551, 0.0003107, 0, 1.5236883, 0.09331290, 0.000092064, -0.000000077, 0,
                 1.850333, -0.0006750, 0.0000126, 0, 285.431761, 1.0697667, 0.0001313, 0.00000414,
                 48.786442, 0.7709917, -0.0000014, -0.00000533, 319.51913, 19139.85475, 0.000181);
-        marsProj = new PlanetProj(marsObject, myPosition);
+        marsProj = new PlanetProj(marsObject);
 
         // Create Jupiter
         jupiterObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_JUPITER"),(short)-16,
                 238.049257, 3036.301986, 0.0003347, -0.00000165, 5.202561, 0.04833475, 0.000164180, -0.0000004676, -0.000000017,
                 1.308736, -0.0056961, 0.0000039, 0,273.277558, 0.5994317, 0.00070405, 0.00000508,
                 99.443414, 1.0105300, 0.00035222, -0.00000851, 225.32833, 3034.69202, -0.000722);
-        jupiterProj = new PlanetProj(jupiterObject, myPosition);
+        jupiterProj = new PlanetProj(jupiterObject);
 
         // Create Saturn
         saturnObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_SATURN"),(short)-7,
                 266.564377, 1223.509884, 0.0003245, -0.0000058, 9.554747, 0.05589232, -0.00034550, -0.000000728, 0.00000000074,
                 2.492519, -0.0039189, -0.00001549, 0.00000004, 338.307800, 1.0852207, 0.00097854, 0.00000992,
                 112.790414, 0.8731951, -0.00015218, -0.00000531, 175.46622, 1221.55147, -0.000502);
-        saturnProj = new PlanetProj(saturnObject, myPosition);
+        saturnProj = new PlanetProj(saturnObject);
 
         // Create all solar system objects
         planetObjects = new PlanetObject[NB_OF_SYSTEM_SOLAR_OBJECTS];
@@ -135,11 +136,11 @@ public class Sky implements Runnable {
         // Create the messier objects
         messierProj = new MessierProj[MessierCatalog.getNumberOfObjects()];
         for (i=0;i<messierProj.length;i++) {
-            messierProj[i] = new MessierProj(MessierCatalog.getObject(i), myPosition);
+            messierProj[i] = new MessierProj(MessierCatalog.getObject(i));
         }
         
         this.myPosition = myPosition;
-
+        Projection.setPosition(myPosition);                                     // Set the static field myPosition in Projection objects
     }
     /**
      * Return one of the star from all stars
@@ -160,43 +161,43 @@ public class Sky implements Runnable {
     /**
      * Return one of the Messier object from the catalog
      * @param i the index of the Messier object required
-     * @return the ith Messier in the Messier catalog
+     * @return the ith MessierProj object in the messierProj table
      */
     public MessierProj getMessier(int i) {
         return messierProj[i];
     }
     /**
-     * 
-     * @return
+     * Return the table of projection object for planet
+     * @return planetProj
      */
     public PlanetProj[] getSystemSolarProj() {
         return planetProj;
     }
     /**
      * Return a moon object
-     * @return a reference to the moon
+     * @return a reference to the moon projection object
      */
     public MoonProj getMoon() {
         return moonProj;
     }
     /**
      * Return a sun object
-     * @return a reference to the sun
+     * @return a reference to the sun projection object
      */
     public SunProj getSun() {
         return sunProj;
     }
     /**
      * Return a planet
-     * @param i the index of the planet (see Sky static definition)
-     * @return
+     * @param i the index of the planet (Sky.SATURN or Sky.VENUS or ...)
+     * @return the PlanetProj object of the index in the planetProj table
      */
     public PlanetProj getPlanet(int i) {
         return planetProj[i];
     }
     /**
-     *
-     * @return
+     * Return a boolean indicating if the calculation of position of objects is done
+     * @return true if calculation of position is done, false if it is ongoing
      */
     public boolean isCalculationDone() {
         return calculationDone;
@@ -223,31 +224,35 @@ public class Sky implements Runnable {
         myPosition.getTemps().adjustDate();
         myPosition.getTemps().calculateJourJulien();
         myPosition.getTemps().calculateHS();
-        Projection.calculateParamSun();
+        Projection.calculateParamSun(myPosition.getTemps().getT());
+        Projection.calcStaticVar();
     }
     /**
      * Add time, calculate new time variables and calculates the star position and other objects
      */
     public void calculate() {
     	setProgress(0);
-        
+        int size = (1 + starsProj.length + messierProj.length + 2 + planetProj.length)/100;
+        int step = 0;
         // ---------------------------------------------------
         // --- Recalculate global variables linked to time ---
     	calculateTimeVariables();
-        setProgress(10);
-
+        step += 1;
+        setProgress(step/size);
         // -----------------------------------
         // --- Calculate position of stars ---
         for (int i=0;i<starsProj.length;i++) {
             starsProj[i].calculate();
-            if (i%100 == 0)
-            	setProgress(10+60*i/starsProj.length);
+            if (i%100 == 0) {
+                step += 100;
+                setProgress(step/size);
+            }
+
         }
 
         // ----------------------------------
         // --- Calculate position of moon ---
         moonProj.calculate();
-
         // ---------------------------------
         // --- Calculate position of sun ---
         sunProj.calculate();
@@ -257,20 +262,23 @@ public class Sky implements Runnable {
         for (int i=0;i<planetProj.length;i++) {
             planetProj[i].calculate();
         }
-    	setProgress(75);
+        step += (2+planetProj.length);
+        setProgress(step/size);
 
         // ---------------------------------------------
         // --- Calculate position of Messier objects ---
         for (int i=0;i<messierProj.length;i++) {
             messierProj[i].calculate();
-            if (i%20 == 0)
-            	setProgress(75+25*i/messierProj.length);
+            if (i%20 == 0){
+                step += 20;
+                setProgress(step/size);
+            }
         }
     	setProgress(100);
     }
     /**
-     *
-     * @return
+     * Return the progress index in the calculation of the projection of all object
+     * @return a value between 0 and 100. 0 means beginning of calculation, 100 means ending of calculation
      */
     public int getProgress() {
         return progress;
