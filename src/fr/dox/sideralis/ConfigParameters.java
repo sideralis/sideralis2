@@ -36,13 +36,13 @@ public class ConfigParameters {
     private int[] color;
     
     /** A table storing the names of all parameters */
-    private static String[] paramNames = new String[] {LocalizationSupport.getMessage("PARAM_CONST"),
+    private static final String[] paramNames = new String[] {LocalizationSupport.getMessage("PARAM_CONST"),
             LocalizationSupport.getMessage("PARAM_CONSTN"),LocalizationSupport.getMessage("PARAM_CONSTNL"),
             LocalizationSupport.getMessage("PARAM_PLA"),LocalizationSupport.getMessage("PARAM_PLANA"),
             LocalizationSupport.getMessage("PARAM_STCIR"),LocalizationSupport.getMessage("PARAM_COLSTA"),
             LocalizationSupport.getMessage("PARAM_HELP"),LocalizationSupport.getMessage("PARAM_NIGHT"),
             LocalizationSupport.getMessage("PARAM_MESSIER"),LocalizationSupport.getMessage("PARAM_MESSIERNA")};
-    private static String[] valueNames = new String[] {LocalizationSupport.getMessage("PARAM_MAX_MAG"),
+    private static final String[] valueNames = new String[] {LocalizationSupport.getMessage("PARAM_MAX_MAG"),
             LocalizationSupport.getMessage("PARAM_SID_TIME")};
     // Parameters - boolean values
     public static final short CONSTELLATIONS_DISPLAYED = 0;
