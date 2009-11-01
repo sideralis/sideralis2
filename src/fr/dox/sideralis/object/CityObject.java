@@ -6,7 +6,7 @@ package fr.dox.sideralis.object;
  */
 public class CityObject {
     /** Name of the city */
-    private String name;
+    private final String name;
     /** Latitude of the city */
     private double latitude;
     /** Longitude of the city */
