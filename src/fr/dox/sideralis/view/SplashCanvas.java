@@ -27,28 +27,32 @@ public class SplashCanvas extends Canvas implements Runnable {
     private static final int MS_PER_FRAME = 1000 / MAX_CPS;
     /** A counter for the splash screen */
     private short counter;
+    /** Different values for state machine of the splash screen display */
     static final short COUNT0 = -5;                                             // Constant color red screen
     static final short COUNT1 = 0;                                              // Decreasing color from red to black
     static final short COUNT2 = 5;                                             // Constant color logo DoX
     static final short COUNT3 = 15;
     static final short COUNT4 = 25;
-    private final Image introImg;
-    private final Image logoImg;
+    private Image introImg;
+    private Image logoImg;
     private final Sideralis myMidlet;
     private final Font myFontBold, myFontNormal;
 
     /**
      *
      */
-    public SplashCanvas(Sideralis myMidlet) throws IOException {
+    public SplashCanvas(Sideralis myMidlet) {
         this.myMidlet = myMidlet;
 
         counter = COUNT0;
         myFontBold = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_LARGE);
         myFontNormal = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM);
-
-        introImg = Image.createImage("/Images/iya_logo.png");
-        logoImg = Image.createImage("/Images/DoX.png");
+        try {
+            introImg = Image.createImage("/iya_logo.png");
+            logoImg = Image.createImage("/DoX.png");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
     /**
