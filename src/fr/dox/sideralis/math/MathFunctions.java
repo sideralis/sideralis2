@@ -92,17 +92,18 @@ public class MathFunctions {
         int N = 40;                                 // This number determines the precision, higher it is, higher the precision is.
         double res;
         double tmp;
+        double zAbs = Math.abs(z);
         
-        if (Math.abs(z)>0.92)
+        if (zAbs>0.92)
             N *= 2;
-        if (Math.abs(z)>0.94)
+        if (zAbs>0.94)
             N += N/2;
-        if (Math.abs(z)>0.96)
+        if (zAbs>0.96)
             N += N/2;
-        if (Math.abs(z)>0.98)
+        if (zAbs>0.98)
             N *= 2;
         
-        if (Math.abs(z) < 1) {
+        if (zAbs < 1) {
             // Sum de k=0 a N de [(-1) exp k * z exp (2k+1) / (2k+1)]
             res = tmp = z;
             for (k=1;k<N;k++) {
@@ -113,7 +114,7 @@ public class MathFunctions {
                     res -= tmp/(2*k+1);
             }
         } else {
-            res = Math.PI * z / 2 / Math.abs(z) - 1/z;
+            res = Math.PI * z / 2 / zAbs - 1/z;
             tmp = 1/z;
             for (k=1;k<N;k++) {
                 tmp /= (z*z);
@@ -151,9 +152,9 @@ public class MathFunctions {
         tmp = (tmp - m)*60;
         s = (int)tmp;
         val2 = (int)((val - ((int)(val*1000))/1000)*1000);
-        res = res + deg + "�"+m+"'"+s+"\"";
+        res = res + deg + "\u00BA"+m+"'"+s+"\"";
         if (flag)
-            res += " (" + (int)val+"."+val2+"�)";
+            res += " (" + (int)val+"."+val2+"\u00BA)";
 
         return res;        
     }
@@ -205,18 +206,6 @@ public class MathFunctions {
             res *= (a+k);
         return res;
         
-    }
-    /** This function calcultes the factorial
-     * For n=0 return 1
-     * @param n the input parameter for the factorial
-     * @return n*(n-1)*...*2
-     * @deprecated
-     */
-    private static double fact(int n) {
-        double res=1;
-        for(int i=2;i<=n;i++)
-            res *= i;
-        return res;
     }
 
     /** A table containing the factoriel value of number between 0 and 16 */
