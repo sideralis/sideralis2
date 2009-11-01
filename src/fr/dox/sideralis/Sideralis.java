@@ -67,7 +67,9 @@ package fr.dox.sideralis;
  *          Add more stars                                                      Done
  *          Display right ascension and declination                             Done     
  *          Support for large screen                                            Done
- * v1.3.5   GUI Code full rewrite
+ * v1.3.5   GUI Code full rewrite                                               Done
+ *          Support of multiple keys press                                      Done
+ *          Support for sensors
  * v1.4.0   Add possibility to zoom and scroll in horizontal view
  *          Add altitude in position information/selection              
  *          Display moon phase. 
@@ -76,9 +78,8 @@ package fr.dox.sideralis;
  *          Stars are displayed only during days
  * v1.5.0   Add milky way
  *          All corrections (nutation, parallaxe, refraction atmospherique, ... ?)
- *          Support of multiple keys press
  *          
- * v?.?.?   Support for sensors
+ * v?.?.?   
  *          Keep backligh on
  *          Identify the moon of Jupiter
  *          Add Uranus and Neptune
@@ -99,11 +100,11 @@ package fr.dox.sideralis;
  *
  *  CODE IMPROVEMENT:
  *  - A SkyObject object father of all objects.                                 Done
- *  - Use of resources for color, ?
- *  - New class for support of touch screen
+ *  - Use of resources for color, ?                                             Not possible
+ *  - New class for support of touch screen                                     Done
  *  - New canvas class for all views                                            On going
- *  - messages.properties in a new package                                      DONE
- *  - A better format of data (for star, constellation and Messier objects)
+ *  - messages.properties in a new package                                      Done
+ *  - A better format of data (for star, constellation and Messier objects)     Done
  */
 
 /** Supported phones 
@@ -120,6 +121,7 @@ import fr.dox.sideralis.data.MessierCatalog;
 import fr.dox.sideralis.data.Sky;
 import fr.dox.sideralis.data.StarCatalogConst;
 import fr.dox.sideralis.data.StarCatalogMag;
+import fr.dox.sideralis.location.LocateMe;
 import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.object.CityObject;
 import fr.dox.sideralis.view.GlobeCanvas;
@@ -132,6 +134,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
+import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordStore;
 
 /**
@@ -143,19 +146,20 @@ import javax.microedition.rms.RecordStore;
  */
 public class Sideralis extends MIDlet implements CommandListener, ItemCommandListener, ItemStateListener {
     /** Version number */
-    static final public String VERSION = "v1.3.5";
+    public static final String VERSION = "v1.3.5";
+    /** How often the calculation of position is refreshed */
+    public static final long REFRESH_TIME_CALC = 1 * 10 * 1000;
     
     private Position myPosition;
     private Sky mySky;
     /** All the canvas */
     private SideralisCanvas myCanvas;
-    private SplashCanvas mySplashCanvas;
+    private final SplashCanvas mySplashCanvas;
     private GlobeCanvas globeCanvas;
 
-    private Display myDisplay;
+    private final Display myDisplay;
     private boolean starting;
     private ConfigParameters myParameter;
-    public static final long REFRESH_TIME_CALC = 1 * 10 * 1000;                 // How often the calculation of position is refreshed
 
     /** The position form */
     private Form positionForm;
@@ -219,20 +223,32 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private StringItem langStringItem;
     private ChoiceGroup langChoiceGroup;
     private long myOffsetForCancellation;
+    /** The locate me object */
+    private LocateMe whereAmI;
+    /** A temporary position used by the locate me object */
+    private Position tempPos;
+    /** An object used to highlight some stars, Messier or planets objects*/
+    private Search mySearch;
+    /** A temp index for the search */
+    private short tmpIndex;
+    /** The index of language used during run time */
+    private int lang;
+    /** To indicate that the midlet is in pause and that at the next call of startApp, not all objects have to be restarted */
+    private boolean pauseFlag;
 
     /**
      * All codes codes which should be executed before creating main objects
      */
     public Sideralis() {
-        System.out.println("Constructor");
+        //System.out.println("Constructor");
+        // Flag to indicate that all objects have not yet been created
         starting = true;
+        pauseFlag = false;
         LocalizationSupport.initLocalizationSupport();
-        try {
-            mySplashCanvas = new SplashCanvas(this);
-            mySplashCanvas.setFullScreenMode(true);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        // Create splash screen
+        mySplashCanvas = new SplashCanvas(this);
+        mySplashCanvas.setFullScreenMode(true);
+        // Display splash screen
         myDisplay = Display.getDisplay(this);
         myDisplay.setCurrent(mySplashCanvas);
     }
@@ -241,21 +257,48 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
      * @throws MIDletStateChangeException
      */
     protected void startApp() {
-        System.out.println("Startup");
-        // Load position and parameters
-        myParameter = new ConfigParameters();
-
-        myPosition = new Position();
-        mySky = new Sky(myPosition);
-        mySky.calculate();
-        myCanvas = new SideralisCanvas(this);
-        myCanvas.setFullScreenMode(true);
-        myCanvas.init();
-        myCanvas.project();
-
-        createGUI();
-
-        starting = false;
+        if (pauseFlag == false) {
+            // Load position and parameters
+            myParameter = new ConfigParameters();
+            loadData();
+            // Set position and time
+            myPosition = new Position();
+            // Create a sky
+            mySky = new Sky(myPosition);
+            // Create a search object
+            mySearch = new Search(mySky);
+            mySearch.createListOfObjets();
+            // Calculate position of all objects
+            mySky.calculate();
+            // Display objects
+            myCanvas = new SideralisCanvas(this);
+            myCanvas.setFullScreenMode(true);
+            myCanvas.init();
+            myCanvas.project();
+            // Create user interface
+            createGUI();
+            // Flag to indicate that everything is ready (all objects have been created)
+            starting = false;
+        } else {
+            pauseFlag = false;
+         }
+    }
+    /**
+     *
+     */
+    protected void pauseApp() {
+        System.out.println("Pause");
+        pauseFlag = true;
+        if (myCanvas != null) {
+            myCanvas.stop();
+        }
+    }
+    /**
+     *
+     * @param unconditional
+     * @throws MIDletStateChangeException
+     */
+    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
     }
     /**
      * Create user interface
@@ -461,26 +504,20 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     public void commandAction(Command c, Displayable d) {
         // EXIT command
         if (c == exitCommand) {
-            try {
-                // Exit
-                saveData();                                                     // Used mainly to save which view is used.
-                destroyApp(true);
-            } catch (MIDletStateChangeException ex) {
-                ex.printStackTrace();
-            }
-            notifyDestroyed();
-
+            // Exit
+            saveData();                                                     // Used mainly to save which view is used.
+            myCanvas.setState(SideralisCanvas.END1);
         // === Form selection commands ===
         } else if (c == displayCommand) {
             // Display display options
             displayOptionsChoiceGroup.setSelectedFlags(myParameter.getSelectedFlags());
             displayOptionsTextMaxMag.setString(String.valueOf(myParameter.getMaxMag()));
             myDisplay.setCurrent(displayOptionsForm);
-//        } else if (c == searchCommand) {
-//            // Search command
-//            searchTextSearch.setString("");
-//            searchItemSearch.setText(mySearch.getNameOfSearchableObject(mySearch.getIndex()));
-//            myDisplay.setCurrent(searchForm);
+        } else if (c == searchCommand) {
+            // Search command
+            searchTextSearch.setString("");
+            searchItemSearch.setText(mySearch.getNameOfSearchableObject(mySearch.getIndex()));
+            myDisplay.setCurrent(searchForm);
         } else if (c == positionCommand) {
             try {
                 // Store current time in case of cancellation.
@@ -496,52 +533,52 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 e.printStackTrace();
             }
 
-//        } else if (c == autoPositionCommand) {
-//            tempPos = new Position();
-//            whereAmI = new LocateMe(tempPos, this);
-//            whereAmI.start();
-//            myDisplay.setCurrent(locateMeForm);
-//        } else if (c == cityCommand) {
-//            // To select city selection
-//            cityChoiceGroup.setSelectedIndex(myPosition.getSelectedCity(), true);
-//            myDisplay.setCurrent(cityForm);
-//        } else if (c == globeCommand) {
-//            // To select position from globe
-//            globeCanvas.setPosition(myPosition);
-//            myDisplay.setCurrent(globeCanvas);
-//        } else if (c == helpCommand) {
-//            // To select help
-//            myDisplay.setCurrent(helpForm);
-//        } else if (c == infoCommand) {
-//            // To select info
-//            myDisplay.setCurrent(infoForm);
-//        } else if (c == dicoCommand) {
-//            // To select info
-//            myDisplay.setCurrent(dicoForm);
-//        } else if (c == langCommand) {
-//            // To select language */
-//            langChoiceGroup.setSelectedIndex(getLangAsInt(), true);
-//            myDisplay.setCurrent(langForm);
-//
+        } else if (c == autoPositionCommand) {
+            tempPos = new Position();
+            whereAmI = new LocateMe(tempPos, this);
+            whereAmI.start();
+            myDisplay.setCurrent(locateMeForm);
+        } else if (c == cityCommand) {
+            // To select city selection
+            cityChoiceGroup.setSelectedIndex(myPosition.getSelectedCity(), true);
+            myDisplay.setCurrent(cityForm);
+        } else if (c == globeCommand) {
+            // To select position from globe
+            globeCanvas.setPosition(myPosition);
+            myDisplay.setCurrent(globeCanvas);
+        } else if (c == helpCommand) {
+            // To select help
+            myDisplay.setCurrent(helpForm);
+        } else if (c == infoCommand) {
+            // To select info
+            myDisplay.setCurrent(infoForm);
+        } else if (c == dicoCommand) {
+            // To select info
+            myDisplay.setCurrent(dicoForm);
+        } else if (c == langCommand) {
+            // To select language */
+            langChoiceGroup.setSelectedIndex(getLangAsInt(), true);
+            myDisplay.setCurrent(langForm);
+
         // === CANCEL command ===
         } else if (c == cancelCommand) {
             // To come back
-            /*if (myDisplay.getCurrent() == globeCanvas) {
+            if (myDisplay.getCurrent() == globeCanvas) {
                 myDisplay.setCurrent(positionForm);
-            } else*/ if (myDisplay.getCurrent() == positionForm) {
+            } else if (myDisplay.getCurrent() == positionForm) {
                 myPosition.getTemps().setTimeOffset(myOffsetForCancellation);
                 myDisplay.setCurrent(myCanvas);
-//            } else if (myDisplay.getCurrent() == cityForm) {
-//                myDisplay.setCurrent(positionForm);
+            } else if (myDisplay.getCurrent() == cityForm) {
+                myDisplay.setCurrent(positionForm);
             } else if (myDisplay.getCurrent() == displayOptionsForm) {
                 myDisplay.setCurrent(myCanvas);
-//            } else if (myDisplay.getCurrent() == langForm) {
-//                myDisplay.setCurrent(myCanvas);
-//            } else if (myDisplay.getCurrent() == locateMeForm) {
-//                whereAmI = null;
-//                myDisplay.setCurrent(positionForm);
+            } else if (myDisplay.getCurrent() == langForm) {
+                myDisplay.setCurrent(myCanvas);
+            } else if (myDisplay.getCurrent() == locateMeForm) {
+                whereAmI = null;
+                myDisplay.setCurrent(positionForm);
             }
-        // ��� OK command
+        // === OK command ===
         } else if (c == okCommand) {
             if (myDisplay.getCurrent() == positionForm) {
                 // Select lat and long from data.
@@ -550,20 +587,20 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 myCanvas.setCounter(0);                                         // To activate a calculation position
                 myDisplay.setCurrent(myCanvas);
                 saveData();
-//            } else if (myDisplay.getCurrent() == cityForm) {
-//                // Select lat and long from city
-//                int selCity;
-//                selCity = cityChoiceGroup.getSelectedIndex();
-//                myPosition.setCity(selCity);
-//                latTextField.setString(new Double(myPosition.getLatitude()).toString());
-//                longTextField.setString(new Double(myPosition.getLongitude()).toString());
-//                myDisplay.setCurrent(positionForm);
-//            } else if (myDisplay.getCurrent() == globeCanvas) {
-//                myPosition.setLatitude(globeCanvas.getLatitude());
-//                myPosition.setLongitude(globeCanvas.getLongitude());
-//                latTextField.setString(new Double(myPosition.getLatitude()).toString());
-//                longTextField.setString(new Double(myPosition.getLongitude()).toString());
-//                myDisplay.setCurrent(positionForm);
+            } else if (myDisplay.getCurrent() == cityForm) {
+                // Select lat and long from city
+                int selCity;
+                selCity = cityChoiceGroup.getSelectedIndex();
+                myPosition.setCity(selCity);
+                latTextField.setString(new Double(myPosition.getLatitude()).toString());
+                longTextField.setString(new Double(myPosition.getLongitude()).toString());
+                myDisplay.setCurrent(positionForm);
+            } else if (myDisplay.getCurrent() == globeCanvas) {
+                myPosition.setLatitude(globeCanvas.getLatitude());
+                myPosition.setLongitude(globeCanvas.getLongitude());
+                latTextField.setString(new Double(myPosition.getLatitude()).toString());
+                longTextField.setString(new Double(myPosition.getLongitude()).toString());
+                myDisplay.setCurrent(positionForm);
             } else if (myDisplay.getCurrent() == displayOptionsForm) {
                 boolean[] b = new boolean[displayOptionsChoiceGroup.size()];
                 displayOptionsChoiceGroup.getSelectedFlags(b);
@@ -574,40 +611,124 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                     myParameter.setMaxMag(0);
                 myDisplay.setCurrent(myCanvas);
                 saveData();
-//            } else if (myDisplay.getCurrent() == langForm) {
-//                int selLang;
-//                selLang = langChoiceGroup.getSelectedIndex();
-//                setLang(selLang);
-//                Alert langAlert = new Alert(LocalizationSupport.getMessage("LANG_FORM_WARNING"), LocalizationSupport.getMessage("LANG_FORM_WARNING2"), null, AlertType.INFO);
-//                langAlert.setTimeout(Alert.FOREVER);
-//                myDisplay.setCurrent(langAlert, myCanvas);
-//                saveLanguage();
-//            } else if (myDisplay.getCurrent() == helpForm) {
-//                myDisplay.setCurrent(myCanvas);
+            } else if (myDisplay.getCurrent() == langForm) {
+                int selLang;
+                selLang = langChoiceGroup.getSelectedIndex();
+                setLang(selLang);
+                Alert langAlert = new Alert(LocalizationSupport.getMessage("LANG_FORM_WARNING"), LocalizationSupport.getMessage("LANG_FORM_WARNING2"), null, AlertType.INFO);
+                langAlert.setTimeout(Alert.FOREVER);
+                myDisplay.setCurrent(langAlert, myCanvas);
+                saveLanguage();
+            } else if (myDisplay.getCurrent() == helpForm) {
+                myDisplay.setCurrent(myCanvas);
             }
-
         } else if (c == backCommand) {
             myDisplay.setCurrent(myCanvas);
         }
-
-    }
-
-    protected void pauseApp() {
-    }
-
-    protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-    }
-
-    public void commandAction(Command c, Item item) {
-    }
-
-    public void itemStateChanged(Item item) {
     }
 
     /**
-     *
+     * React to user's choice.
+     * @param c the command of the user
+     * @param i the item
+     */
+    public void commandAction(Command c, Item i) {
+        CityObject c1,c2;
+        // Save position
+        if (i==posStore) {
+            // Store city 1 in city 2 and store new city in city 1
+            c2 = myParameter.getCity1();
+            myParameter.setCity2(c2);
+            c1 = new CityObject(posName.getString(),Double.parseDouble(latTextField.getString()),Double.parseDouble(longTextField.getString()));
+            myParameter.setCity1(c1);
+            pos1Restore.setText(c1.getName());
+            pos2Restore.setText(c2.getName());
+        }
+        // Restore saved position 1
+        if (i==pos1Restore) {
+            // Set new latitude and longitude according to position 1
+            c1 = myParameter.getCity1();
+            myPosition.setLatitude(c1.getLatitude());
+            myPosition.setLongitude(c1.getLongitude());
+            latTextField.setString(new Double(myPosition.getLatitude()).toString());
+            longTextField.setString(new Double(myPosition.getLongitude()).toString());
+        }
+        // Restore saved position 2
+        if (i==pos2Restore) {
+            c2 = myParameter.getCity2();
+            myPosition.setLatitude(c2.getLatitude());
+            myPosition.setLongitude(c2.getLongitude());
+            latTextField.setString(new Double(myPosition.getLatitude()).toString());
+            longTextField.setString(new Double(myPosition.getLongitude()).toString());
+        }
+        // Set time as current time
+        if (i==realTimeButton) {
+            // The user pressed Current time
+            myPosition.getTemps().setTimeOffset(0);
+            myPosition.getTemps().adjustDate();
+            dateField.setDate(myPosition.getTemps().getMyDate());
+        }
+        // Activate search
+        if (i==searchItemSearch) {
+            if (tmpIndex != -1) {
+                short res;
+                // Only if an object has been found
+                mySearch.clearHighlight();
+                mySearch.setIndex(tmpIndex);
+                res = mySearch.setHighlight(searchItemSearch.getText());
+                if (res==Search.FOUND_NOT_VISIBLE) {
+                    Alert visibleAlert = new Alert("", LocalizationSupport.getMessage("POS_ALERT_VIS"), null, AlertType.INFO);
+                    visibleAlert.setTimeout(Alert.FOREVER);
+                    myDisplay.setCurrent(visibleAlert, searchForm);
+                } else {
+                    myDisplay.setCurrent(myCanvas);
+                }
+            }
+        }
+        // Cancel Search
+        if (i==searchItemCancelSearch) {
+            mySearch.setIndex(-1);
+            tmpIndex = -1;
+            mySearch.clearHighlight();
+            searchTextSearch.setString("");
+            searchItemSearch.setText(mySearch.getNameOfSearchableObject(-1));
+            myDisplay.setCurrent(myCanvas);
+        }
+    }
+
+    /**
+     * Called when user change time or change of method of selecting time
+     * @param i the item which has been changed
+     */
+    public void itemStateChanged(Item i) {
+ 
+        if (i == dateField) {
+            // ===========================================================
+            // === The user changed time, so we are now in custom time ===
+            myPosition.getTemps().calculateTimeOffset(dateField.getDate());
+        }
+        if (i == searchTextSearch) {
+            // ========================================================================
+            // === Get name of searched object (remove proposition if there is one) ===
+            String tmp = searchTextSearch.getString().toLowerCase().trim();
+            // If name is not empty
+            if (!tmp.equals("")) {
+                tmpIndex = mySearch.search(tmp);
+            } else {
+                tmpIndex = -1;
+            }
+            searchItemSearch.setText(mySearch.getNameOfSearchableObject(tmpIndex));
+        }
+    }
+
+    /**
+     * To finish gauge for locate me position
      */
     public void EndOfLocateMe() {
+        latTextField.setString(new Double(tempPos.getLatitude()).toString());
+        longTextField.setString(new Double(tempPos.getLongitude()).toString());
+        myDisplay.setCurrent(positionForm);
+        whereAmI = null;
     }
 
     /**
@@ -616,31 +737,99 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     public void endOfSplash() {
         myDisplay.setCurrent(myCanvas);
     }
-
     /**
      *
-     * @return
+     */
+    public void end() {
+        try {
+            destroyApp(true);
+        } catch (MIDletStateChangeException ex) {
+            ex.printStackTrace();
+        }
+        notifyDestroyed();
+    }
+    /**
+     * Return a boolean indicating if all objects have been created
+     * @return true if all objects have not yet been created (in startApp()), false if they have all been created
      */
     public boolean isStarting() {
         return starting;
     }
 
     /**
-     *
-     * @return
+     * Return my sky object
+     * @return mySky object
      */
     public Sky getMySky() {
         return mySky;
     }
-
+    /**
+     * Return the object describing all parameters
+     * @return the parameter object
+     */
     public ConfigParameters getMyParameter() {
         return myParameter;
     }
+    /**
+     * Return the search object
+     * @return mySearch object
+     */
+    public Search getSearch() {
+        return mySearch;
+    }
+    /**
+     * Return the language selected during run time
+     * @return an index in the table of all possible languages supported by Sideralis
+     */
+    public int getLangAsInt() {
+        return lang;
+    }
+   /**
+     * Return the language used to display all text messages
+     * @return "" for default, "fr_FR" for French, "it_IT" for Italian
+     */
+    public String getLang() {
+        String ret = "";
 
+        switch (lang) {
+            case 0:
+                ret = "";
+                break;
+            case 1:
+                ret = "fr_FR";
+                break;
+            case 2:
+                ret = "it_IT";
+                break;
+            case 3:
+                ret = "es_ES";
+                break;
+            case 4:
+                ret = "pt_PT";
+                break;
+            case 5:
+                ret = "de_DE";
+                break;
+            case 6:
+                ret = "pl_PL";
+                break;
+//            case 7:
+//                ret = "cs_CZ";
+//                break;
+        }
+        return ret;
+    }
+    /**
+     * Set parameter language
+     * @param sel language used during run time
+     */
+    public void setLang(int selLang) {
+        lang = selLang;
+    }
     /**
      * Save position data in a record store so position will be used again when started again
      */
-    public void saveData() {
+    private void saveData() {
         RecordStore rs;
         int count, i;
         byte[] b;
@@ -739,8 +928,71 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             bin.close();
             rs.closeRecordStore();
         } catch (Exception e) {
+            // File not found - logical if it is the first launch of Sideralis
+            //e.printStackTrace();
+        }
+    }
+    /**
+     * Load language
+     * @return true if a language has been loaded, false if not language file stored previously
+     */
+    private boolean loadLanguage() {
+        RecordStore rs;
+        int i;
+        byte[] b;
+        String sv;
+
+        try {
+            rs = RecordStore.openRecordStore("language", true);
+            b = rs.getRecord(1);                                                // will go to InvalideRecordIDException if record has not been created
+            ByteArrayInputStream bin = new ByteArrayInputStream(b);
+            DataInputStream din = new DataInputStream(bin);
+            sv = din.readUTF();
+            if (sv.equals(VERSION)) {
+                i = din.readInt();
+                setLang(i);
+            }
+
+            din.close();
+            bin.close();
+            rs.closeRecordStore();
+        } catch (InvalidRecordIDException e) {
+            return false;
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
+        return true;
     }
+
+    /**
+     * Save language used
+     */
+    private void saveLanguage() {
+        RecordStore rs;
+        int count;
+        byte[] b;
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        DataOutputStream dout = new DataOutputStream(bout);
+
+        try {
+            dout.writeUTF(VERSION);
+            dout.writeInt(getLangAsInt());
+            b = bout.toByteArray();
+            dout.close();
+            bout.close();
+
+            rs = RecordStore.openRecordStore("language", true);
+            count = rs.getNumRecords();
+            if (count == 0) {
+                rs.addRecord(b, 0, b.length);
+            } else {
+                rs.setRecord(1, b, 0, b.length);
+            }
+            rs.closeRecordStore();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }
