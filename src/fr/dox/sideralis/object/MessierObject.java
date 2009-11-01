@@ -8,7 +8,9 @@ public class MessierObject extends SkyObject {
     /** The distance from earth */
     private float dist;
     
-    /** Creates a new instance of MessierData */
+    /** 
+     * Creates a new instance of MessierData
+     */
     public MessierObject(float asc, float dec, short mag, float dist, String name) {
         super(asc,dec,name,mag);
         this.dist = dist;
