@@ -9,7 +9,7 @@ import fr.dox.sideralis.data.ConstellationCatalog;
  */
 public class ConstellationObject {
     /** A list of stars in a constellation. The list represents couples of stars. Each couple represent a line when drawing the constellation */
-    private short[] listStars;
+    private final short[] listStars;
     /** The index to the name */
     private int idxName;
     /** The star which is used to display the name of the constellation */
@@ -23,7 +23,6 @@ public class ConstellationObject {
      * @param c the id of the star which is used as reference to display the constellation name
      */
     public ConstellationObject(short[] v, int idxName,short c) {
-        listStars = new short[v.length];
         listStars = v;
         this.idxName = idxName;
         constNameStar = c;
