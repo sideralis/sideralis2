@@ -10,11 +10,11 @@ package fr.dox.sideralis.view;
  */
 
 import java.io.IOException;
-import java.util.Timer;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import fr.dox.sideralis.location.Position;
+import fr.dox.sideralis.math.MathFunctions;
 
 /**
  * A class derived from Canvas and used to display a globe to select graphically the position of the user
@@ -24,13 +24,14 @@ import fr.dox.sideralis.location.Position;
 public class GlobeCanvas extends Canvas {
     private Image img;                      // The image representing the globe
     private double x,y;                     // Coordinate in the image
-    Position myPosition;                    // Real globe coordinate of the user
+    private Position myPosition;            // Real globe coordinate of the user
     private double lScreen,hScreen;         // Length and heigh of mobile screen
     private double lImage,hImage;           // Length and heigh of Image
     private double xc,yc;                   // Coordinate of cursor on mobile screen
     private double xi,yi;                   // Coordinate top left corner of screen in image
     private double x0,y0;                   // Coordinate of lat = long = 0 in the image
-    private Timer keyTimer;                 // A timer use to repeat key pressed
+    private int xPressed,yPressed;          // For touch screen support
+    private boolean drag;                   // For touch screen support
     
     private final double SIZE_LONG_PIXEL=14.3/10;                           // Number of pixel on the image for 1 degree in longitude
     private final double TAB_SIZE_POS[] = {15,14,16,16,18,20,23,29,38};     // Number of pixel for 10, 20, ... degrees in latitude
@@ -41,9 +42,9 @@ public class GlobeCanvas extends Canvas {
      * @param p a reference to the user position
      */
     public GlobeCanvas(Position p) {
-        setFullScreenMode(true);
+        //setFullScreenMode(true);
         try {
-            img = Image.createImage("/Images/world.PNG");
+            img = Image.createImage("/world.PNG");
         } catch (IOException e) {
             System.out.println(e.toString());
             System.out.println(e.getMessage());
@@ -65,10 +66,22 @@ public class GlobeCanvas extends Canvas {
      * @param g the graphics object
      */
     public void paint(Graphics g) {
+        // Draw background image (globe)
         g.drawImage(img, -(int)xi,-(int)yi, Graphics.LEFT | Graphics.TOP);
+        // Draw cursor
         g.setColor(0, 0, 255);
         g.drawRect((int)xc,(int)yc,2,2);
+        // Draw coordinate (lat and long)
         getLongLatFromXY();
+        g.setColor(255,0,0);
+        if (yc<getHeight()/2) {
+            g.drawString(MathFunctions.convert2deg(myPosition.getLongitude(), false),0,getHeight(),Graphics.BOTTOM|Graphics.LEFT);
+            g.drawString(MathFunctions.convert2deg(myPosition.getLatitude(), false),getWidth(),getHeight(),Graphics.BOTTOM|Graphics.RIGHT);
+        } else {
+            g.drawString(MathFunctions.convert2deg(myPosition.getLongitude(), false),0,0,Graphics.TOP|Graphics.LEFT);
+            g.drawString(MathFunctions.convert2deg(myPosition.getLatitude(), false),getWidth(),0,Graphics.TOP|Graphics.RIGHT);
+        }
+
     }
     /**
      * Function called each time a key is pressed
@@ -76,32 +89,16 @@ public class GlobeCanvas extends Canvas {
      */
     public void keyPressed(int keyCode) {
         if (getGameAction(keyCode) == UP ) {
-//            if (keyTimer != null)
-//                keyTimer.cancel();
-//            keyTimer = new Timer();
-//            keyTimer.schedule(new KeyTimerTask(KeyTimerTask.DECYC,this),500, 75);
             decYCursor();
         }
         if (getGameAction(keyCode) == DOWN ) {
-//            if (keyTimer != null)
-//                keyTimer.cancel();
-//            keyTimer = new Timer();
-//            keyTimer.schedule(new KeyTimerTask(KeyTimerTask.INCYC,this),500, 75);
             incYCursor();            
         }
         if (getGameAction(keyCode) == RIGHT ) {
-//            if (keyTimer != null)
-//                keyTimer.cancel();
-//            keyTimer = new Timer();
-//            keyTimer.schedule(new KeyTimerTask(KeyTimerTask.INCXC,this),500, 75);
             incXCursor();            
         }
         if (getGameAction(keyCode) == LEFT ) {
-//            if (keyTimer != null)
-//                keyTimer.cancel();
-//            keyTimer = new Timer();
-//            keyTimer.schedule(new KeyTimerTask(KeyTimerTask.DECXC,this),500, 75);
-            decXCursor();
+           decXCursor();
         }
         repaint();
     }
@@ -110,11 +107,44 @@ public class GlobeCanvas extends Canvas {
      * @param keyCode the key code of the pressed key
      */
     public void keyReleased(int keyCode) {
-//        if (keyTimer != null) {
-//            keyTimer.cancel();
-//            keyTimer = null;
-//        }
     }
+    /**
+     * Function called each time a key is kept pressed
+     * @param keyCode the key code of the pressed key
+     */
+    protected void keyRepeated(int keyCode) {
+        keyPressed(keyCode);
+    }
+
+    protected void pointerDragged(int x, int y) {
+        int dist;
+
+        if (drag == false) {
+            dist = (x-xPressed)*(x-xPressed)+(y-yPressed)*(y-yPressed);
+            if (dist > 4) {
+                drag = true;
+            }
+        }
+        if (drag == true) {
+
+        }
+    }
+
+    protected void pointerPressed(int x, int y) {
+        xPressed = x;
+        yPressed = y;
+    }
+
+    protected void pointerReleased(int x, int y) {
+        if (drag == false) {
+            this.x = xi+x;
+            this.y = yi+y;
+            getScreenAndCursorCoordinateFromXY();
+            repaint();
+        }
+        drag = false;
+    }
+
     /**
      * Increment x
      */
