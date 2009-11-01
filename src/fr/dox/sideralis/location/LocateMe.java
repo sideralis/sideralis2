@@ -17,17 +17,23 @@ import javax.microedition.location.LocationProvider;
  * @author Bernard
  */
 public class LocateMe extends Thread {
-    private Position rMyPosition;
+    private final Position rMyPosition;
     private boolean ended;
-    private Sideralis rMyApp;
-    
+    private final Sideralis myMidlet;
+
+    /**
+     * Constructor
+     * @param pos the position of the user
+     * @param app the calling midlet
+     */
     public LocateMe(Position pos,Sideralis app) {
         rMyPosition = pos; 
         ended = false;
-        rMyApp = app;
-        
+        myMidlet = app;        
     }
-    
+    /**
+     * This class has to be a thread to avoid blocking calling thread
+     */
     public void run() {
         try {
 
@@ -52,8 +58,9 @@ public class LocateMe extends Thread {
             ended = true;
         } catch (Exception e) {
             // not able to retrive location information
+            e.printStackTrace();
         }
         if (ended)
-            rMyApp.EndOfLocateMe();
+            myMidlet.EndOfLocateMe();
     }    
 }
