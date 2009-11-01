@@ -11,15 +11,17 @@ public class SkyObject {
     /** Declinaison expressed in d m s */
     protected float dec;
     /** Reference ID */
-    protected String name;
+    protected final String name;
     /** Magnitude apparente */
     protected float mag;
     /** All types of objects */
+    public final static short NONE = -1;
     public final static short STAR = 0;
     public final static short MESSIER = 1;
     public final static short SUN = 2;
     public final static short MOON = 3;
     public final static short PLANET = 4;
+    public final static short CONSTELLATION = 5;
 
 
     /**
