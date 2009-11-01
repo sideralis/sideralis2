@@ -17,11 +17,11 @@ public class Position {
     /** Altitude of the user expressed in meter */
     private short alt;
     /** The time */
-    private Temps myTime;
+    private final Temps myTime;
     /** The city selected */
     private short cityIndex;
     /** CityList */
-    static public CityObject[] cities = {new CityObject(LocalizationSupport.getMessage("CITY_ADELAIDE"), -34.933, 138.600),
+    public static final CityObject[] cities = {new CityObject(LocalizationSupport.getMessage("CITY_ADELAIDE"), -34.933, 138.600),
         new CityObject(LocalizationSupport.getMessage("CITY_AIX"), 43.531, 5.423),
         new CityObject(LocalizationSupport.getMessage("CITY_ALES"), 44.133, 4.083),
         new CityObject(LocalizationSupport.getMessage("CITY_AMSTERDAM"), 52.35, 4.917),
@@ -195,7 +195,7 @@ public class Position {
      * This function is a static function
      * @return A table of string representing the names of the cities
      */
-    static public String[] getCityList() {
+    public static String[] getCityList() {
         String[] citiesNames;
         citiesNames = new String[cities.length];
         for (int i = 0; i < citiesNames.length; i++) {
