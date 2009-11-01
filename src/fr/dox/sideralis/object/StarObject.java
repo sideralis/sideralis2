@@ -20,19 +20,16 @@ public class StarObject extends SkyObject {
             "\u03C0 pi1","\u03C0 pi2","\u03C0 pi3","\u03C0 pi4","\u03C0 pi5","\u03C0 pi6","\u03C8 psi","\u03C8 psi1","\u03C8 psi2","\u03C8 psi3","\u03C1 ro","\u03C1 ro1","\u03C3 sig","\u03C3 sig2","\u03C4 tau","\u03C4 tau1","\u03C4 tau2","\u03C4 tau3",
             "\u03C4 tau4","\u03C4 tau5","\u03C4 tau6","\u03C4 tau8","\u03C4 tau9","\u03B8 tet","\u03B8 tet1","\u03B8 tet2","\u03C5 ups","\u03C5 ups1","\u03C5 ups2","\u03C5 ups4","\u03BE xi","\u03BE xi1","\u03BE xi2","\u03B6 zet","\u03B6 zet1","\u03B6 zet2","",
     };
-    /** For debug only */
-//    static private short mMag,mHR,mBayerName,mConstName,mDist;
 
     /** 
      * Creates a new instance of Star 
-     * @param a ascendance
-     * @param d declinaison
-     * @param m magnitude
+     * @param asc ascendance
+     * @param dec declinaison
+     * @param mag magnitude
      * @param HR HR reference
-     * @param bN Bayer's name
-     * @param cN Constellation's name
-     * @param di Distance from earth
-     * @param n Name
+     * @param bayerNameConstName Bayer's name and constellation name
+     * @param dist Distance from earth
+     * @param name Name
      */
     public StarObject(float asc, float dec, float mag, short HR,short bayerNameConstName, float dist, String name) {
         super(asc,dec,name,mag);
