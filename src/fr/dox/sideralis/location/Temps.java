@@ -27,20 +27,12 @@ public class Temps {
     }
 
     /**
-     *
-     * @return
+     * Return my date object
+     * @return myDate object (Date object)
      */
     public Date getMyDate() {
         return myDate;
     }
-
-//    public String getInfo() {
-//        String ret;
-//        TimeZone tz;
-//        tz = TimeZone.getDefault();
-//        ret = "ID:"+tz.getID() +" DayLight:"+tz.useDaylightTime()+" Offset:"+tz.getRawOffset();
-//        return ret;
-//    }
 
     /** 
      * Return the Jour Julien 
@@ -80,8 +72,8 @@ public class Temps {
         return T;
     }
     /**
-     * 
-     * @return
+     * Return the calendar object associated with myDate
+     * @return a calendar object linked to myDate (a Date object)
      */
     public Calendar getCalendar() {
         Calendar cal;
@@ -148,7 +140,7 @@ public class Temps {
         C = (int)((float)365.25*(float)year);
         D = (int)((float)30.6001 * (float)(month+1));
         jourJulien = B + C + D + cal.get(Calendar.DAY_OF_MONTH) + hour/24 + 1720994.5;
-//        System.out.println("JJ:"+jourJulien+ " y:"+year+" m:"+month+" h:"+hour);
+        //System.out.println("JJ:"+jourJulien+ " y:"+year+" m:"+month+" h:"+hour);
     }
     /**
      * Calculates the sideral hour
