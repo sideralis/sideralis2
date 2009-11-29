@@ -1,21 +1,20 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
 package fr.dox.sideralis.projection.plane;
 
 /**
- * This is the projection class. It is used to project the coordinate of the sky objects
- * on the screen
  *
  * @author Bernard
  */
-public class Zenith {
+public class Stereographique {
 
     /** The rotation of the screen */
-    private double rot;
+    private double rotH,rotV;
     /** The zoom of the screen */
     private float zoom;
-    /** the x shift of the screen */
-    private float shiftX;
-    /** The y shift of the screen */
-    private float shiftY;
     /** The height of the screen */
     private int heightDisplay;
     /** the width of the screen */
@@ -34,9 +33,8 @@ public class Zenith {
      * @param hD height of display
      * @param wD width of display
      */
-    public Zenith(int hD, int wD) {
-        rot = 0;
-        shiftX = shiftY = 0;
+    public Stereographique(int hD, int wD) {
+        rotH = rotV = 0;
         zoom = 1.0F;
         heightDisplay = hD;
         widthDisplay = wD;
@@ -66,83 +64,64 @@ public class Zenith {
         shiftXView = (widthDisplay>heightDisplay?(widthDisplay-heightDisplay)/2:0);
         shiftYView = (heightDisplay>widthDisplay?(heightDisplay-widthDisplay)/2:0);
     }
-    /**
-     * Return the rotation of the view
-     * @return the angle of rotation of the view
-     */
     public double getRot() {
-        return rot;
-    }
-    /**
-     * Set the new rotation of the view
-     * @param rot the new angle rotation
-     */
-    public void setRot(double rot) {
-        this.rot = rot;
+        return rotH;
     }
     /**
      * Increase the angle of rotation by PI/20
      */
-    public void incRot() {
-        rot += Math.PI / 20;
-        if (rot > 2 * Math.PI) {
-            rot -= 2 * Math.PI;
+    public void incShiftX() {
+        rotH += Math.PI / 20;
+        if (rotH > 2 * Math.PI) {
+            rotH -= 2 * Math.PI;
         }
-    }
-    public void addRot(float rotDir) {
-        rot += rotDir / 20 / zoom;
-        if (rot<0)
-            rot += 2 * Math.PI;
-        else if (rot>2*Math.PI)
-            rot -= 2 * Math.PI;
     }
     /**
      * Decrease the angle of rotation by PI/20
      */
-    public void decRot() {
-        rot -= Math.PI / 20;
-        if (rot < 0) {
-            rot += 2 * Math.PI;
-        }
-    }
-    /**
-     * Scroll the view left
-     */
     public void decShiftX() {
-        shiftX -= (zoom-1)/10;
-    }
-    /**
-     * Scroll the view right
-     */
-    public void incShiftX() {
-        shiftX += (zoom-1)/10;
+        rotH -= Math.PI / 20;
+        if (rotH < 0) {
+            rotH += 2 * Math.PI;
+        }
     }
     /**
      * Scroll horizontally by val
      * @param val the amplitude of scroll
-     * @deprecated 
      */
     public void addShiftX(float val) {
-        shiftX += val/60*zoom;
+        rotH += val;
+        if (rotH > 2 * Math.PI) {
+            rotH -= 2 * Math.PI;
+        }
     }
     /**
-     * Scroll the view up
-     */
-    public void decShiftY() {
-        shiftY -= (zoom-1)/10;
-    }
-    /**
-     * Scroll the view down
+     * Increase the angle of rotation by PI/20
      */
     public void incShiftY() {
-        shiftY += (zoom-1)/10;
+        rotV += Math.PI / 20;
+        if (rotV > 2 * Math.PI) {
+            rotV -= 2 * Math.PI;
+        }
+    }
+    /**
+     * Decrease the angle of rotation by PI/20
+     */
+    public void decShiftY() {
+        rotV -= Math.PI / 20;
+        if (rotV < 0) {
+            rotV += 2 * Math.PI;
+        }
     }
     /**
      * Scroll vertically by val
-     * @param val the amplitude of scroll     
+     * @param val the amplitude of scroll
      */
     public void addShiftY(float val) {
-        shiftY += val/60*zoom;
+        rotV += val;
+        if (rotV > 2 * Math.PI) {
+            rotV -= 2 * Math.PI;
+        }
     }
     /**
      * Return the zoom value
@@ -165,22 +144,6 @@ public class Zenith {
         if (zoom < 5)
             zoom += 0.5;
 
-        if (shiftY > (zoom - 1)) {
-            shiftY = zoom - 1;
-        }
-
-        if (shiftY < (1 - zoom)) {
-            shiftY = 1 - zoom;
-        }
-
-        if (shiftX > (zoom - 1)) {
-            shiftX = zoom - 1;
-        }
-
-        if (shiftX < (1 - zoom)) {
-            shiftX = 1 - zoom;
-        }
-
     }
     /**
      * Decrement zoom by 0.5 (limited to 1)
@@ -190,21 +153,6 @@ public class Zenith {
         if (zoom > 1)
             zoom -= 0.5;
 
-        if (shiftY > (zoom - 1)) {
-            shiftY = zoom - 1;
-        }
-
-        if (shiftY < (1 - zoom)) {
-            shiftY = 1 - zoom;
-        }
-
-        if (shiftX > (zoom - 1)) {
-            shiftX = zoom - 1;
-        }
-
-        if (shiftX < (1 - zoom)) {
-            shiftX = 1 - zoom;
-        }
     }
     /**
      * Return the real x value on the screen from a x from a virtual display.
@@ -215,7 +163,7 @@ public class Zenith {
     public int getX(double virtualX) {
         double x;
 
-        x = 1 + virtualX * zoom + shiftX;
+        x = 1 + virtualX * zoom;
         x = x * widthtView/2 + shiftXView;
 
         return (int)x;
@@ -229,7 +177,7 @@ public class Zenith {
     public int getY(double virtualY) {
         double y;
 
-        y = 1 + virtualY * zoom + shiftY;
+        y = 1 + virtualY * zoom;
         y = y * heightView/2 + shiftYView;
 
         return (int)y;
@@ -241,11 +189,9 @@ public class Zenith {
      * @return A value between -1 and 1
      */
     public double getVirtualX(double az, double hau) {
-        double distL;
         double x;
 
-        distL = 1 - hau / (Math.PI / 2);
-        x = -distL * Math.cos(az + rot);                                        // To have west on east and vice versa
+        x = Math.cos(az + rotH)*Math.tan((hau+rotV)/2);
 
         return x;
     }
@@ -257,12 +203,11 @@ public class Zenith {
      * @return A value between -1 and 1
      */
     public double getVirtualY(double az, double hau) {
-        double distL;
         double y;
 
-        distL = 1 - hau / (Math.PI / 2);
-        y = distL * Math.sin(az + rot);
+        y = Math.sin(az + rotH)*Math.tan((hau+rotV)/2);
 
         return y;
     }
+
 }

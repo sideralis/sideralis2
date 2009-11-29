@@ -26,7 +26,7 @@ public class Sky implements Runnable {
     /** The projection of the sun */
     private final SunProj sunProj;
     /** The projection of planets */
-    private final PlanetProj mercuryProj,venusProj,marsProj,jupiterProj,saturnProj;
+    private final PlanetProj mercuryProj,venusProj,marsProj,jupiterProj,saturnProj,uranusProj,neptuneProj;
     /** The Messier objects */
     private final MessierProj[] messierProj;
     
@@ -45,21 +45,20 @@ public class Sky implements Runnable {
     private final PlanetObject marsObject;
     /** The Saturn planet description */
     private final PlanetObject saturnObject;
-    /** The Juptier planet description */
+    /** The Jupiter planet description */
     private final PlanetObject jupiterObject;
+    /** The Uranus planet description */
+    private final PlanetObject uranusObject;
+    /** The Neptune planet description */
+    private final PlanetObject neptuneObject;
 
     private final PlanetObject[] planetObjects;
     private final PlanetProj[] planetProj;
 
     private boolean calculationDone;
 
-    /** All types of planet objects */
-    public static final short MERCURY = 0;
-    public static final short VENUS = 1;
-    public static final short MARS = 2;
-    public static final short JUPITER = 3;
-    public static final short SATURN = 4;
-    public static final short NB_OF_SYSTEM_SOLAR_OBJECTS = 5;
+    /** Number of planets */
+    public static final short NB_OF_PLANETS = 7;
     /**
      * Creates a new instance of Sky (so all objects in the sky)
      * @param myPosition the position of the user
@@ -88,50 +87,68 @@ public class Sky implements Runnable {
                 178.179078, 149474.07078, 0.0003011, 0, 0.3870986, 0.20561421, 0.00002046, -0.000000030, 0,
                 7.002881, 0.0018608, -0.0000183, 0, 28.753753, 0.3702806, 0.0001208, 0,
                 47.145944, 1.1852083, 0.0001739, 0, 102.27938, 149472.51529, 0.000007);
-        mercuryProj = new PlanetProj(mercuryObject);
+        mercuryProj = new PlanetProj(mercuryObject,SkyObject.MERCURE);
 
         // Create venus
         venusObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_VENUS"),(short)-40,
                 342.767053, 58519.21191, 0.0003097, 0, 0.7233316, 0.00682069, -0.00004774, 0.000000091, 0,
                 3.393631, 0.0010058, -0.0000010, 0, 54.384186, 0.5081861, -0.0013864, 0,
                 75.779647, 0.8998500, 0.0004100, 0, 212.60322, 58517.80387, 0.001286);
-        venusProj = new PlanetProj(venusObject);
+        venusProj = new PlanetProj(venusObject,SkyObject.VENUS);
 
         // Create Mars
         marsObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_MARS"),(short)15,
                 293.737334, 19141.69551, 0.0003107, 0, 1.5236883, 0.09331290, 0.000092064, -0.000000077, 0,
                 1.850333, -0.0006750, 0.0000126, 0, 285.431761, 1.0697667, 0.0001313, 0.00000414,
                 48.786442, 0.7709917, -0.0000014, -0.00000533, 319.51913, 19139.85475, 0.000181);
-        marsProj = new PlanetProj(marsObject);
+        marsProj = new PlanetProj(marsObject,SkyObject.MARS);
 
         // Create Jupiter
         jupiterObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_JUPITER"),(short)-16,
                 238.049257, 3036.301986, 0.0003347, -0.00000165, 5.202561, 0.04833475, 0.000164180, -0.0000004676, -0.000000017,
                 1.308736, -0.0056961, 0.0000039, 0,273.277558, 0.5994317, 0.00070405, 0.00000508,
                 99.443414, 1.0105300, 0.00035222, -0.00000851, 225.32833, 3034.69202, -0.000722);
-        jupiterProj = new PlanetProj(jupiterObject);
+        jupiterProj = new PlanetProj(jupiterObject,SkyObject.JUPITER);
 
         // Create Saturn
         saturnObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_SATURN"),(short)-7,
                 266.564377, 1223.509884, 0.0003245, -0.0000058, 9.554747, 0.05589232, -0.00034550, -0.000000728, 0.00000000074,
                 2.492519, -0.0039189, -0.00001549, 0.00000004, 338.307800, 1.0852207, 0.00097854, 0.00000992,
                 112.790414, 0.8731951, -0.00015218, -0.00000531, 175.46622, 1221.55147, -0.000502);
-        saturnProj = new PlanetProj(saturnObject);
+        saturnProj = new PlanetProj(saturnObject,SkyObject.SATURNE);
+
+        // Create Uranus
+        uranusObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_URANUS"),(short)55,
+                244.197470, 429.863546, 0.0003160, -0.00000060, 19.21814, 0.0463444, -0.00002658, 0.000000077, 0,
+                0.772464, 0.0006253, 0.0000395, 0, 98.071581, 0.9857650, -0.0010745, -0.00000061,
+                73.477111, 0.4986678, 0.0013117, 0, 72.6488, 428.37911, 0.000079);
+        uranusProj = new PlanetProj(uranusObject,SkyObject.URANUS);
+
+        // Create Neptune
+        neptuneObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_NEPTUNE"),(short)79,
+                84.457994, 219.885914, 0.0003205, -0.00000060, 30.10957, 0.00899704, 0.000006330, -0.00000002, 0,
+                1.779242, -0.0095436, -0.0000091, 0, 276.045975, 0.3256394, 0.00014095, 0.000004113,
+                130.681389, 1.0989350, 0.00024987, -0.000004718, 37.7306, 218.46134 , -0.000070);
+        neptuneProj = new PlanetProj(neptuneObject,SkyObject.NEPTUNE);
 
         // Create all solar system objects
-        planetObjects = new PlanetObject[NB_OF_SYSTEM_SOLAR_OBJECTS];
+        planetObjects = new PlanetObject[NB_OF_PLANETS];
         planetObjects[0] = mercuryObject;
         planetObjects[1] = venusObject;
         planetObjects[2] = marsObject;
         planetObjects[3] = jupiterObject;
         planetObjects[4] = saturnObject;
+        planetObjects[5] = uranusObject;
+        planetObjects[6] = neptuneObject;
 
-        planetProj = new PlanetProj[NB_OF_SYSTEM_SOLAR_OBJECTS];
+        planetProj = new PlanetProj[NB_OF_PLANETS];
         planetProj[0] = mercuryProj;
         planetProj[1] = venusProj;
         planetProj[2] = marsProj;
         planetProj[3] = jupiterProj;
         planetProj[4] = saturnProj;
+        planetProj[5] = uranusProj;
+        planetProj[6] = neptuneProj;
 
         // Create the messier objects
         messierProj = new MessierProj[MessierCatalog.getNumberOfObjects()];
@@ -242,7 +259,12 @@ public class Sky implements Runnable {
         // -----------------------------------
         // --- Calculate position of stars ---
         for (int i=0;i<starsProj.length;i++) {
-            starsProj[i].calculate();
+            try {
+                starsProj[i].calculate();
+            } catch(ArrayIndexOutOfBoundsException ex) {
+                System.out.println(i+" "+starsProj.length);
+                ex.printStackTrace();
+            }
             if (i%100 == 0) {
                 step += 100;
                 setProgress(step/size);

@@ -4,7 +4,14 @@ package fr.dox.sideralis.math;
  * A class which contains only static functions used for calculation of arcsin and arctan.
  * @author Bernard
  */
-public class MathFunctions {    
+public class MathFunctions {
+    /** Precision of calculation for log function */
+    private static final int PREC_LOG = 50;
+    /** This number determines the precision, higher it is, higher the precision is.
+     *  Be careful, if you change this number you should also extend the constFact table */
+    private static final int PREC_ARCSIN = 17;
+    /** This number determines the precision, higher it is, higher the precision is. */
+    private static final int PREC_ARCTAN = 40;
     /**
      * Function arcsin: return the inverse sinus in radian
      * You can also use it to calculate the arccos as arccos(z) = PI/2 - arcsin(z)
@@ -13,12 +20,6 @@ public class MathFunctions {
      */
     public static double arcsin(double z) {
         int k,i;
-        /**
-         * This number determines the precision, higher it is, higher the precision is.
-         * Be careful, if you change this number you should also extend the constFact table
-         */
-        int N = 17;
-
         double res,tmp1,tmp2,tmp3;
 
         res = 0;
@@ -29,7 +30,7 @@ public class MathFunctions {
             tmp1 *= tmp2;
             res += tmp1;
             // = sum(k=0 a n) de (produit de j=0 a k-1 de (0.5+j))*z exp 2k+1) div (k! * 2k+1)
-            for (k=1;k<N;k++) {
+            for (k=1;k<PREC_ARCSIN;k++) {
                 tmp3 *= (0.5+k-1);
                 tmp1 = tmp3;
                 tmp2 = 1;
@@ -48,7 +49,7 @@ public class MathFunctions {
             tmp2 = 1;
             res += tmp1;
             // = (Pi/2-Racine de 2*racine de 1-z)*Sum(k=0 a N) de (produit de j=0 a k-1 de (0.5+j))*(1-z) exp k) div (2exp k * k! * 2k+1)
-            for (k=1;k<N;k++) {
+            for (k=1;k<PREC_ARCSIN;k++) {
                 tmp3 *= (0.5 + k-1);
                 tmp1 = tmp3;
                 tmp2 = 1;
@@ -64,7 +65,7 @@ public class MathFunctions {
             res = Math.PI/2 - res;
         } else {
             // = (-Pi/2 + Racine de 2*racine de z+1)*Sum(k=0 a N) de (produit de j=0 a k-1 de (0.5+j))*(z+1) exp k) div (2exp k * k! * 2k+1)
-            for (k=0;k<N;k++) {
+            for (k=0;k<PREC_ARCSIN;k++) {
                 tmp1 = PochHammer(0.5,k);
                 tmp2 = 1;
                 for (i=0;i<k;i++)
@@ -89,24 +90,24 @@ public class MathFunctions {
      */
     public static double arctan(double z,boolean signN) {
         int k;
-        int N = 40;                                 // This number determines the precision, higher it is, higher the precision is.
         double res;
         double tmp;
         double zAbs = Math.abs(z);
+        int prec = PREC_ARCTAN;
         
         if (zAbs>0.92)
-            N *= 2;
+            prec *= 2;
         if (zAbs>0.94)
-            N += N/2;
+            prec += PREC_ARCTAN/2;
         if (zAbs>0.96)
-            N += N/2;
+            prec += PREC_ARCTAN/2;
         if (zAbs>0.98)
-            N *= 2;
+            prec *= 2;
         
         if (zAbs < 1) {
             // Sum de k=0 a N de [(-1) exp k * z exp (2k+1) / (2k+1)]
             res = tmp = z;
-            for (k=1;k<N;k++) {
+            for (k=1;k<prec;k++) {
                 tmp *= z*z;
                 if ((k%2) == 0)
                     res += tmp/(2*k+1);
@@ -116,7 +117,7 @@ public class MathFunctions {
         } else {
             res = Math.PI * z / 2 / zAbs - 1/z;
             tmp = 1/z;
-            for (k=1;k<N;k++) {
+            for (k=1;k<prec;k++) {
                 tmp /= (z*z);
                 if ((k%2) == 0)
                     res -= tmp/(2*k+1);
@@ -131,6 +132,43 @@ public class MathFunctions {
             res += Math.PI;
         return res;
     }
+    /**
+     * Calculate the log of z
+     * @param z the input value as double (z>0)
+     * @return log(z) as double
+     */
+    public static double log(double z) {
+        double fact = 0;
+        if (z>=2) {
+            z /= 8;
+            fact = 2.0794415416798359282516963;
+        }
+        if (Math.abs(z-1)>=1)
+            throw new IllegalArgumentException("z is not in correct range. "+z);
+
+        int prec = PREC_LOG;
+        int k;
+        double log;
+        double c;
+
+        z = z-1;
+        c = log = z;
+
+        if (z<-0.5 || z>0.5)
+            prec *=2;
+        if (z<-0.75 || z>0.75)
+            prec *=2;
+
+
+        for (k=2;k<prec;k+=2) {
+            c *= z;
+            log -= c/k;
+            c *= z;
+            log += c/(k+1);
+        }
+        return fact + log;
+    }
+
     /**
      * Convert a double value representing a degree in a string
      * @param val in degre

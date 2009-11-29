@@ -11,7 +11,6 @@ public class SunProj extends Projection {
     /**
      * Creates a new instance of Sun
      * @param object the description of the sun object (name, mag, ...)
-     * @param pos the position of the user
      */
     public SunProj(SkyObject object) {
         super(object);

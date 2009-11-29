@@ -14,11 +14,11 @@ public class StarObject extends SkyObject {
     /** bayerName + constName */
     private short bayerNameConstName;
     
-    public static final String STAR_NAME[] = {"","\u03B1 alf","\u03B1 alf1","\u03B1 alf2","Bayer","\u03B2 bet","\u03B2 bet1","\u03B2 bet2","\u03C7 chi","\u03C7 chi1","\u03C7 chi2","\u03B4 del","\u03B4 del1",
-            "\u03B4 del2","\u03B4 del3","\u03B5 eps","\u03B5 eps1","\u03B7 eta","\u03B7 eta2","\u03B3 gam","\u03B3 gam1","\u03B3 gam2","\u03B9 iot","\u03B9 iot1","\u03B9 iot2","\u03BA kap","\u03BA kap1","\u03BA kap2","\u03BB lam","\u03BB lam1",
-            "\u03BC mu","\u03BC mu1","\u03BC mu2","\u03BD nu","\u03BD nu1","\u03BD nu2","\u03BD nu3","\u03C9 omg","\u03C9 omg1","\u03C9 omg2","\u03BF omi","\u03BF omi1","\u03BF omi2","\u03C6 phi","\u03C6 phi1","\u03C6 phi2","\u03C6 phi3","\u03C0 pi",
-            "\u03C0 pi1","\u03C0 pi2","\u03C0 pi3","\u03C0 pi4","\u03C0 pi5","\u03C0 pi6","\u03C8 psi","\u03C8 psi1","\u03C8 psi2","\u03C8 psi3","\u03C1 ro","\u03C1 ro1","\u03C3 sig","\u03C3 sig2","\u03C4 tau","\u03C4 tau1","\u03C4 tau2","\u03C4 tau3",
-            "\u03C4 tau4","\u03C4 tau5","\u03C4 tau6","\u03C4 tau8","\u03C4 tau9","\u03B8 tet","\u03B8 tet1","\u03B8 tet2","\u03C5 ups","\u03C5 ups1","\u03C5 ups2","\u03C5 ups4","\u03BE xi","\u03BE xi1","\u03BE xi2","\u03B6 zet","\u03B6 zet1","\u03B6 zet2","",
+    public static final String STAR_NAME[] = {"","\u03B1","\u03B11","\u03B12","Bayer","\u03B2","\u03B21","\u03B22","\u03C7","\u03C71","\u03C72","\u03B4","\u03B41",
+            "\u03B42","\u03B43","\u03B5","\u03B51","\u03B7","\u03B72","\u03B3","\u03B31","\u03B32","\u03B9","\u03B91","\u03B92","\u03BA","\u03BA1","\u03BA2","\u03BB","\u03BB1",
+            "\u03BC","\u03BC1","\u03BC2","\u03BD","\u03BD1","\u03BD2","\u03BD3","\u03C9","\u03C91","\u03C92","\u03BF","\u03BF1","\u03BF2","\u03C6","\u03C61","\u03C62","\u03C63","\u03C0",
+            "\u03C01","\u03C02","\u03C03","\u03C04","\u03C05","\u03C06","\u03C8","\u03C81","\u03C82","\u03C83","\u03C1","\u03C11","\u03C3","\u03C32","\u03C4","\u03C41","\u03C42","\u03C43",
+            "\u03C44","\u03C45","\u03C46","\u03C48","\u03C49","\u03B8","\u03B81","\u03B82","\u03C5","\u03C51","\u03C52","\u03C54","\u03BE","\u03BE1","\u03BE2","\u03B6","\u03B61","\u03B62","",
     };
 
     /** 

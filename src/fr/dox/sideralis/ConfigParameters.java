@@ -34,6 +34,8 @@ public class ConfigParameters {
     private CityObject city1,city2;
     /** The color object containing all definitions */
     private int[] color;
+    /** True if 3d is supported */
+    private boolean support3D;
     
     /** A table storing the names of all parameters */
     private static final String[] paramNames = new String[] {LocalizationSupport.getMessage("PARAM_CONST"),
@@ -70,10 +72,11 @@ public class ConfigParameters {
      * Creates a new instance of ConfigParameters 
      */
     public ConfigParameters() {
-        // Internal parameters (not known from user(
+        // Internal parameters (not known from user)
         cursor = false;
         constStory = false;
         horizontalView = true;
+        support3D = false;
 
 
         // Boolean parameters
@@ -85,7 +88,7 @@ public class ConfigParameters {
         parameters[PLANETS_NAME_DISPLAYED] = false;        
         parameters[STARS_AS_FILLED_CIRCLES]= false;
         parameters[STARS_COLORED] = true;
-        parameters[ON_SCREEN_HELP] = true;
+        parameters[ON_SCREEN_HELP] = false;
         parameters[NIGHT_VIEW] = false;
         parameters[MESSIER_DISPLAYED] = true;
         parameters[MESSIER_NAME_DISPLAYED] = false;
@@ -339,4 +342,13 @@ public class ConfigParameters {
         maxMag /= 10;
         this.maxMag = maxMag;
     }
+
+    public boolean isSupport3D() {
+        return support3D;
+    }
+
+    public void setSupport3D(boolean support3D) {
+        this.support3D = support3D;
+    }
+
  }

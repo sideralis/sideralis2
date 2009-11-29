@@ -21,30 +21,30 @@ public class PlanetObject extends SkyObject {
      * @param dec declinaison
      * @param name name
      * @param mag magnitude
-     * @param La0 
-     * @param La1
-     * @param La2
-     * @param La3
-     * @param aa0
-     * @param ea0
-     * @param ea1
-     * @param ea2
-     * @param ea3
-     * @param ia0
-     * @param ia1
-     * @param ia2
-     * @param ia3
-     * @param oa0
-     * @param oa1
-     * @param oa2
-     * @param oa3
-     * @param wa0
-     * @param wa1
-     * @param wa2
-     * @param wa3
-     * @param Ma0
-     * @param Ma1
-     * @param Ma2
+     * @param La0 Indirectly mean anomaly (coeff1)
+     * @param La1 Indirectly mean anomaly (coeff2)
+     * @param La2 Indirectly mean anomaly (coeff3)
+     * @param La3 Indirectly mean anomaly (coeff4)
+     * @param aa0 Size of the orbit
+     * @param ea0 Eccentricity (coeff 1)
+     * @param ea1 Eccentricity (coeff 2)
+     * @param ea2 Eccentricity (coeff 3)
+     * @param ea3 Eccentricity (coeff 4)
+     * @param ia0 Inclination (coeff 1)
+     * @param ia1 Inclination (coeff 2)
+     * @param ia2 Inclination (coeff 3)
+     * @param ia3 Inclination (coeff 4)
+     * @param oa0 Small omega (coeff 1)
+     * @param oa1 Small omega (coeff 2)
+     * @param oa2 Small omega (coeff 3)
+     * @param oa3 Small omega (coeff 4)
+     * @param wa0 Large omega - ecliptic longitude (coeff 1)
+     * @param wa1 Large omega - ecliptic longitude (coeff 2)
+     * @param wa2 Large omega - ecliptic longitude (coeff 3)
+     * @param wa3 Large omega - ecliptic longitude (coeff 4)
+     * @param Ma0 Mean anomaly (coeff 1)
+     * @param Ma1 Mean anomaly (coeff 2)
+     * @param Ma2 Mean anomaly (coeff 3)
      */
     public PlanetObject(float asc, float dec, String name, short mag,
             double La0, double La1, double La2, double La3,

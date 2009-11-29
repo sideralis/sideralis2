@@ -10,7 +10,6 @@ public class MessierProj extends Projection {
     /**
      * Construtor of the messier projection
      * @param object the object describing the messier object (name, mag, ...)
-     * @param pos the position of the user
      */
     public MessierProj(MessierObject object) {
         super(object);

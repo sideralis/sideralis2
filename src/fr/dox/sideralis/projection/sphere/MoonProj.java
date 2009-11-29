@@ -18,7 +18,6 @@ public class MoonProj extends Projection {
     /**
      * Creates a new instance of Moon
      * @param object the moon object describing the moon
-     * @param pos the position of the user
      */
     public MoonProj(SkyObject object) {
         super(object);
@@ -38,6 +37,7 @@ public class MoonProj extends Projection {
 
         // Calcul de T = (JJ-2415020.0)/36525
         T = myPosition.getTemps().getT();
+
         // A partir de T.
         // Calcul de L'
         Lp = 270.434164 + 481267.8831*T - 0.001133*T*T + 0.0000019*T*T*T;
@@ -57,23 +57,25 @@ public class MoonProj extends Projection {
         // Calcul de Omega
         O = 259.183275 - 1934.1420*T + 0.002078*T*T + 0.0000022*T*T*T;
         O = O % 360;
+        O = Math.toRadians(O);
         
         // Ajout des termes additifs.
-        double s1 = Math.sin((51.2+20.2*T)*Math.PI/180.0);
-        double s2 = 0.003964* Math.sin((346.560+132.870*T-0.0091731*T*T)*Math.PI/180.0);
-        double s3 = Math.sin(O*Math.PI/180.0);
+        double s1 = Math.sin(Math.toRadians(51.2+20.2*T));
+        double s2 = 0.003964* Math.sin(Math.toRadians(346.560+132.870*T-0.0091731*T*T));
+        double s3 = Math.sin(O);
+
         Lp = Lp + 0.000233*s1 + s2 + 0.001964*s3;
         M = M - 0.001778*s1;
         Mp = Mp + 0.000817*s1 + s2 + 0.002541*s3;
         D = D + 0.002011*s1 + s2 + 0.001964*s3;
-        F = F + s2 -0.024691*s3 - 0.004328*Math.sin((O+275.05-2.30*T)*Math.PI/180.0);
+        F = F + s2 -0.024691*s3 - 0.004328*Math.sin(O+Math.toRadians(275.05-2.30*T));
         
         // Conversion from degre to radian;
         //Lp = Lp*Math.PI/180.0;
-        M = M*Math.PI/180.0;
-        Mp = Mp*Math.PI/180.0;
-        D = D*Math.PI/180.0;
-        F = F*Math.PI/180.0;
+        M = Math.toRadians(M);
+        Mp = Math.toRadians(Mp);
+        D = Math.toRadians(D);
+        F = Math.toRadians(F);
         
         // Calcul de e et e2
         e = 1 - 0.002495*T - 0.00000752*T*T;
@@ -213,20 +215,25 @@ public class MoonProj extends Projection {
         dist = 6378.14/Math.sin(Math.toRadians(pi));
                
         
-        o1 = 0.0004664*Math.cos(O*Math.PI/180.0);
-        o2 = 0.0000754*Math.cos((O+275.05-2.30*T)*Math.PI/180.0);
+        o1 = 0.0004664*Math.cos(O);
+        o2 = 0.0000754*Math.cos(O+Math.toRadians(275.05-2.30*T));
         b = B * (1-o1-o2);
         b = b%360;
+
+        l = Math.toRadians(l);
+        b = Math.toRadians(b);
         
         // Calcul of Alpha et Delta (7.3) and (7.4)
         double sinD, tanA,tanAp;
         double eps;
-        eps = 23.452994 - 0.0130125*T - 0.00000164*T*T + 0.000000503*T*T*T;
-        sinD = Math.sin(Math.toRadians(b))*Math.cos(Math.toRadians(eps)) + Math.cos(Math.toRadians(b))*Math.sin(Math.toRadians(eps))*Math.sin(Math.toRadians(l));
-        tanAp = (Math.sin(Math.toRadians(l))*Math.cos(Math.toRadians(eps))-Math.tan(Math.toRadians(b))*Math.sin(Math.toRadians(eps)));
-        tanA = tanAp/Math.cos(Math.toRadians(l));
+        eps = Math.toRadians(23.452994 - 0.0130125*T - 0.00000164*T*T + 0.000000503*T*T*T);
+        sinD = Math.sin(b)*Math.cos(eps) + Math.cos(b)*Math.sin(eps)*Math.sin(l);
+        tanAp = (Math.sin(l)*Math.cos(eps)-Math.tan(b)*Math.sin(eps));
+        tanA = tanAp/Math.cos(l);
         alpha = MathFunctions.arctan(tanA, tanAp>=0?true:false);    
         delta = MathFunctions.arcsin(sinD);
+
+        //System.out.println(MathFunctions.convert2hms(Math.toDegrees(alpha)/15, false) + "  "+MathFunctions.convert2deg(Math.toDegrees(delta), false));
 
         object.setAscendance((float)Math.toDegrees(alpha)/15);
         object.setDeclinaison((float)Math.toDegrees(delta));

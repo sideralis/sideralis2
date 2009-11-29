@@ -40,7 +40,6 @@ public class Projection {
     /**
      * Creates a new instance of Projection
      * @param object the description of the object
-     * @param pos the position of the user
      */
     public Projection(SkyObject object) {
         this.object = object;
@@ -216,19 +215,40 @@ public class Projection {
         cosT = Math.cos(latitudeInRad);
         tanA = sinH/(cosH*sinT-tanD*cosT);                                      // (7.5)
         
-        sinD = Math.sin(delta / 180.0 * Math.PI);
-        cosD = Math.cos(delta / 180.0 * Math.PI);
+        sinD = Math.sin(Math.toRadians(delta));
+        cosD = Math.cos(Math.toRadians(delta));
         sinHau = sinT*sinD+cosT*cosD*cosH;                                      // (7.6)
         
         hau = MathFunctions.arcsin(sinHau);
         az = MathFunctions.arctan(tanA,sinH>=0?true:false);
         az += Math.PI/2;                                                    // to have North on top of the screen
         
+        // Add refraction atmospherique
+        if (hau>0)
+            hau = addRefractionAtmospherique(hau);
         // Is the star below or above the horizon ?
         if (hau>0)
             visible = true;                                                     // The star is above the horizon
         else
             visible = false;                                                    // The star is below the horizon
+    }
+
+    private double addRefractionAtmospherique(double h) {
+        double R=0;
+        double hDeg;
+        hDeg = Math.toDegrees(h);
+        if (hDeg>15) {
+            double tmp = Math.tan(Math.PI/2-h);
+            R = (58.276*tmp - 0.0824*tmp*tmp*tmp)/3600;
+        } else if (hDeg>4) {
+            R = 4.4010-0.9603*MathFunctions.log(hDeg-1.1);
+            R *= R/60;
+        } else {
+            R = 7.5262-2.2204*MathFunctions.log(hDeg+2.6);
+            R *= R/60;
+        }
+        //System.out.println("R="+R);
+        return Math.toRadians(hDeg+R);
     }
     /**
      * Return the height

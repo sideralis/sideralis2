@@ -70,6 +70,13 @@ package fr.dox.sideralis;
  * v1.3.5   GUI Code full rewrite                                               Done
  *          Support of multiple keys press                                      Done
  *          Support for sensors
+ *          Add Uranus and Neptune                                              Done
+ *          Improve precision for large planet                                  Done
+ *          Add atmoshpere refraction                                           Done
+ *          Add drawing of missing constellations
+ *          Add more stars
+ *          Add support for touch screen
+ *          Add 3D view
  * v1.4.0   Add possibility to zoom and scroll in horizontal view
  *          Add altitude in position information/selection              
  *          Display moon phase. 
@@ -77,12 +84,11 @@ package fr.dox.sideralis;
  *          Add zoom centered on cursor
  *          Stars are displayed only during days
  * v1.5.0   Add milky way
- *          All corrections (nutation, parallaxe, refraction atmospherique, ... ?)
+ *          All corrections (nutation (p48), aberration (p50), parallaxe, ... ?)
  *          
  * v?.?.?   
  *          Keep backligh on
  *          Identify the moon of Jupiter
- *          Add Uranus and Neptune
  *          Ephemeride 
  *          Display orbit for planet
  *          a) press '0' then click on an object: the story of the constellation appears (translated in good Italian, though some typo errors exist): it would be nice to allow the automatic scroll when holding the up/down buttons (now there's the need to press N times these buttons to scroll the text by N lines)
@@ -97,6 +103,9 @@ package fr.dox.sideralis;
  *          Add all missing constellations informations
  *          Add globular cluster , nebula , etc .
  *          Add ISS position
+ *          Add horizontal and vertical compass
+ *          Add real sphere view
+ *          Improve precision of moon by using elp82b
  *
  *  CODE IMPROVEMENT:
  *  - A SkyObject object father of all objects.                                 Done
@@ -121,17 +130,22 @@ import fr.dox.sideralis.data.MessierCatalog;
 import fr.dox.sideralis.data.Sky;
 import fr.dox.sideralis.data.StarCatalogConst;
 import fr.dox.sideralis.data.StarCatalogMag;
+//#ifdef JSR179
 import fr.dox.sideralis.location.LocateMe;
+//#endif
 import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.object.CityObject;
 import fr.dox.sideralis.view.GlobeCanvas;
+//#ifdef JSR184
+import fr.dox.sideralis.view.Sideralis3DCanvas;
+//#endif
 import fr.dox.sideralis.view.SideralisCanvas;
 import fr.dox.sideralis.view.SplashCanvas;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.InputStream;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 import javax.microedition.rms.InvalidRecordIDException;
@@ -146,7 +160,7 @@ import javax.microedition.rms.RecordStore;
  */
 public class Sideralis extends MIDlet implements CommandListener, ItemCommandListener, ItemStateListener {
     /** Version number */
-    public static final String VERSION = "v1.3.5";
+    public String version,build;
     /** How often the calculation of position is refreshed */
     public static final long REFRESH_TIME_CALC = 1 * 10 * 1000;
     
@@ -156,6 +170,9 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private SideralisCanvas myCanvas;
     private final SplashCanvas mySplashCanvas;
     private GlobeCanvas globeCanvas;
+//#ifdef JSR184
+private Sideralis3DCanvas my3DCanvas;
+//#endif
 
     private final Display myDisplay;
     private boolean starting;
@@ -224,7 +241,9 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private ChoiceGroup langChoiceGroup;
     private long myOffsetForCancellation;
     /** The locate me object */
+//#ifdef JSR179
     private LocateMe whereAmI;
+//#endif
     /** A temporary position used by the locate me object */
     private Position tempPos;
     /** An object used to highlight some stars, Messier or planets objects*/
@@ -240,17 +259,24 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
      * All codes codes which should be executed before creating main objects
      */
     public Sideralis() {
-        //System.out.println("Constructor");
         // Flag to indicate that all objects have not yet been created
         starting = true;
         pauseFlag = false;
-        LocalizationSupport.initLocalizationSupport();
+        // Select language
+        if (loadLanguage()) {
+            LocalizationSupport.initLocalizationSupport(getLang());         // Language was selected before
+        } else {
+            LocalizationSupport.initLocalizationSupport();                  // Language was never selected
+            setLang();
+        }
         // Create splash screen
         mySplashCanvas = new SplashCanvas(this);
         mySplashCanvas.setFullScreenMode(true);
         // Display splash screen
         myDisplay = Display.getDisplay(this);
         myDisplay.setCurrent(mySplashCanvas);
+
+
     }
     /**
      * Creation of main objects (it takes time)
@@ -258,11 +284,24 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
      */
     protected void startApp() {
         if (pauseFlag == false) {
+            // Get versions and build number
+            version = "v"+getAppProperty("MIDlet-Version");
+            build = getAppProperty("build");
+            int pos = build.indexOf('.');
+            while (pos!=-1) {
+                build = build.substring(0, pos) + build.substring(pos+1, build.length());
+                pos = build.indexOf('.');
+            }
+            boolean st = build.startsWith("0");
+            while (st) {
+                build = build.substring(1,build.length());
+                st = build.startsWith("0");
+            }
+            // Set position and time
+            myPosition = new Position();
             // Load position and parameters
             myParameter = new ConfigParameters();
             loadData();
-            // Set position and time
-            myPosition = new Position();
             // Create a sky
             mySky = new Sky(myPosition);
             // Create a search object
@@ -275,6 +314,20 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             myCanvas.setFullScreenMode(true);
             myCanvas.init();
             myCanvas.project();
+
+            String m3gVersion = System.getProperty("microedition.m3g.version");
+            if (m3gVersion != null)
+                myParameter.setSupport3D(true);
+            else
+                myParameter.setSupport3D(false);
+
+//#ifdef JSR184
+            if (myParameter.isSupport3D()) {
+                my3DCanvas = new Sideralis3DCanvas(this);
+                my3DCanvas.setFullScreenMode(true);
+                my3DCanvas.init();
+            }
+//#endif
             // Create user interface
             createGUI();
             // Flag to indicate that everything is ready (all objects have been created)
@@ -287,7 +340,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
      *
      */
     protected void pauseApp() {
-        System.out.println("Pause");
         pauseFlag = true;
         if (myCanvas != null) {
             myCanvas.stop();
@@ -299,7 +351,12 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
      * @throws MIDletStateChangeException
      */
     protected void destroyApp(boolean unconditional) throws MIDletStateChangeException {
-    }
+        saveData();
+        pauseFlag = true;
+        if (myCanvas != null) {
+            myCanvas.stop();
+        }
+   }
     /**
      * Create user interface
      * This will be called after having launch the splash screen in order to accelerate start time
@@ -423,7 +480,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         // Create the help form
         helpForm = new Form(LocalizationSupport.getMessage("AH"));
         helpStringItem = new StringItem[]{
-                    new StringItem("Sideralis " + VERSION, " © DoX - 2009"),
+                    new StringItem("Sideralis " + version+" b"+build, " © DoX - 2009"),
                     new StringItem(LocalizationSupport.getMessage("AI"), "© Luc Bianco -- http://lucbianco.free.fr --"),
                     new StringItem(LocalizationSupport.getMessage("AJ"), LocalizationSupport.getMessage("AK")),
                     new StringItem("Sideralis ", LocalizationSupport.getMessage("AL")),
@@ -451,7 +508,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         infoStringItem = new StringItem[]{
                     new StringItem(LocalizationSupport.getMessage("AZ"), (new Integer(StarCatalogConst.getNumberOfStars()+StarCatalogMag.getNumberOfStars()).toString())),
                     new StringItem(LocalizationSupport.getMessage("B0"), new Integer(ConstellationCatalog.getNumberOfConstellations()).toString()),
-                    new StringItem(LocalizationSupport.getMessage("B1"), new Integer(Sky.NB_OF_SYSTEM_SOLAR_OBJECTS).toString()),
+                    new StringItem(LocalizationSupport.getMessage("B1"), new Integer(Sky.NB_OF_PLANETS).toString()),
                     new StringItem(LocalizationSupport.getMessage("B2"), "1"),
                     new StringItem(LocalizationSupport.getMessage("B3"), new Integer(MessierCatalog.getNumberOfObjects()).toString()),
                 };
@@ -504,9 +561,14 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     public void commandAction(Command c, Displayable d) {
         // EXIT command
         if (c == exitCommand) {
-            // Exit
-            saveData();                                                     // Used mainly to save which view is used.
-            myCanvas.setState(SideralisCanvas.END1);
+            try {
+                // Exit
+                destroyApp(true);
+                notifyDestroyed();
+             } catch (MIDletStateChangeException ex) {
+                ex.printStackTrace();
+            }
+            //myCanvas.setState(SideralisCanvas.END1);
         // === Form selection commands ===
         } else if (c == displayCommand) {
             // Display display options
@@ -532,12 +594,14 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             } catch (Exception e) {
                 e.printStackTrace();
             }
+//#ifdef JSR179
 
         } else if (c == autoPositionCommand) {
             tempPos = new Position();
             whereAmI = new LocateMe(tempPos, this);
             whereAmI.start();
             myDisplay.setCurrent(locateMeForm);
+//#endif
         } else if (c == cityCommand) {
             // To select city selection
             cityChoiceGroup.setSelectedIndex(myPosition.getSelectedCity(), true);
@@ -574,9 +638,11 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 myDisplay.setCurrent(myCanvas);
             } else if (myDisplay.getCurrent() == langForm) {
                 myDisplay.setCurrent(myCanvas);
+//#ifdef JSR179
             } else if (myDisplay.getCurrent() == locateMeForm) {
                 whereAmI = null;
                 myDisplay.setCurrent(positionForm);
+//#endif
             }
         // === OK command ===
         } else if (c == okCommand) {
@@ -721,6 +787,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         }
     }
 
+//#ifdef JSR179
     /**
      * To finish gauge for locate me position
      */
@@ -730,12 +797,24 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         myDisplay.setCurrent(positionForm);
         whereAmI = null;
     }
+//#endif
 
     /**
      *
      */
     public void endOfSplash() {
         myDisplay.setCurrent(myCanvas);
+    }
+    /**
+     * Move to the next display
+     */
+    public void nextDisplay() {
+//#ifdef JSR184
+        if (myDisplay.getCurrent() == my3DCanvas)
+            myDisplay.setCurrent(myCanvas);
+        else
+            myDisplay.setCurrent(my3DCanvas);
+//#endif
     }
     /**
      *
@@ -821,10 +900,33 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     }
     /**
      * Set parameter language
-     * @param sel language used during run time
+     * @param selLang language used during run time
      */
     public void setLang(int selLang) {
         lang = selLang;
+    }
+    /**
+     *
+     */
+    public void setLang() {
+        String s = System.getProperty("microedition.locale");
+        if (s.startsWith("fr")) {
+            lang = 1;
+        } else if (s.startsWith("it")) {
+            lang = 2;
+        } else if (s.startsWith("es")) {
+            lang = 3;
+        } else if (s.startsWith("pt")) {
+            lang = 4;
+        } else if (s.startsWith("de")) {
+            lang = 5;
+        } else if (s.startsWith("pl")) {
+            lang = 6;
+//        } else if (s.startsWith("cs")) {
+//            lang = 7;
+        } else {
+            lang = 0;
+        }
     }
     /**
      * Save position data in a record store so position will be used again when started again
@@ -838,7 +940,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         DataOutputStream dout = new DataOutputStream(bout);
 
         try {
-            dout.writeUTF(VERSION);
+            dout.writeUTF(version);
             dout.writeDouble(myPosition.getLatitude());
             dout.writeDouble(myPosition.getLongitude());
             dout.writeLong((myPosition.getTemps().getTimeOffset()));
@@ -854,7 +956,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             for (i = 0; i < bParam.length; i++) {
                 dout.writeBoolean(bParam[i]);
             }
-
             b = bout.toByteArray();
             dout.close();
             bout.close();
@@ -869,7 +970,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
 
             rs.closeRecordStore();
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
     /**
@@ -894,7 +995,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             ByteArrayInputStream bin = new ByteArrayInputStream(b);
             DataInputStream din = new DataInputStream(bin);
             sv = din.readUTF();
-            if (sv.equals(VERSION)) {
+            if (sv.equals(version)) {
                 d = din.readDouble();
                 myPosition.setLatitude(d);                                      // Set latitude
                 d = din.readDouble();
@@ -920,7 +1021,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                     bb = din.readBoolean();
                     bParam[i] = bb;
                 }
-
                 myParameter.setSelectedFlags(bParam);
             }
 
@@ -948,7 +1048,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             ByteArrayInputStream bin = new ByteArrayInputStream(b);
             DataInputStream din = new DataInputStream(bin);
             sv = din.readUTF();
-            if (sv.equals(VERSION)) {
+            if (sv.equals(version)) {
                 i = din.readInt();
                 setLang(i);
             }
@@ -959,7 +1059,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         } catch (InvalidRecordIDException e) {
             return false;
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return true;
     }
@@ -975,7 +1075,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         DataOutputStream dout = new DataOutputStream(bout);
 
         try {
-            dout.writeUTF(VERSION);
+            dout.writeUTF(version);
             dout.writeInt(getLangAsInt());
             b = bout.toByteArray();
             dout.close();
@@ -990,9 +1090,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             }
             rs.closeRecordStore();
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
-
-
 }

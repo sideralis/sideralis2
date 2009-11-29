@@ -21,6 +21,9 @@ public class SplashCanvas extends Canvas implements Runnable {
     private int getHeight;
     private int getWidth;
     private boolean running;
+    /** String used to store text and to avoid recurrent calls to LocalizationSupport */
+    private String pleaseWait,pressAnyKey;
+
     /** Number of frames per second */
     private static final int MAX_CPS = 5;
     /** Time in millisecond between 2 frames */
@@ -53,6 +56,8 @@ public class SplashCanvas extends Canvas implements Runnable {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+        pleaseWait = LocalizationSupport.getMessage("PLEASE_WAIT");
+        pressAnyKey = LocalizationSupport.getMessage("A1");
     }
 
     /**
@@ -106,7 +111,7 @@ public class SplashCanvas extends Canvas implements Runnable {
             g.setColor(166, 34, 170);
             g.fillRect(0, 0, getWidth, getHeight);
             g.setColor(0, 0, 0);
-            g.drawString(LocalizationSupport.getMessage("PLEASE_WAIT"), getWidth / 2, getHeight / 2, Graphics.HCENTER | Graphics.TOP);
+            g.drawString(pleaseWait, getWidth / 2, getHeight / 2, Graphics.HCENTER | Graphics.TOP);
         } else if (counter < COUNT2) {
             g.setColor(166 - counter * 166 / COUNT2, 34 - counter * 34 / COUNT2, 170 - counter * 170 / COUNT2);
             g.fillRect(0, 0, getWidth, getHeight);
@@ -126,7 +131,7 @@ public class SplashCanvas extends Canvas implements Runnable {
             g.setFont(myFontBold);
             g.drawString("SIDERALIS", getWidth / 2, 0, Graphics.HCENTER | Graphics.TOP);
             g.setFont(myFontNormal);
-            g.drawString(" " + Sideralis.VERSION, getWidth / 2, getHeight - myFontNormal.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
+            g.drawString("" + myMidlet.version+" b"+myMidlet.build, getWidth / 2, getHeight - myFontNormal.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
         } else {
             g.setColor(0, 0, 0);
             g.fillRect(0, 0, getWidth, getHeight);
@@ -135,13 +140,13 @@ public class SplashCanvas extends Canvas implements Runnable {
             g.setFont(myFontBold);
             g.drawString("SIDERALIS", getWidth / 2, 0, Graphics.HCENTER | Graphics.TOP);
             g.setFont(myFontNormal);
-            g.drawString(" " + Sideralis.VERSION, getWidth / 2, getHeight - myFontNormal.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
+            g.drawString("" + myMidlet.version+" b"+myMidlet.build, getWidth / 2, getHeight - myFontNormal.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
         }
 
         if (!myMidlet.isStarting()) {
             g.setFont(myFontNormal);
             g.setColor(166, 34, 170);
-            g.drawString(LocalizationSupport.getMessage("A1"), getWidth / 2, getHeight, Graphics.HCENTER | Graphics.BOTTOM);
+            g.drawString(pressAnyKey, getWidth / 2, getHeight, Graphics.HCENTER | Graphics.BOTTOM);
         }
     }
     /**
@@ -155,6 +160,19 @@ public class SplashCanvas extends Canvas implements Runnable {
             myMidlet.endOfSplash();
         }
     }
+    /**
+     *
+     * @param x
+     * @param y
+     */
+    protected void pointerPressed(int x, int y) {
+        super.pointerPressed(x, y);
+        if (!myMidlet.isStarting()) {
+            running = false;
+            myMidlet.endOfSplash();
+        }
+    }
+
     /**
      * Called when the drawable area of the Canvas has been changed
      * @param w the new width in pixels of the drawable area of the Canvas
