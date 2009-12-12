@@ -48,8 +48,8 @@ public class TouchScreen {
     public static final short NOTHING = 30;
     public static final short ZOOM_IN = 0;
     public static final short ZOOM_OUT = 1;
-    public static final short ROT_LEFT = 2;
-    public static final short ROT_RIGHT =3;
+    public static final short ROT_RIGHT = 2;
+    public static final short ROT_LEFT =3;
     /** Default size of icon */
     private static final int SIZE_ICON = 32;
     /** Number of icon */

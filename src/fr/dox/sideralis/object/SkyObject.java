@@ -22,14 +22,15 @@ public class SkyObject {
     public final static short MOON = 3;
     public final static short PLANET = 4;
     public final static short CONSTELLATION = 5;
-
-    public final static short MERCURE = 1;
-    public final static short VENUS = 2;
-    public final static short MARS = 3;
-    public final static short JUPITER = 4;
-    public final static short SATURNE = 5;
-    public final static short URANUS = 6;
-    public final static short NEPTUNE = 7;
+    /** All planets */
+    public final static short MERCURE = 0;
+    public final static short VENUS = 1;
+    public final static short MARS = 2;
+    public final static short JUPITER = 3;
+    public final static short SATURNE = 4;
+    public final static short URANUS = 5;
+    public final static short NEPTUNE = 6;
+    public final static short EARTH = 7;
 
 
     /**

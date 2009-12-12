@@ -73,13 +73,13 @@ package fr.dox.sideralis;
  *          Add Uranus and Neptune                                              Done
  *          Improve precision for large planet                                  Done
  *          Add atmoshpere refraction                                           Done
- *          Add drawing of missing constellations
- *          Add more stars
- *          Add support for touch screen
- *          Add 3D view
+ *          Add drawing of missing constellations                               Done
+ *          Add more stars                                                      Done
+ *          Add support for touch screen                                        Done
+ *          Add 3D view                                                         Done
+ *          Display moon phase.
  * v1.4.0   Add possibility to zoom and scroll in horizontal view
  *          Add altitude in position information/selection              
- *          Display moon phase. 
  *          Add Messier object pictures
  *          Add zoom centered on cursor
  *          Stars are displayed only during days
@@ -140,16 +140,18 @@ import fr.dox.sideralis.view.GlobeCanvas;
 import fr.dox.sideralis.view.Sideralis3DCanvas;
 //#endif
 import fr.dox.sideralis.view.SideralisCanvas;
+import fr.dox.sideralis.view.SideralisEyesCanvas;
 import fr.dox.sideralis.view.SplashCanvas;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.InputStream;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordStore;
+import javax.microedition.sensor.SensorInfo;
+import javax.microedition.sensor.SensorManager;
 
 /**
  * The MIDlet class. This is the first class called.
@@ -171,7 +173,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private final SplashCanvas mySplashCanvas;
     private GlobeCanvas globeCanvas;
 //#ifdef JSR184
-private Sideralis3DCanvas my3DCanvas;
+    private Sideralis3DCanvas my3DCanvas;
+    private SideralisEyesCanvas myEyesCanvas;
 //#endif
 
     private final Display myDisplay;
@@ -326,6 +329,11 @@ private Sideralis3DCanvas my3DCanvas;
                 my3DCanvas = new Sideralis3DCanvas(this);
                 my3DCanvas.setFullScreenMode(true);
                 my3DCanvas.init();
+
+                myEyesCanvas = new SideralisEyesCanvas(this);
+                myEyesCanvas.setFullScreenMode(true);
+                myEyesCanvas.init();
+                myEyesCanvas.project2D();
             }
 //#endif
             // Create user interface
@@ -812,6 +820,8 @@ private Sideralis3DCanvas my3DCanvas;
 //#ifdef JSR184
         if (myDisplay.getCurrent() == my3DCanvas)
             myDisplay.setCurrent(myCanvas);
+        else if (myDisplay.getCurrent() == myCanvas)
+            myDisplay.setCurrent(myEyesCanvas);
         else
             myDisplay.setCurrent(my3DCanvas);
 //#endif

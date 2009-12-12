@@ -6,28 +6,14 @@ package fr.dox.sideralis.projection.plane;
  *
  * @author Bernard
  */
-public class Zenith {
+public class Zenith extends ScreenProj {
 
     /** The rotation of the screen */
     private double rot;
-    /** The zoom of the screen */
-    private float zoom;
     /** the x shift of the screen */
     private float shiftX;
     /** The y shift of the screen */
     private float shiftY;
-    /** The height of the screen */
-    private int heightDisplay;
-    /** the width of the screen */
-    private int widthDisplay;
-    /** The height of the view */
-    private int heightView;
-    /** The width of the view */
-    private int widthtView;
-    /** X offset of view inside display */
-    private int shiftXView;
-    /** Y offset of view inside display */
-    private int shiftYView;
 
     /**
      * Constructor
@@ -35,36 +21,11 @@ public class Zenith {
      * @param wD width of display
      */
     public Zenith(int hD, int wD) {
+        super(hD,wD);
         rot = 0;
         shiftX = shiftY = 0;
         zoom = 1.0F;
-        heightDisplay = hD;
-        widthDisplay = wD;
         setView();
-    }
-    /**
-     * Called in case of display change (rotation, ...)
-     * @param heightDisplay the new height of the display
-     */
-    public void setHeightDisplay(int heightDisplay) {
-        this.heightDisplay = heightDisplay;
-    }
-    /**
-     * Called in case of display change (rotation, ...)
-     * @param widthDisplay the new width of the display
-     */
-    public void setWidthDisplay(int widthDisplay) {
-        this.widthDisplay = widthDisplay;
-    }
-    /**
-     * Set the new dimension of the view (a view size differs from the display size
-     * in order to avoid deformation of the view)
-     */
-    public void setView() {
-        heightView = Math.min(heightDisplay, widthDisplay);
-        widthtView = Math.min(heightDisplay, widthDisplay);
-        shiftXView = (widthDisplay>heightDisplay?(widthDisplay-heightDisplay)/2:0);
-        shiftYView = (heightDisplay>widthDisplay?(heightDisplay-widthDisplay)/2:0);
     }
     /**
      * Return the rotation of the view
@@ -83,80 +44,62 @@ public class Zenith {
     /**
      * Increase the angle of rotation by PI/20
      */
-    public void incRot() {
+    public void left() {
         rot += Math.PI / 20;
         if (rot > 2 * Math.PI) {
             rot -= 2 * Math.PI;
         }
     }
-    public void addRot(float rotDir) {
-        rot += rotDir / 20 / zoom;
-        if (rot<0)
-            rot += 2 * Math.PI;
-        else if (rot>2*Math.PI)
-            rot -= 2 * Math.PI;
-    }
     /**
      * Decrease the angle of rotation by PI/20
      */
-    public void decRot() {
+    public void right() {
         rot -= Math.PI / 20;
         if (rot < 0) {
             rot += 2 * Math.PI;
         }
     }
     /**
-     * Scroll the view left
-     */
-    public void decShiftX() {
-        shiftX -= (zoom-1)/10;
-    }
-    /**
-     * Scroll the view right
-     */
-    public void incShiftX() {
-        shiftX += (zoom-1)/10;
-    }
-    /**
-     * Scroll horizontally by val
-     * @param val the amplitude of scroll
-     * @deprecated 
-     */
-    public void addShiftX(float val) {
-        shiftX += val/60*zoom;
-    }
-    /**
      * Scroll the view up
      */
-    public void decShiftY() {
+    public void down() {
         shiftY -= (zoom-1)/10;
+        if (shiftY < (1 - zoom)) {
+            shiftY = 1 - zoom;
+        }
     }
     /**
      * Scroll the view down
      */
-    public void incShiftY() {
+    public void up() {
         shiftY += (zoom-1)/10;
+        if (shiftY > (zoom - 1)) {
+            shiftY = zoom - 1;
+        }
+    }
+    /**
+     * Scroll horizontally by val
+     * @param val the amplitude of horizontal rotation
+     */
+    public void scrollHor(float val) {
+        rot += val / 20 / zoom;
+        if (rot<0)
+            rot += 2 * Math.PI;
+        else if (rot>2*Math.PI)
+            rot -= 2 * Math.PI;
     }
     /**
      * Scroll vertically by val
      * @param val the amplitude of scroll     
      */
-    public void addShiftY(float val) {
+    public void scrollVer(float val) {
         shiftY += val/60*zoom;
-    }
-    /**
-     * Return the zoom value
-     * @return the zoom value
-     */
-    public float getZoom() {
-        return zoom;
-    }
-    /**
-     * Set a value to the zoom
-     * @param zoom the new value of the zoom
-     */
-    public void setZoom(float zoom) {
-        this.zoom = zoom;
+        if (shiftY > (zoom - 1)) {
+            shiftY = zoom - 1;
+        }
+        if (shiftY < (1 - zoom)) {
+            shiftY = 1 - zoom;
+        }
     }
     /**
      * Increment the zoom by 0.5 (limited to 5) and scroll view ?

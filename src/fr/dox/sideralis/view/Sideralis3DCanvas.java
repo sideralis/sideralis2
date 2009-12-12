@@ -6,6 +6,8 @@ package fr.dox.sideralis.view;
 
 import fr.dox.sideralis.Sideralis;
 import fr.dox.sideralis.data.Sky;
+import fr.dox.sideralis.object.PlanetObject;
+import fr.dox.sideralis.view.color.Color;
 import java.util.Random;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.game.GameCanvas;
@@ -13,6 +15,7 @@ import javax.microedition.m3g.Appearance;
 import javax.microedition.m3g.Camera;
 import javax.microedition.m3g.Graphics3D;
 import javax.microedition.m3g.Group;
+import javax.microedition.m3g.Light;
 import javax.microedition.m3g.Mesh;
 import javax.microedition.m3g.PolygonMode;
 import javax.microedition.m3g.TriangleStripArray;
@@ -85,15 +88,20 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
         world.addChild(camera);
         world.setActiveCamera(camera);
 
+        // Create light
+        Light light = new Light();
+        light.setMode(Light.OMNI);
+        world.addChild(light);
+
         // Create a group
         group = new Group();
         world.addChild(group);
 
         // Create the planets objects
-        meshPlanets = new Mesh[Sky.NB_OF_PLANETS];
-        for (int i=0;i<Sky.NB_OF_PLANETS;i++) {
-            meshPlanets[i] = createSphere(8, 8, true, true);
-            addRandomColors(meshPlanets[i]);
+        meshPlanets = new Mesh[Sky.NB_OF_PLANETS+1];
+        for (int i=0;i<Sky.NB_OF_PLANETS+1;i++) {
+            meshPlanets[i] = createSphere(8, 8, true, false);
+            meshPlanets[i].getVertexBuffer().setDefaultColor((myMidlet.getMyParameter().getColor())[Color.COL_VENUS+i]);
             PolygonMode polygonMode = new PolygonMode();
             polygonMode.setShading(PolygonMode.SHADE_FLAT);
             meshPlanets[i].getAppearance(0).setPolygonMode(polygonMode);
@@ -103,12 +111,17 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
         for (int i=0;i<Sky.NB_OF_PLANETS;i++) {
             meshPlanets[i].setTranslation((float)mySky.getPlanet(i).getX(), (float)mySky.getPlanet(i).getY(), (float)mySky.getPlanet(i).getZ());
         }
+        meshPlanets[Sky.NB_OF_PLANETS].setTranslation((float)mySky.getEarth().getX(), (float)mySky.getEarth().getY(), (float)mySky.getEarth().getZ());
 
-        meshPlanets[0].setScale(0.5f,0.5f,0.5f);
-        meshPlanets[1].setScale(1.5f,1.5f,1.5f);
-        meshPlanets[2].setScale(0.75F,0.75F,0.75F);
-        meshPlanets[3].setScale(5,5,5);
-        meshPlanets[4].setScale(4,4,4);
+        meshPlanets[PlanetObject.MERCURE].setScale(1.0f,1.0f,1.0f);
+        meshPlanets[PlanetObject.VENUS].setScale(1.0f,1.0f,1.0f);
+        meshPlanets[PlanetObject.MARS].setScale(1.0f,1.0f,1.0f);
+        meshPlanets[PlanetObject.JUPITER].setScale(1.0f,1.0f,1.0f);
+        meshPlanets[PlanetObject.SATURNE].setScale(1.0f,1.0f,1.0f);
+        meshPlanets[PlanetObject.URANUS].setScale(1.0f,1.0f,1.0f);
+        meshPlanets[PlanetObject.NEPTUNE].setScale(1.0f,1.0f,1.0f);
+        meshPlanets[PlanetObject.EARTH].setScale(1.0f,1.0f,1.0f);
+
 //        meshPlanets[0].setScale(0.24F, 0.24F, 0.24F);
 //        meshPlanets[1].setScale(0.61F, 0.61F, 0.61F);
 //        meshPlanets[2].setScale(0.33F, 0.33F, 0.33F);
@@ -118,17 +131,8 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
         // Create the mesh sun
         meshSun = createSphere(8,8,true, true);
         meshSun.setScale(2F,2F,2F);
+        meshSun.getVertexBuffer().setDefaultColor(0x00ffff00);
         group.addChild(meshSun);
-
-
-//        Transform cameraTransform = new Transform();
-//
-//        cameraTransform.postTranslate(32, 16, 32);
-//        cameraTransform.postRotate(45, 0, 1, 0);
-//        cameraTransform.postRotate(-20, 1, 0, 0);
-
-        graphics3d.setCamera(camera, null);
-
 
     }
 
@@ -207,7 +211,6 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
     protected void render(Graphics graphics) {
         graphics3d.bindTarget(graphics);
         graphics3d.setViewport(0, 0, getWidth, getHeight);
-        graphics3d.clear(null);
         graphics3d.render(world);
         graphics3d.releaseTarget();
     }
@@ -394,11 +397,9 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
     protected void sizeChanged(int w, int h) {
         getHeight = h;
         getWidth = w;
-        // TODO set viewport
         Camera camera = world.getActiveCamera();
         float aspect = (float) getWidth / (float) getHeight;
         camera.setPerspective(90, aspect, 1, 1000);
         world.setActiveCamera(camera);
-        graphics3d.setCamera(camera, null);
     }
 }

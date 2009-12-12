@@ -26,7 +26,7 @@ public class Sky implements Runnable {
     /** The projection of the sun */
     private final SunProj sunProj;
     /** The projection of planets */
-    private final PlanetProj mercuryProj,venusProj,marsProj,jupiterProj,saturnProj,uranusProj,neptuneProj;
+    private final PlanetProj mercuryProj,venusProj,marsProj,jupiterProj,saturnProj,uranusProj,neptuneProj,earthProj;
     /** The Messier objects */
     private final MessierProj[] messierProj;
     
@@ -51,6 +51,8 @@ public class Sky implements Runnable {
     private final PlanetObject uranusObject;
     /** The Neptune planet description */
     private final PlanetObject neptuneObject;
+    /** The Earth planet description */
+    private final PlanetObject earthObject;
 
     private final PlanetObject[] planetObjects;
     private final PlanetProj[] planetProj;
@@ -131,6 +133,13 @@ public class Sky implements Runnable {
                 130.681389, 1.0989350, 0.00024987, -0.000004718, 37.7306, 218.46134 , -0.000070);
         neptuneProj = new PlanetProj(neptuneObject,SkyObject.NEPTUNE);
 
+        // Create Earth
+        earthObject = new PlanetObject(0F, 0F, LocalizationSupport.getMessage("NAME_EARTH"), (short)0,
+                279.69668+180, 36000.76892, 0.00030255, 0, 1.0000002, 0.01675104, -0.0000418, -0.000000126, 0,
+                0, 0, 0, 0, 287.511505, 0.5647920, 0.00013610, 0.000003333,
+                175.105679, -0.2416582, 0.00000794, -0.000000028, 358.47583, 35999.04975, -0.000150);
+        earthProj = new PlanetProj(earthObject,SkyObject.EARTH);
+
         // Create all solar system objects
         planetObjects = new PlanetObject[NB_OF_PLANETS];
         planetObjects[0] = mercuryObject;
@@ -203,6 +212,13 @@ public class Sky implements Runnable {
      */
     public SunProj getSun() {
         return sunProj;
+    }
+    /**
+     * Return a earth object
+     * @return a reference to the earth projection object
+     */
+    public PlanetProj getEarth() {
+        return earthProj;
     }
     /**
      * Return a planet
@@ -286,6 +302,10 @@ public class Sky implements Runnable {
         }
         step += (2+planetProj.length);
         setProgress(step/size);
+
+        // -----------------------------------
+        // --- Calculate position of earth ---
+        earthProj.calculate();
 
         // ---------------------------------------------
         // --- Calculate position of Messier objects ---
