@@ -141,8 +141,8 @@ public class SideralisEyesCanvas extends GameCanvas implements Runnable {
 
         // Create an horizon
         horizon = createHorizon();
-//        addRandomColors(horizon);
-        horizon.getVertexBuffer().setDefaultColor(0x000000ff);
+        addRandomColors(horizon);
+//        horizon.getVertexBuffer().setDefaultColor(0x000000ff);
         
 //        horizon.getAppearance(0).setTexture(0, texture);
         PolygonMode polygonMode = new PolygonMode();
@@ -272,39 +272,65 @@ public class SideralisEyesCanvas extends GameCanvas implements Runnable {
         }
     }
     /**
-     * Create the horizon
-     * @return the mesh representing the horizon
+     *
+     * @return
      */
-    public Mesh createHorizon() {
-        final float scale = Short.MAX_VALUE;
-        short height = -50;
-        int slices = 16;
-        double angle = 2 * Math.PI / slices;
-        short[] positions = new short[(slices + 1) * 3];
-        int[] triangleIndices = new int[slices * 3];
-        int[] triangleLengths = new int[slices];
-//        short[] texCoords = new short[(slices + 1) * 2];
+    private Mesh createHorizon() {
+        Random random = new Random();
+        final short scale = Short.MAX_VALUE;
+        short dim = 127;
+        int height = 128;
+        short heightOffset = 0;
+        final short step = (short)(2*scale/dim);
 
-        positions[slices * 3 + 0] = 0;
-        positions[slices * 3 + 1] = height;
-        positions[slices * 3 + 2] = 0;
+        short[] positions = new short[(dim+1) * (dim+1) * 3];
+        int[] triangleIndices = new int[((dim+1)*2)*dim];
+        int[] triangleLengths = new int[dim];
 
-        for (int i = 0; i < slices; i++) {
-            positions[i * 3 + 0] = (short) (scale * Math.cos(-i * angle));
-            positions[i * 3 + 1] = height;
-            positions[i * 3 + 2] = (short) (scale * Math.sin(-i * angle));
+        short x,y,z;
+        int i,j,index,tk;
 
-            triangleIndices[i * 3 + 0] = slices;
-            triangleIndices[i * 3 + 1] = i;
-            triangleIndices[i * 3 + 2] = (i + 1) % slices;
-            triangleLengths[i] = 3;
+        x = -scale;
+        y = (short)(heightOffset-random.nextInt(height));
+        z = -scale;
+        index = 0;
+        tk = 0;
+        // 0
+        positions[index++] = x;
+        positions[index++] = y;
+        positions[index++] = z;
 
-//            texCoords[i * 2 + 0] = (short) (scale * i / slices);
-//            texCoords[i * 2 + 1] = (short) (0);
+        // Create first line
+        for (j=0;j<dim;j++) {
+            y = (short) (heightOffset-random.nextInt(height));
+            x = (short) (x + step);
+            positions[index++] = x;
+            positions[index++] = y;
+            positions[index++] = z;
         }
-//        texCoords[slices * 2 + 0] = (short) (scale / 2);
-//        texCoords[slices * 2 + 1] = (short) scale;
+        // Create next lines
+        for (i = 1; i <= dim; i++) {
+            z = (short) (z + step);
+            x = -scale;
+            // First vertice in line
+            positions[index++] = x;
+            positions[index++] = y;
+            positions[index++] = z;
+            for (j = 1; j <= dim; j++) {
+                //  Next vertices
+                y = (short) (heightOffset-random.nextInt(height));
+                x = (short) (x + step);
+                positions[index++] = x;
+                positions[index++] = y;
+                positions[index++] = z;
 
+            }
+            for (j=0;j<=dim;j++) {
+                triangleIndices[tk++] = (i-1)*(dim+1) + j;
+                triangleIndices[tk++] = (i)*(dim+1) + j;
+            }
+            triangleLengths[i-1] = (dim+1)*2;
+        }
         VertexBuffer planeVertexData = new VertexBuffer();
 
         VertexArray vertexPositions = new VertexArray(positions.length / 3, 3, 2);
@@ -312,10 +338,6 @@ public class SideralisEyesCanvas extends GameCanvas implements Runnable {
         planeVertexData.setPositions(vertexPositions, 1, null);
 
         TriangleStripArray planeTriangles = new TriangleStripArray(triangleIndices, triangleLengths);
-
-//        VertexArray vertexTexCoords = new VertexArray(texCoords.length/2, 2, 2);
-//        vertexTexCoords.set(0, texCoords.length/2, texCoords);
-//        planeVertexData.setTexCoords(0, vertexTexCoords, 1, null);
 
         return new Mesh(planeVertexData, planeTriangles, new Appearance());
     }

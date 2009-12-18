@@ -5,6 +5,11 @@
 
 package fr.dox.sideralis.projection.plane;
 
+import fr.dox.sideralis.Sideralis;
+import fr.dox.sideralis.data.Sky;
+import fr.dox.sideralis.object.ScreenCoord;
+import javax.microedition.lcdui.Graphics;
+
 /**
  *
  * @author Bernard
@@ -15,19 +20,29 @@ public abstract class ScreenProj {
     /** the width of the screen */
     protected int widthDisplay;
     /** The height of the view */
-    protected int heightView;
+    protected int getHeight;
     /** The width of the view */
-    protected int widthtView;
+    protected int getWidth;
     /** X offset of view inside display */
     protected int shiftXView;
     /** Y offset of view inside display */
     protected int shiftYView;
     /** The zoom of the screen */
     protected float zoom;
+    /** The rotation of the screen */
+    protected float rot;
 
-    public ScreenProj(int hD,int wD) {
+    /** A reference to the sky */
+    protected Sky mySky;
+    /** A reference to my midlet */
+    protected Sideralis myMidlet;
+
+
+    public ScreenProj(Sideralis myMidlet,int hD,int wD) {
         heightDisplay = hD;
         widthDisplay = wD;
+        this.myMidlet = myMidlet;
+        mySky = myMidlet.getMySky();
     }
 
     /**
@@ -45,11 +60,6 @@ public abstract class ScreenProj {
         this.zoom = zoom;
     }
 
-    public abstract int getX(double virtualX);
-    public abstract int getY(double virtualY);
-    public abstract double getVirtualX(double az, double hau);
-    public abstract double getVirtualY(double az, double hau);
-
     public abstract void left();
     public abstract void right();
     public abstract void up();
@@ -58,7 +68,17 @@ public abstract class ScreenProj {
     public abstract void scrollVer(float val);
     public abstract void incZoom();
     public abstract void decZoom();
-    public abstract double getRot();
+    public abstract void project();
+    public abstract void init();
+    public abstract ScreenCoord[] getScreenCoordMessier();
+    public abstract ScreenCoord[] getScreenCoordStars();
+    public abstract ScreenCoord[] getScreenCoordPlanets();
+    public abstract ScreenCoord getScreenCoordMoon();
+    public abstract ScreenCoord getScreenCoordSun();
+    public abstract void drawHorizon(Graphics g);
+    public abstract void setView();
+
+
     /**
      * Called in case of display change (rotation, ...)
      * @param heightDisplay the new height of the display
@@ -73,15 +93,9 @@ public abstract class ScreenProj {
     public void setWidthDisplay(int widthDisplay) {
         this.widthDisplay = widthDisplay;
     }
-    /**
-     * Set the new dimension of the view (a view size differs from the display size
-     * in order to avoid deformation of the view)
-     */
-    public void setView() {
-        heightView = Math.min(heightDisplay, widthDisplay);
-        widthtView = Math.min(heightDisplay, widthDisplay);
-        shiftXView = (widthDisplay>heightDisplay?(widthDisplay-heightDisplay)/2:0);
-        shiftYView = (heightDisplay>widthDisplay?(heightDisplay-widthDisplay)/2:0);
+
+    public double getRot() {
+        return rot;
     }
 
 }

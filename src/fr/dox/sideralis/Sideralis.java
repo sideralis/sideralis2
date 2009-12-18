@@ -138,9 +138,9 @@ import fr.dox.sideralis.object.CityObject;
 import fr.dox.sideralis.view.GlobeCanvas;
 //#ifdef JSR184
 import fr.dox.sideralis.view.Sideralis3DCanvas;
+import fr.dox.sideralis.view.SideralisEyesCanvas;
 //#endif
 import fr.dox.sideralis.view.SideralisCanvas;
-import fr.dox.sideralis.view.SideralisEyesCanvas;
 import fr.dox.sideralis.view.SplashCanvas;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -150,8 +150,6 @@ import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordStore;
-import javax.microedition.sensor.SensorInfo;
-import javax.microedition.sensor.SensorManager;
 
 /**
  * The MIDlet class. This is the first class called.
@@ -290,11 +288,20 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             // Get versions and build number
             version = "v"+getAppProperty("MIDlet-Version");
             build = getAppProperty("build");
-            int pos = build.indexOf('.');
-            while (pos!=-1) {
-                build = build.substring(0, pos) + build.substring(pos+1, build.length());
-                pos = build.indexOf('.');
-            }
+            int pos1 = build.indexOf('.');
+            int pos2 = build.indexOf('.', pos1+1);
+            String n1,n2,n3;
+            n1 = build.substring(0, pos1);
+            n2 = build.substring(pos1+1,pos2);
+            n3 = build.substring(pos2+1,build.length());
+            // Add 0 to n1 and n2 if needed
+            if (n2.length() == 1)
+                n2 = "0"+n2;
+            if (n3.length() == 1)
+                n3 = "0"+n3;
+            // Create build number
+            build = n1+n2+n3;
+            // Remove leading 0 from build number
             boolean st = build.startsWith("0");
             while (st) {
                 build = build.substring(1,build.length());
@@ -410,7 +417,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         cityCommand = new Command(LocalizationSupport.getMessage("A9"), Command.SCREEN, 2);
         autoPositionCommand = new Command(LocalizationSupport.getMessage("POS_FORM_LOCATE"), Command.SCREEN, 3);
         cancelCommand = new Command(LocalizationSupport.getMessage("AA"), Command.CANCEL, 1);
-        okCommand = new Command(LocalizationSupport.getMessage("OK"), Command.BACK, 1);
+        okCommand = new Command(LocalizationSupport.getMessage("OK"), Command.OK, 1);
         positionForm.append(latTextField);
         positionForm.append(longTextField);
         positionForm.append(new Spacer(400, 10));
