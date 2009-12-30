@@ -14,6 +14,7 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.m3g.Appearance;
 import javax.microedition.m3g.Camera;
 import javax.microedition.m3g.Graphics3D;
+import javax.microedition.m3g.Light;
 import javax.microedition.m3g.Mesh;
 import javax.microedition.m3g.PolygonMode;
 import javax.microedition.m3g.Transform;
@@ -22,7 +23,7 @@ import javax.microedition.m3g.VertexArray;
 import javax.microedition.m3g.VertexBuffer;
 
 /**
- *
+ * This class is used to calculate the screen coordinate of all sky objects
  * @author Bernard
  */
 public class EyeProj extends ScreenProj {
@@ -38,6 +39,8 @@ public class EyeProj extends ScreenProj {
     private Mesh planetMesh,starMesh,messierMesh;
     /** The horizon */
     private Mesh horizon;
+    /** The lights */
+    private Light lightSun, lightMoon;
     /** The camera */
     private Camera camera;
     /** The Camera Transform */
@@ -52,7 +55,8 @@ public class EyeProj extends ScreenProj {
     private float aspectRatio;
     /** Camera near and far parameters */
     private float near,far;
-
+    /** The field of vision */
+    private float fov;
 
     /** Global variable (to avoid multiple new) */
     private VertexBuffer genericVertexBuffer;
@@ -61,22 +65,24 @@ public class EyeProj extends ScreenProj {
     private int SUN = Sky.NB_OF_PLANETS;
     private int MOON = SUN + 1;
     /**
-     * 
-     * @param mySky
-     * @param hD
-     * @param wD
+     * The constructor
+     * @param myMidlet a reference to the calling midlet
+     * @param hD the height of the display
+     * @param wD the width of the display
      */
     public EyeProj(Sideralis myMidlet, int hD, int wD) {
         super(myMidlet, hD, wD);
     }
     /**
-     *
+     * Intialization
      */
     public void init() {
-        zoom = 70;
+        double x,y,z;
+
+        fov = 70;
         near = 1;
         far = 1000;
-        rotV = 20;
+        rotV = (float)Math.toRadians(20);
 
         positionsPlanets = new short[(Sky.NB_OF_PLANETS +2) * 3];               // 2 for Sun and Moon
         positionsStars = new short[mySky.getStarsProj().length * 3];
@@ -107,17 +113,30 @@ public class EyeProj extends ScreenProj {
         // Create a sky
         createSky();
 
+        // Create the lights
+        if (mySky.getSun().getHeight()>0) {
+            lightSun = new Light();
+            lightSun.setMode(Light.DIRECTIONAL);
+            lightSun.setIntensity(10);
+            x = Math.cos(mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
+            y = Math.sin(mySky.getSun().getHeight());
+            z = Math.sin(mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
+            lightSun.translate((float)x, (float)y, (float)z);
+            graphics3D.addLight(lightSun, null);
+        }
+
         // Create an horizon
         horizon = createHorizon();
         addRandomColors(horizon);
         PolygonMode polygonMode = new PolygonMode();
         polygonMode.setPerspectiveCorrectionEnable(true);
         polygonMode.setCulling(PolygonMode.CULL_NONE);
+//        polygonMode.setShading(PolygonMode.SHADE_FLAT);
         horizon.getAppearance(0).setPolygonMode(polygonMode);
 
         // Create a camera
         camera = new Camera();
-        aspectRatio = 1f;
+        aspectRatio = (float)getWidth/(float)getHeight;
         cameraTransform = new Transform();
         invertedCameraTransform = new Transform();
         setCamera();
@@ -125,9 +144,9 @@ public class EyeProj extends ScreenProj {
     }
 
     /**
-     * Create the sky
+     * Create the sky mesh
      */
-    public void createSky() {
+    private void createSky() {
         short[] positions;
         VertexBuffer vertexBuffer;
         VertexArray vertexPositions;
@@ -178,11 +197,12 @@ public class EyeProj extends ScreenProj {
      */
     private Mesh createHorizon() {
         Random random = new Random();
-        final short scale = Short.MAX_VALUE;
-        short dim = 127;
+        final short scale = Short.MAX_VALUE/10;
+        short dim = 63;
         int height = 128;
-        short heightOffset = 0;
+        short heightOffset = -128;
         final short step = (short)(2*scale/dim);
+        double dist;
 
         short[] positions = new short[(dim+1) * (dim+1) * 3];
         int[] triangleIndices = new int[((dim+1)*2)*dim];
@@ -203,7 +223,8 @@ public class EyeProj extends ScreenProj {
 
         // Create first line
         for (j=0;j<dim;j++) {
-            y = (short) (heightOffset-random.nextInt(height));
+            dist = (float)(x*x + z*z)/(float)(scale*scale)*Math.PI;
+            y = (short) (heightOffset*Math.sin(dist)-random.nextInt(height));
             x = (short) (x + step);
             positions[index++] = x;
             positions[index++] = y;
@@ -219,8 +240,10 @@ public class EyeProj extends ScreenProj {
             positions[index++] = z;
             for (j = 1; j <= dim; j++) {
                 //  Next vertices
-                y = (short) (heightOffset-random.nextInt(height));
+                dist = (float)(x*x + z*z)/(float)(scale*scale)*Math.PI;
+                y = (short) (heightOffset*Math.sin(dist)-random.nextInt(height));
                 x = (short) (x + step);
+//                if (x<step && x>0) System.out.println(""+x+" "+y+" "+z);
                 positions[index++] = x;
                 positions[index++] = y;
                 positions[index++] = z;
@@ -245,22 +268,23 @@ public class EyeProj extends ScreenProj {
     /**
      * Apply rotation to camera and set new field of view
      */
-    public void setCamera() {
+    private void setCamera() {
         cameraTransform.setIdentity();
-        cameraTransform.postRotate(rotV, (float) Math.cos(Math.toRadians(rot)), 0, (float) Math.sin(Math.toRadians(rot)));
-        cameraTransform.postRotate(-rot, 0, 1, 0);
+        cameraTransform.postRotate((float)Math.toDegrees(rotV), (float) Math.cos(rot), 0, (float) Math.sin(rot));
+        cameraTransform.postRotate(-(float)Math.toDegrees(rot), 0, 1, 0);
+//        cameraTransform.postTranslate(0,1000,0);
 
         invertedCameraTransform = new Transform(cameraTransform);
         invertedCameraTransform.invert();
 
-        camera.setPerspective(zoom, aspectRatio, near, far);
+        camera.setPerspective(fov, aspectRatio, near, far);
         graphics3D.setCamera(camera, cameraTransform);
     }
 
     /**
      * Update the sky objects spatial coordinate
      */
-    public void project3D() {
+    private void project3D() {
         int index;
         float scale = Short.MAX_VALUE;
         double x, y, z;
@@ -339,7 +363,7 @@ public class EyeProj extends ScreenProj {
     /**
      * Project on display the sky objects
      */
-    public void project2D() {
+    private void project2D() {
         int numVertices;
         int i;
         Transform transform = new Transform();
@@ -448,73 +472,146 @@ public class EyeProj extends ScreenProj {
         }
 
     }
-
+    /**
+     * Go left  by some degrees
+     */
     public void left() {
-        rot -= 5;
-        rot %= 360;
+        rot -= Math.toRadians(5f/70f)*fov;
+        if (rot<0)
+            rot += 2*Math.PI;
         setCamera();
     }
-
+    /**
+     * Go right by some degrees
+     */
     public void right() {
-        rot += 5;
-        rot %= 360;
+        rot += Math.toRadians(5f/70f)*fov;
+        if (rot>2*Math.PI)
+            rot -= 2*Math.PI;
         setCamera();
     }
-
+    /**
+     * Go up by some degrees
+     */
     public void up() {
-        rotV += 5;
-        rotV %= 360;
+        rotV += Math.toRadians(5f/70f)*fov;
+        if (rotV>2*Math.PI)
+            rotV -= 2*Math.PI;
         setCamera();
     }
-
+    /**
+     * Go down by some degrees
+     */
     public void down() {
-        rotV -= 5;
-        rotV %= 360;
+        rotV -= Math.toRadians(5f/70f)*fov;
+        if (rotV<0)
+            rotV += 2*Math.PI;
         setCamera();
     }
-
+    /**
+     * Scroll horizontally
+     * @param val
+     */
     public void scrollHor(float val) {
+        rot -= Math.toRadians(val/70f)*fov;
+        if (rot<0)
+            rot += 2*Math.PI;
+        if (rot>2*Math.PI)
+            rot -= 2*Math.PI;
+        setCamera();
     }
 
+    /**
+     * Scroll vertically
+     * @param val
+     */
     public void scrollVer(float val) {
-    }
-
-    public void incZoom() {
-        zoom += 10;
-        if (zoom >= 180) {
-            zoom = 179;
-        }
+        rotV += Math.toRadians(val/70f)*fov;
+        if (rotV<0)
+            rotV += 2*Math.PI;
+        if (rotV>2*Math.PI)
+            rotV -= 2*Math.PI;
         setCamera();
     }
-
+    /**
+     * Increase the field of vision by 10 degrees
+     */
     public void decZoom() {
-        zoom -= 10;
-        if (zoom < 1) {
-            zoom = 1;
+        fov += 10;
+        if (fov >= 180) {
+            fov = 179;
         }
         setCamera();
     }
-
+    /**
+     * Decrease the field of vision by 10 degrees
+     */
+    public void incZoom() {
+        fov -= 10;
+        if (fov < 1) {
+            fov = 1;
+        }
+        setCamera();
+    }
+    /**
+     * Return the zoom value
+     * @return the zoom value
+     */
+    public float getZoom() {
+        float tmp = 70/fov;
+        if  (tmp<1F)
+            tmp = 1;
+        return tmp;
+    }
+    /**
+     * Set a value to the zoom
+     * @param zoom the new value of the zoom
+     */
+    public void setZoom(float zoom) {
+        fov = zoom;
+    }
+    /**
+     * Return the vertical rotation in radian
+     * @return the rotV angle
+     */
+    public float getRotV() {
+        return rotV;
+    }
+    /**
+     * Return the reference to the screen coordinates of the Messier objects
+     * @return the screenCoordMessier
+     */
     public ScreenCoord[] getScreenCoordMessier() {
         return screenCoordMessiers;
     }
-
+    /**
+     * Return the reference to the screen coordinates of the stars
+     * @return the screenCoordStars
+     */
     public ScreenCoord[] getScreenCoordStars() {
         return screenCoordStars;
     }
-
+    /**
+     * Return the reference to the screen coordinates of the planets
+     * @return the screenCoordPlanets
+     */
     public ScreenCoord[] getScreenCoordPlanets() {
         return screenCoordPlanets;
     }
-
+    /**
+     * Return the reference to the screen coordinates of the Moon
+     * @return the screenCoordMoon
+     */
     public ScreenCoord getScreenCoordMoon() {
         return screenCoordPlanets[MOON];
     }
-
+    /**
+     * Return the reference to the screen coordinates of the Sun
+     * @return the screenCoordSun
+     */
     public ScreenCoord getScreenCoordSun() {
         return screenCoordPlanets[SUN];
     }
-
     /**
      *
      * @param mesh
@@ -525,19 +622,27 @@ public class EyeProj extends ScreenProj {
         byte[] colors = new byte[vertexCount * 3];
 
         for (int i = 0; i < colors.length; i++) {
-            colors[i] = (byte) random.nextInt(256);
+            if (i%3 == 1)
+                colors[i] = (byte) 200;
+            else
+                colors[i] = (byte) random.nextInt(256);
         }
 
         VertexArray vertexColors = new VertexArray(vertexCount, 3, 1);
         vertexColors.set(0, vertexCount, colors);
         mesh.getVertexBuffer().setColors(vertexColors);
     }
-
+    /**
+     * Project all the objects of the sky on the display
+     */
     public void project() {
         project3D();
         project2D();
     }
-
+    /**
+     * Draw the horizon
+     * @param g The graphic object on which to draw
+     */
     public void drawHorizon(Graphics g) {
         graphics3D.bindTarget(g);
         graphics3D.setViewport(0, 0, getWidth, getHeight);
@@ -552,6 +657,14 @@ public class EyeProj extends ScreenProj {
     public void setView() {
         getHeight = heightDisplay;
         getWidth = widthDisplay;
-    }
+        aspectRatio = (float)getWidth/(float)getHeight;
 
+    }
+    /**
+     * Indicate that this projection is a 3D projection
+     * @return true
+     */
+    public boolean is3D() {
+        return true;
+    }
 }

@@ -12,13 +12,14 @@ import fr.dox.sideralis.object.SkyObject;
 
 
 /**
- *
+ * The search class.
+ * Store the name of all objects in order to retrieve them easily
  * @author Bernard
  */
 public class Search {
     /** A reference to my sky object */
     private final Sky mySky;
-    /** This is the index of the objec to be highlighted (from 0 to ? for stars, from 0 to ? for Messier and negative for sun, moon or planets */
+    /** This is the index of the objec to be highlighted (from 0 to ? for stars, from 0 to ? for Messier and from 0 to ? for sun, moon or planets */
     private int idxHighlight;
     /** The type of object to highlight */
     private int typeHighlight;
@@ -35,6 +36,7 @@ public class Search {
 
     /**
      * Constructor
+     * @param mySky a reference to the sky
      */
     public Search(Sky mySky) {
         indexSearch = -1;                                                       // By default, no search
@@ -43,9 +45,9 @@ public class Search {
         typeHighlight = SkyObject.NONE;
     }
     /**
-     * Return the name of the searched object or "..." if no objects are searched
+     * Return the name of the searched object or "?" if no objects are searched
      * @param idx the index of the object in the name list
-     * @return Name of object or "..."
+     * @return Name of object or "?"
      */
     public String getNameOfSearchableObject(int idx) {
         if (idx>=0)
@@ -54,7 +56,7 @@ public class Search {
             return "?";                    
     }
     /**
-     * Insure that index of search object is valid
+     * Insure that index of search object is valid (between min and max)
      */
     public void boundIndexOfSearchableObject() {
         if (indexSearch>=listOfSearchableObjects.length) {
@@ -82,7 +84,7 @@ public class Search {
         count += MessierCatalog.getNumberOfObjects();
         // =============================================
         // === Add main objects (sun, moon, planets) ===
-        count += 7;
+        count += (2 + Sky.NB_OF_PLANETS);
         // ==========================
         // === Add constellations ===
         count += 2*ConstellationCatalog.getNumberOfConstellations();            // 2 for normal names + latin names
@@ -112,6 +114,8 @@ public class Search {
         listOfSearchableObjects[count++] = LocalizationSupport.getMessage("NAME_MARS");
         listOfSearchableObjects[count++] = LocalizationSupport.getMessage("NAME_JUPITER");
         listOfSearchableObjects[count++] = LocalizationSupport.getMessage("NAME_SATURN");
+        listOfSearchableObjects[count++] = LocalizationSupport.getMessage("NAME_URANUS");
+        listOfSearchableObjects[count++] = LocalizationSupport.getMessage("NAME_NEPTUNE");
         // Add constellations
         for (i=0;i<ConstellationCatalog.getNumberOfConstellations();i++) {
             listOfSearchableObjects[count++] = ConstellationCatalog.getConstellation(i).getLatinName();
@@ -129,10 +133,6 @@ public class Search {
                     listOfSearchableObjects[b] = listOfSearchableObjects[b + 1];
                     listOfSearchableObjects[b + 1] = temp;
                 }
-        // Debug
-        //        for (i=0;i<listOfSearchableObjects.length;i++) {
-        //            System.out.println(listOfSearchableObjects[i]);
-        //        }        
             }
         }
     }
@@ -158,6 +158,7 @@ public class Search {
     }
     /**
      * Return the index in listOfSearchableObjects of the object which starts as parameter string
+     * Called when typing the first letter of a name
      * @param string the first letters of an object
      * @return An index in listOfSearchableObject or -1 if no object found
      */
@@ -189,7 +190,7 @@ public class Search {
         flagCentered = true;
     }
     /**
-     * Highlight the searched object
+     * Highlight the searched object - Called when pressing search
      * @param string name of the object
      * @return indicate if the object was found and if yes, if it is visible or not
      */
@@ -266,7 +267,8 @@ public class Search {
         return flagVisible;
     }
     /**
-     * 
+     * Return the number of elements in the search list
+     * @return number of searchable objects
      */
     public int getLength() {
         return listOfSearchableObjects.length;        
@@ -280,8 +282,8 @@ public class Search {
         return listOfSearchableObjects[idx];
     }
     /**
-     * 
-     * @param idx
+     * Set the index of the object we want to search for. And check that it is inside bound
+     * @param idx the index in the list of searchable object
      */
     public void setIndex(int idx) {
         indexSearch = (short)idx; 
@@ -316,8 +318,8 @@ public class Search {
         return flagCentered;
     }
     /**
-     *
-     * @param flagCentered
+     * Set to true to indicate that the search object is centered in the screen
+     * @param flagCentered true or false
      */
     public void setFlagCentered(boolean flagCentered) {
         this.flagCentered = flagCentered;

@@ -18,8 +18,6 @@ import fr.dox.sideralis.view.color.Color;
  * @author Bernard
  */
 public class ConfigParameters {
-    // ----------------------
-    // --- All parameters ---
     /** All my display options parameters */
     private boolean[] parameters;
     /** Flag indicating if we move the cursor to display information on object or if pressing keys change the sky (rotation, zoom, ...) */
@@ -30,19 +28,21 @@ public class ConfigParameters {
     private boolean horizontalView;
     /** Filter for star according to value of Magnitude */
     private float maxMag;
-    /** */
+    /** The name of the 2 shortcut to cities */
     private CityObject city1,city2;
     /** The color object containing all definitions */
     private int[] color;
     /** True if 3d is supported */
     private boolean support3D;
+    /** True if GPS is supported */
+    private boolean supportGPS;
     
     /** A table storing the names of all parameters */
     private static final String[] paramNames = new String[] {LocalizationSupport.getMessage("PARAM_CONST"),
             LocalizationSupport.getMessage("PARAM_CONSTN"),LocalizationSupport.getMessage("PARAM_CONSTNL"),
             LocalizationSupport.getMessage("PARAM_PLA"),LocalizationSupport.getMessage("PARAM_PLANA"),
             LocalizationSupport.getMessage("PARAM_STCIR"),LocalizationSupport.getMessage("PARAM_COLSTA"),
-            LocalizationSupport.getMessage("PARAM_HELP"),LocalizationSupport.getMessage("PARAM_NIGHT"),
+            LocalizationSupport.getMessage("PARAM_NIGHT"),
             LocalizationSupport.getMessage("PARAM_MESSIER"),LocalizationSupport.getMessage("PARAM_MESSIERNA")};
     private static final String[] valueNames = new String[] {LocalizationSupport.getMessage("PARAM_MAX_MAG"),
             LocalizationSupport.getMessage("PARAM_SID_TIME")};
@@ -54,19 +54,16 @@ public class ConfigParameters {
     public static final short PLANETS_NAME_DISPLAYED = 4;
     public static final short STARS_AS_FILLED_CIRCLES = 5;
     public static final short STARS_COLORED = 6;
-    public static final short ON_SCREEN_HELP = 7;
-    public static final short NIGHT_VIEW = 8;
-    public static final short MESSIER_DISPLAYED = 9;
-    public static final short MESSIER_NAME_DISPLAYED = 10;
+    public static final short NIGHT_VIEW = 7;
+    public static final short MESSIER_DISPLAYED = 8;
+    public static final short MESSIER_NAME_DISPLAYED = 9;
     
-    public static final short NB_PARAM = 11;                                    // Total number of boolean parameters
+    public static final short NB_PARAM = 10;                                    // Total number of boolean parameters
     // Values - non boolean values
     public static final short MAX_MAG = NB_PARAM+0;                             // maxMag
     public static final short SID_TIME =NB_PARAM+1;                             // No variable
     // Total number of values and parameters
     public static final short NB_OPT = NB_PARAM+2;
-    /** */
-    public static final short TIMER_POINTER = 100;
         
     /**
      * Creates a new instance of ConfigParameters 
@@ -75,9 +72,8 @@ public class ConfigParameters {
         // Internal parameters (not known from user)
         cursor = false;
         constStory = false;
-        horizontalView = true;
+        horizontalView = false;
         support3D = false;
-
 
         // Boolean parameters
         parameters = new boolean[paramNames.length];
@@ -88,7 +84,6 @@ public class ConfigParameters {
         parameters[PLANETS_NAME_DISPLAYED] = false;        
         parameters[STARS_AS_FILLED_CIRCLES]= false;
         parameters[STARS_COLORED] = true;
-        parameters[ON_SCREEN_HELP] = false;
         parameters[NIGHT_VIEW] = false;
         parameters[MESSIER_DISPLAYED] = true;
         parameters[MESSIER_NAME_DISPLAYED] = false;
@@ -100,15 +95,31 @@ public class ConfigParameters {
 
         color = Color.colorDay;
     }
+    /**
+     * Return the city object of the first shortcut
+     * @return The shortcut to the first city
+     */
     public CityObject getCity1() {
         return city1;
     }
+    /**
+     * Return the city object of the second shortcut
+     * @return The shortcut to the second city
+     */
     public CityObject getCity2() {
         return city2;
     }
+    /**
+     * Define the first shortcut to the cities
+     * @param c The city object
+     */
     public void setCity1(CityObject c) {
         city1 = c;
     }
+    /**
+     * Define the second shortcut to the cities
+     * @param c The city object
+     */
     public void setCity2(CityObject c) {
         city2 = c;
     }
@@ -214,20 +225,6 @@ public class ConfigParameters {
      */
     public void setDisplayConstHistory(boolean b) {
         constStory = b;
-    }
-    /** 
-     * Set or unset the display of help on screen
-     * @param b true or false
-     */
-    public void setHelp(boolean b) {
-       parameters[ON_SCREEN_HELP] = b; 
-    }
-    /**
-     * Return true if help is displayed on screen
-     * @return true or false depending if help is displayed or not on main screen
-     */
-    public boolean isHelpDisplayed() {
-        return parameters[ON_SCREEN_HELP];
     }
     /** 
      * Check if stars should be displayed as filled circles which size depends on magnitude
@@ -342,13 +339,33 @@ public class ConfigParameters {
         maxMag /= 10;
         this.maxMag = maxMag;
     }
-
+    /**
+     * Return true if 3D is supported by the mobile
+     * @return true if m3g 1.1 is supported
+     */
     public boolean isSupport3D() {
         return support3D;
     }
-
+    /**
+     * To set the boolean indicating if 3D is supported by phone
+     * @param support3D true or false
+     */
     public void setSupport3D(boolean support3D) {
         this.support3D = support3D;
+    }
+    /**
+     * Indicate if GPS is supported by phone
+     * @return true if GPS is supported by mobile, false else
+     */
+    public boolean isSupportGPS() {
+        return supportGPS;
+    }
+    /**
+     * To set the boolean indicating if GPS is supported by phone
+     * @param supportGPS true or false
+     */
+    public void setSupportGPS(boolean supportGPS) {
+        this.supportGPS = supportGPS;
     }
 
  }

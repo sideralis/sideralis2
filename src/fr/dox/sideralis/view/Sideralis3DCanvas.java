@@ -7,17 +7,24 @@ package fr.dox.sideralis.view;
 import fr.dox.sideralis.Sideralis;
 import fr.dox.sideralis.data.Sky;
 import fr.dox.sideralis.object.PlanetObject;
+import fr.dox.sideralis.object.ScreenCoord;
 import fr.dox.sideralis.view.color.Color;
-import java.util.Random;
+import java.io.IOException;
+import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.game.GameCanvas;
 import javax.microedition.m3g.Appearance;
 import javax.microedition.m3g.Camera;
 import javax.microedition.m3g.Graphics3D;
 import javax.microedition.m3g.Group;
+import javax.microedition.m3g.Image2D;
 import javax.microedition.m3g.Light;
+import javax.microedition.m3g.Material;
 import javax.microedition.m3g.Mesh;
 import javax.microedition.m3g.PolygonMode;
+import javax.microedition.m3g.Sprite3D;
+import javax.microedition.m3g.Transform;
 import javax.microedition.m3g.TriangleStripArray;
 import javax.microedition.m3g.VertexArray;
 import javax.microedition.m3g.VertexBuffer;
@@ -38,13 +45,16 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
     private int counter;
     /** The sky object */
     private final Sky mySky;
-
+    /** The camera used to see the world */
+    private Camera camera;
     /** Object that represents the 3D world. */
     private World world;
     /** Planet meshes. */
     private Mesh[] meshPlanets;
     /** Sun mesh */
     private Mesh meshSun;
+    /** Arrow mesh */
+    private Mesh meshArrow;
     /** Group of planets */
     private Group group;
     /** 3D graphics singleton used for rendering. */
@@ -53,7 +63,11 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
     private Graphics graphics;
     /** Zoom */
     private float zoom,zoomInc;
-
+    /** The 2D coordinates for planets */
+    private float[] coord2DPlanets;
+    private ScreenCoord[] screenCoordPlanets;
+    /** The index of the planet arrow is pointing to */
+    private int indexArrow;
 
     /** All objects positions are recalculated every COUNTER calls to run() */
     private static final int COUNTER = 1000;
@@ -61,27 +75,59 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
     private static final int MAX_CPS = 10;
     /** Time in millisecond between 2 frames */
     private static final int MS_PER_FRAME = 1000 / MAX_CPS;
+    /** Number of slices in the sphere */
+    private static final int NB_OF_SLICES = 16;
+    /** Number of stacks in the sphere */
+    private static final int NB_OF_STACKS = 16;
 
-
+    private Image2D image2D;
+    /**
+     * The constructor
+     * @param myMidleta reference to the calling midlet
+     */
     public Sideralis3DCanvas(Sideralis myMidlet) {
         super(false);
         running = false;
         this.myMidlet = myMidlet;
         mySky = myMidlet.getMySky();
-    }
+//        Image image = null;
+//        try {
+//            image = Image.createImage("/Cursor.png");
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
+        Font myFont = Font.getDefaultFont();
+        Image image = Image.createImage(myFont.stringWidth("Venus"),myFont.getHeight());
+        Graphics g = image.getGraphics();
+        g.setFont(myFont);
+        g.drawString("Venus",0,0,Graphics.TOP|Graphics.LEFT);
 
+        image2D = new Image2D(Image2D.RGBA,image);
+
+    }
+    /**
+     * Initialize main variables
+     */
     public void init() {
         graphics3d = Graphics3D.getInstance();
         graphics = getGraphics();
 
+        System.out.println("Hints: "+graphics3d.getHints());
+
         zoom = 1;
         zoomInc = 0;
+        indexArrow = Sky.NB_OF_PLANETS;                                         // Earth
+
+        screenCoordPlanets = new ScreenCoord[1];
+        screenCoordPlanets[0] = new ScreenCoord();
+        coord2DPlanets = new float[(NB_OF_SLICES+1)*NB_OF_STACKS*4];
+
 
         // Create a world
         world = new World();
 
         // Create a camera
-        Camera camera = new Camera();
+        camera = new Camera();
         float aspect = (float) getWidth() / (float) getHeight();
         camera.setPerspective(90, aspect, 1, 1000);
         camera.setTranslation(0,0,150);
@@ -90,7 +136,8 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
 
         // Create light
         Light light = new Light();
-        light.setMode(Light.OMNI);
+        light.setMode(Light.DIRECTIONAL);
+        light.setIntensity(1);
         world.addChild(light);
 
         // Create a group
@@ -100,14 +147,31 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
         // Create the planets objects
         meshPlanets = new Mesh[Sky.NB_OF_PLANETS+1];
         for (int i=0;i<Sky.NB_OF_PLANETS+1;i++) {
-            meshPlanets[i] = createSphere(8, 8, true, false);
-            meshPlanets[i].getVertexBuffer().setDefaultColor((myMidlet.getMyParameter().getColor())[Color.COL_VENUS+i]);
+            meshPlanets[i] = createSphere(NB_OF_SLICES, NB_OF_STACKS, true, false);
+//            meshPlanets[i].getVertexBuffer().setDefaultColor((myMidlet.getMyParameter().getColor())[Color.COL_VENUS+i]);
             PolygonMode polygonMode = new PolygonMode();
             polygonMode.setShading(PolygonMode.SHADE_FLAT);
             meshPlanets[i].getAppearance(0).setPolygonMode(polygonMode);
+            Material material = new Material();
+            material.setColor(Material.SPECULAR,(myMidlet.getMyParameter().getColor())[Color.COL_VENUS+i] );
+            meshPlanets[i].getAppearance(0).setMaterial(material);
             group.addChild(meshPlanets[i]);
         }
 
+//        Sprite3D sprite = new Sprite3D(true, image2D, new Appearance());
+//        sprite.setTranslation((float)mySky.getPlanet(0).getX(), (float)mySky.getPlanet(0).getY()+1, (float)mySky.getPlanet(0).getZ());
+////        sprite.setScale(30,30,30);
+//        group.addChild(sprite);
+
+        meshArrow = createArrow();
+        PolygonMode polygonMode = new PolygonMode();
+        polygonMode.setCulling(PolygonMode.CULL_NONE);
+        meshArrow.getAppearance(0).setPolygonMode(polygonMode);
+        setArrowTranslation();
+
+//        meshArrow.setScale(400, 400, 400);
+        group.addChild(meshArrow);
+        
         for (int i=0;i<Sky.NB_OF_PLANETS;i++) {
             meshPlanets[i].setTranslation((float)mySky.getPlanet(i).getX(), (float)mySky.getPlanet(i).getY(), (float)mySky.getPlanet(i).getZ());
         }
@@ -135,7 +199,9 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
         group.addChild(meshSun);
 
     }
-
+    /**
+     * Called when the display is going to be shown
+     */
     protected void showNotify() {
         super.showNotify();
         if (running == false) {
@@ -173,19 +239,27 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
             }
 
             // Move scene
-            group.postRotate(2, 0, 0, 1);
+//            group.postRotate(2, 0, 0, 1);
             if (zoom<0.5F) {
                 zoomInc = 0;
                 zoom = 0.5F;
-            } else if (zoom >6) {
+            } else if (zoom >12) {
                 zoomInc = 0;
-                zoom = 6.0F;
+                zoom = 12.0F;
             }
             zoom += zoomInc;
-            group.setScale(zoom, zoom, zoom);
+            camera = world.getActiveCamera();
+            camera.setTranslation(0, 0, zoom*20);
+            //camera.postRotate(2, 0, 0, 1);
+            world.setActiveCamera(camera);
+            meshArrow.postRotate(2, 0, 1, 0);
+//            group.setScale(zoom, zoom, zoom);
 
             // Display scene.
             render(graphics);
+//            project2D();
+//            graphics.setColor(0x00);
+//            graphics.drawString("Venus", screenCoordPlanets[0].x, screenCoordPlanets[0].y, Graphics.BOTTOM|Graphics.HCENTER);
             flushGraphics();
 
             /* Thread is set to sleep if it remains some time before next frame */
@@ -199,10 +273,85 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
             }
         }
     }
+    private void setArrowTranslation() {
+        if (indexArrow < Sky.NB_OF_PLANETS)
+            meshArrow.setTranslation((float)mySky.getPlanet(indexArrow).getX(), (float)mySky.getPlanet(indexArrow).getY()+3, (float)mySky.getPlanet(indexArrow).getZ());
+        else
+            meshArrow.setTranslation((float)mySky.getEarth().getX(), (float)mySky.getEarth().getY()+3, (float)mySky.getEarth().getZ());
+    }
+    /**
+     * Calculate the 2D display coordinate of all objects
+     */
+    private void project2D() {
+        int i;
+        Transform transform = new Transform();
+        VertexArray vertexArray3D;
+        float w;
+        float[] scaleBias = new float[4];
+        float[] trCamera = new float[16];
 
+        // ============================
+        // === Planets & Sun & Moon ===
+        // ============================
+        vertexArray3D = meshPlanets[0].getVertexBuffer().getPositions(scaleBias);
 
+        camera = world.getActiveCamera();
+        camera.getProjection(transform);
 
+//        Transform invertedCameraTransform = new Transform();
+        camera.getTranslation(trCamera);
+        Transform invertedCameraTransform = new Transform();
+        invertedCameraTransform.set(trCamera);
+//        invertedCameraTransform.get(trCamera);
 
+//        camera.getTranslation(trCamera);
+        System.out.println(" "+trCamera[0]+" "+trCamera[1]+" "+trCamera[2]+" "+trCamera[3]);
+        System.out.println(" "+trCamera[4]+" "+trCamera[5]+" "+trCamera[6]+" "+trCamera[7]);
+        System.out.println(" "+trCamera[8]+" "+trCamera[9]+" "+trCamera[10]+" "+trCamera[11]);
+        System.out.println(" "+trCamera[12]+" "+trCamera[13]+" "+trCamera[14]+" "+trCamera[15]);
+
+        transform.postMultiply(invertedCameraTransform);
+        transform.postTranslate(scaleBias[1], scaleBias[2], scaleBias[3]);
+        transform.postScale(scaleBias[0], scaleBias[0], scaleBias[0]);
+
+        transform.transform(vertexArray3D, coord2DPlanets, true);
+        // Planets
+        for (i = 0; i < 1; i++) {
+            w = 1.0f/coord2DPlanets[i * 4 + 3];
+            coord2DPlanets[i * 4 + 0] *= w;
+            coord2DPlanets[i * 4 + 1] *= w;
+
+            screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
+            screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
+        }
+        System.out.println("x="+screenCoordPlanets[0].x+" y="+screenCoordPlanets[0].y);
+//        // Sun
+//        w = 1.0f/coord2DPlanets[i * 4 + 3];
+//        coord2DPlanets[i * 4 + 0] *= w;
+//        coord2DPlanets[i * 4 + 1] *= w;
+//
+//        screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
+//        screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
+//        if (coord2DPlanets[i * 4 + 2] <= 0 || mySky.getSun().getHeight() < 0) {
+//            screenCoordPlanets[i].setVisible(false);
+//        } else {
+//            screenCoordPlanets[i].setVisible(true);
+//        }
+//        // Moon
+//        i += 1;
+//        w = 1.0f/coord2DPlanets[i * 4 + 3];
+//        coord2DPlanets[i * 4 + 0] *= w;
+//        coord2DPlanets[i * 4 + 1] *= w;
+//
+//        screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
+//        screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
+//        if (coord2DPlanets[i * 4 + 2] <= 0 || mySky.getMoon().getHeight() < 0) {
+//            screenCoordPlanets[i].setVisible(false);
+//        } else {
+//            screenCoordPlanets[i].setVisible(true);
+//        }
+
+    }
     /**
      * Renders the sample.
      *
@@ -215,6 +364,10 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
         graphics3d.releaseTarget();
     }
 
+    /** 
+     * A key is pressed
+     * @param keyCode id of the key
+     */
     protected void keyPressed(int keyCode) {
 
         if (keyCode == KEY_NUM1) {
@@ -223,6 +376,31 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
         } else if (keyCode == KEY_NUM3) {
             // Zoom in
             zoomInc = 0.1F;
+        } else if (keyCode == KEY_NUM7) {
+            indexArrow--;
+            if (indexArrow<0)
+                indexArrow += (Sky.NB_OF_PLANETS+1);
+            setArrowTranslation();
+        } else if (keyCode == KEY_NUM9) {
+            indexArrow++;
+            indexArrow %= (Sky.NB_OF_PLANETS+1);
+            setArrowTranslation();
+//        } else if (keyCode == KEY_NUM0) {
+//            camera = world.getActiveCamera();
+//            camera.scale(5F, 5F, 5F);
+//            world.setActiveCamera(camera);
+//        } else if (keyCode == KEY_NUM8) {
+//            camera = world.getActiveCamera();
+//            camera.scale(2F, 2F, 2F);
+//            world.setActiveCamera(camera);
+//        } else if (keyCode == KEY_NUM5) {
+//            camera = world.getActiveCamera();
+//            camera.scale(1F, 1F, 1F);
+//            world.setActiveCamera(camera);
+//        } else if (keyCode == KEY_NUM2) {
+//            camera = world.getActiveCamera();
+//            camera.scale(0.5F, 0.5F, 0.5F);
+//            world.setActiveCamera(camera);
         } else {
             // Next display
             running = false;
@@ -232,6 +410,21 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
 
 
     // ====================================================================================
+
+    private static Mesh createArrow() {
+        byte[] positions = new byte[] {-1,0,0, -1,1,0, 1,0,0, 1,1,0, -2,0,0, 2,0,0, 0,-1,0} ;
+        VertexBuffer arrowVertexData = new VertexBuffer();
+
+        VertexArray vertexPositions = new VertexArray(positions.length/3, 3, 1);
+        vertexPositions.set(0,positions.length/3,positions);
+        arrowVertexData.setPositions(vertexPositions, 1, null);
+
+        int[] indices = {0,1,2,3,4,5,6};
+
+        TriangleStripArray arrowTriangles = new TriangleStripArray(indices, new int[] {4,3});
+
+        return new Mesh(arrowVertexData, arrowTriangles, new Appearance());
+    }
     /**
      * Creates a sphere that's subdivided with the given number of
      * slices and stacks. The minimum number is two and three for slices
@@ -244,7 +437,7 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
      * @param addTexCoords true to generate texture coordinates, false otherwise.
      * @return sphere.
      */
-    public static Mesh createSphere(int slices, int stacks, boolean addNormals, boolean addTexCoords) {
+    private static Mesh createSphere(int slices, int stacks, boolean addNormals, boolean addTexCoords) {
         if (slices < 2) {
             throw new IllegalArgumentException("Minimum number of slices is 2.");
         }
@@ -346,19 +539,23 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
         return new Mesh(vertexBuffer, triangles, new Appearance());
     }
 
-    public static void addRandomColors(Mesh mesh) {
-        Random random = new Random();
-        int vertexCount = mesh.getVertexBuffer().getVertexCount();
-        byte[] colors = new byte[vertexCount * 3];
-
-        for (int i = 0; i < colors.length; i++) {
-            colors[i] = (byte) random.nextInt(256);
-        }
-
-        VertexArray vertexColors = new VertexArray(vertexCount, 3, 1);
-        vertexColors.set(0, vertexCount, colors);
-        mesh.getVertexBuffer().setColors(vertexColors);
-    }
+    /**
+     * Add ramdon color
+     * @param mesh the mesh on which to add color
+     */
+//    public static void addRandomColors(Mesh mesh) {
+//        Random random = new Random();
+//        int vertexCount = mesh.getVertexBuffer().getVertexCount();
+//        byte[] colors = new byte[vertexCount * 3];
+//
+//        for (int i = 0; i < colors.length; i++) {
+//            colors[i] = (byte) random.nextInt(256);
+//        }
+//
+//        VertexArray vertexColors = new VertexArray(vertexCount, 3, 1);
+//        vertexColors.set(0, vertexCount, colors);
+//        mesh.getVertexBuffer().setColors(vertexColors);
+//    }
 
     /**
      * Creates a cube with one vertex per corner. The edge length is
@@ -367,28 +564,28 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
      *
      * @return cube mesh.
      */
-    public static Mesh createMinimalCube() {
-        byte[] positions = {
-            -1, -1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1,
-            -1, -1, -1, 1, -1, -1, -1, 1, -1, 1, 1, -1
-        };
-
-        int[] triangleIndices = {
-            0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
-        };
-
-        int[] triangleLengths = {triangleIndices.length};
-        VertexBuffer vertexBuffer = new VertexBuffer();
-
-        VertexArray vertexPositions = new VertexArray(positions.length / 3, 3, 1);
-        vertexPositions.set(0, positions.length / 3, positions);
-        vertexBuffer.setPositions(vertexPositions, 1, null);
-
-        TriangleStripArray triangles = new TriangleStripArray(
-                triangleIndices, triangleLengths);
-
-        return new Mesh(vertexBuffer, triangles, new Appearance());
-    }
+//    public static Mesh createMinimalCube() {
+//        byte[] positions = {
+//            -1, -1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1,
+//            -1, -1, -1, 1, -1, -1, -1, 1, -1, 1, 1, -1
+//        };
+//
+//        int[] triangleIndices = {
+//            0, 1, 2, 3, 7, 1, 5, 4, 7, 6, 2, 4, 0, 1
+//        };
+//
+//        int[] triangleLengths = {triangleIndices.length};
+//        VertexBuffer vertexBuffer = new VertexBuffer();
+//
+//        VertexArray vertexPositions = new VertexArray(positions.length / 3, 3, 1);
+//        vertexPositions.set(0, positions.length / 3, positions);
+//        vertexBuffer.setPositions(vertexPositions, 1, null);
+//
+//        TriangleStripArray triangles = new TriangleStripArray(
+//                triangleIndices, triangleLengths);
+//
+//        return new Mesh(vertexBuffer, triangles, new Appearance());
+//    }
     /**
      * Called when the drawable area of the Canvas has been changed
      * @param w the new width in pixels of the drawable area of the Canvas
@@ -397,7 +594,7 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
     protected void sizeChanged(int w, int h) {
         getHeight = h;
         getWidth = w;
-        Camera camera = world.getActiveCamera();
+        camera = world.getActiveCamera();
         float aspect = (float) getWidth / (float) getHeight;
         camera.setPerspective(90, aspect, 1, 1000);
         world.setActiveCamera(camera);

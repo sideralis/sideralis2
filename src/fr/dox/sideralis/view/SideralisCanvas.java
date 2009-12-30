@@ -10,6 +10,7 @@ package fr.dox.sideralis.view;
  */
 
 import fr.dox.sideralis.ConfigParameters;
+import fr.dox.sideralis.Help;
 import fr.dox.sideralis.LocalizationSupport;
 import fr.dox.sideralis.Sideralis;
 import fr.dox.sideralis.data.ConstellationCatalog;
@@ -42,28 +43,36 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
     /** Width and height of the display */
     private int getHeight, getWidth;
     /** Flag for stopping the animation thread.*/
+    private boolean runningCmd;
+    /** Flag indicating if the animation thread has stopped */
     private boolean running;
     /** 2D graphics singleton used for rendering. */
     private Graphics graphics;
+    /** The string used to indicat the cardinate pole */
     private static String northString, southString, eastString, westString;
     /** The calling midlet */
     private final Sideralis myMidlet;
     /** The sky object */
     private final Sky mySky;
     /** The projection used to display the objects on the screen */
-    private final ScreenProj myProjection;
+    private ScreenProj myProjection;
     /** Table to store x and y position on screen of stars */
     protected ScreenCoord[] screenCoordStars;
     protected ScreenCoord[] screenCoordMessier;
     protected ScreenCoord screenCoordSun;
     protected ScreenCoord screenCoordMoon;
     protected ScreenCoord[] screenCoordPlanets;
+    /** The font used */
     private final Font myFont;
     // ------------------
     // --- For cursor ---
+    /** Index of the closest constellation */
     private int idxClosestConst;
+    /** Index of the closest object */
     private int idxClosestObject;
+    /** Type of the closest object (Planet, Star, Messier, ...) */
     private int typeClosestObject;
+    /** Toggling color of the closest constellation */
     private int colorClosestConst;
     /** The counter associated to this action: if the cursor does not move for sometime, it is not displayed anymore */
     private short displayCursor;
@@ -73,6 +82,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
     private int xCursor, yCursor;
     /** All informations about object */
     private String objectName, magName, distName, azName, heiName;
+    /** The string used for azimuth and height string - Defined at beginning to avoid multiple call the Localization class */
     private String AZ_NAME, HEI_NAME;
     /** Number of lines which will be used to display informations on star */
     private final short NB_OF_LINES = 5;
@@ -82,7 +92,6 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
     /** Name of the constellation which is shown by the cursor */
     private String constName1, constName2;
     /** The offset of the text containing the info text */
-    private int xInfoText, yInfoText;
     private int xInfoDest, xInfo;
     private int yInfoDest, yInfo;
     /** Default size in pixel for Moon and Sun */
@@ -93,20 +102,14 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
     private static final int COUNTER = 1000;
     /** The reset value of display Cursor before it disappears */
     private static final short COUNTER_CURSOR = 10;
+    /** The object used to manage touch screen */
     private final TouchScreen touchScreen;
     /** The position of the circle around the selected or highlighted objects */
     private short angle;
     private short angleHighlight;
-    /** To indicate if help is displayed or not. TODO use parameter instead*/
-    private boolean help;
-    /** Help text */
-    private String helpText;
-    /** The counter used to do transformation */
-    private int step;
-    /** An img object used to make transition between screen */
-    private Image imgOrg, imgRet;
-    /** The graphic object associated to the image above */
-    private Graphics gImg;
+    /** The Help object */
+    private Help myHelp;
+
     /** Number of frames per second */
     private static final int MAX_CPS = 10;
     /** Time in millisecond between 2 frames */
@@ -119,11 +122,10 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
     public SideralisCanvas(Sideralis myMidlet) {
         super(false);
         this.myMidlet = myMidlet;
-        running = false;
+        runningCmd = running = false;
         mySky = myMidlet.getMySky();
         myFont = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-//        myProjection = new ZenithProj(myMidlet, getHeight(), getWidth());
-        myProjection = new EyeProj(myMidlet, getHeight(), getWidth());
+        myProjection = new ZenithProj(myMidlet, getHeight(), getWidth());
         if (hasPointerEvents()) {
             touchScreen = new TouchScreen(getWidth(), getHeight());
         } else {
@@ -133,9 +135,17 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
         westString = LocalizationSupport.getMessage("WEST");
         southString = LocalizationSupport.getMessage("SOUTH");
         eastString = LocalizationSupport.getMessage("EAST");
-        helpText = LocalizationSupport.getMessage("HELP_ONSCREEN");
         AZ_NAME = new String(LocalizationSupport.getMessage("CURSOR_AZIMUTH_ABBR"));
         HEI_NAME = new String(LocalizationSupport.getMessage("CURSOR_HEIGHT_ABBR"));
+
+        graphics = getGraphics();
+
+        try {
+            cursorImage = Image.createImage("/Cursor.png");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
     }
 
@@ -143,7 +153,18 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
      * Create and initialize all objects needed to display the sky objects at the right position
      */
     public void init() {
-        graphics = getGraphics();
+
+        myHelp = new Help(new String[] {LocalizationSupport.getMessage("ZO"),
+                                        LocalizationSupport.getMessage("UP"),
+                                        LocalizationSupport.getMessage("ZI"),
+                                        LocalizationSupport.getMessage("LFT"),"",
+                                        LocalizationSupport.getMessage("RIT"),"",
+                                        LocalizationSupport.getMessage("DWN"),"",
+                                        LocalizationSupport.getMessage("PARAM_HOR"),
+                                        LocalizationSupport.getMessage("DIC"),
+                                        LocalizationSupport.getMessage("DIH")});
+        if (!myMidlet.getMyParameter().isSupport3D())
+            myHelp.setText(Help.STAR, "");
 
         idxClosestObject = idxClosestConst = -1;
         colorClosestConst = 0;
@@ -155,20 +176,12 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
         screenCoordStars = myProjection.getScreenCoordStars();
         screenCoordSun = myProjection.getScreenCoordSun();
 
-        try {
-            cursorImage = Image.createImage("/Cursor.png");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         xCursor = getWidth() / 2;
         yCursor = getHeight() / 2;
-        help = false;
-
     }
 
     /**
-     *
+     * Set the counter indicating when the position of objects must be calculated again
      * @param counter
      */
     public void setCounter(int counter) {
@@ -176,13 +189,14 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
     }
 
     /**
-     *
+     * Render the graphic scene
      * @param g
      */
     protected void render(Graphics g) {
         // =============================================================
         // === Check if we need to center screen to searched object ====
         // =============================================================
+        // TODO to correct the centering of searched object
         if (!myMidlet.getSearch().isFlagCentered()) {
             if (myProjection.getZoom() > 1) {
                 myProjection.decZoom();
@@ -211,7 +225,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
             mySky.setCalculationDone(false);
             mySky.setProgress(0);
             g.setColor(0x000000FF);
-            g.drawString("Wait", getWidth / 2, getHeight / 2, Graphics.HCENTER | Graphics.BASELINE);
+            g.drawString(LocalizationSupport.getMessage("PLEASE_WAIT"), getWidth / 2, getHeight / 2, Graphics.HCENTER | Graphics.BASELINE);
             project();
         } else {
             // ------------------------------------------------
@@ -261,22 +275,26 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
 
             // -------------------------------
             // ------ Draw progress bar ------
-            g.setColor(0x00ff);
+            g.setColor(0x00ff);                                                 // TODO set right color
             if (mySky.getProgress() != 0) {
                 g.drawLine(0, 0, mySky.getProgress() * getHeight / 100, 0);
             }
 
-            // -------------------------
-            // ------ Display help -----
-            if (myMidlet.getMyParameter().isHelpDisplayed()) {
-                g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_HELP]);
-                g.drawString(helpText, 0, getHeight - myFont.getHeight(), Graphics.TOP | Graphics.LEFT);
-            }
+            // ------------------------------
+            // ------ Draw directions -------
+            drawDirections(g);
+
             // --------------------------------
             // ------- Draw Help --------------
-            if (help) {
-                drawHelp(g);
+            if (myHelp.isDisplayed()) {
+                myHelp.draw(g);
             }
+
+            // Debug only
+            g.setColor(0xff);
+            g.drawString(new Integer(getHeight).toString(),0,0,Graphics.TOP|Graphics.LEFT);
+            g.drawString(new Integer(getWidth).toString(),0,10,Graphics.TOP|Graphics.LEFT);
+
         }
     }
 
@@ -285,9 +303,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
      * @param g the Graphics object
      */
     private void drawHorizon(Graphics g) {
-
         myProjection.drawHorizon(g);
-
     }
 
     /**
@@ -620,11 +636,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
 
         // Calculate position of info box
         if (yCursor < getHeight / 2) {
-            if (rMyParam.isHelpDisplayed()) {
-                yInfoDest = getHeight - vSize - myFont.getHeight() - 4;
-            } else {
-                yInfoDest = getHeight - vSize - 4;
-            }
+            yInfoDest = getHeight - vSize - 4;
         } else {
             yInfoDest = 6;
         }
@@ -656,36 +668,6 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
         g2.drawRoundRect(xInfo - 1, yInfo - 1, maxl + 1, vSize + 1, 8, 8);
     }
 
-    /**
-     * 
-     * @param g
-     */
-    private void drawHelp(Graphics g) {
-        int x, y, w, h;
-        String s;
-
-        h = getHeight * 9 / 10;
-        w = h * 3 / 4;
-        x = getWidth / 2 - w / 2;
-        y = getHeight / 2 - h / 2;
-
-        g.setColor(0);
-        g.fillRect(x, y, w, h);
-        g.setColor(0xff);
-        for (int i = 0; i < 12; i++) {
-            g.drawRect(x + (i % 3) * w / 3, y + (i / 3) * h / 4, w / 3, h / 4);
-            if (i == 9) {
-                s = new String("*");
-            } else if (i == 11) {
-                s = new String("#");
-            } else if (i == 10) {
-                s = new String("0");
-            } else {
-                s = new Integer((i + 1) % 10).toString();
-            }
-            g.drawString(s, x + (i % 3) * w / 3, y + (i / 3) * h / 4, Graphics.LEFT | Graphics.TOP);
-        }
-    }
 
     /**
      * Highlight the searched object if visible
@@ -741,7 +723,25 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
             }
         }
     }
+    private void drawDirections(Graphics g) {
+        g.setColor(0xff);
+        if (myProjection.is3D()) {
+            g.drawArc(2, getHeight-22, 20, 20, 0, 360);
+            g.drawArc(25, getHeight-22, 20, 20, 0, 360);
+            double x1,y1;
+            x1 = 12 - 9*Math.cos(myProjection.getRot()+Math.PI/2);
+            y1 = getHeight-12 -9*Math.sin(myProjection.getRot()+Math.PI/2);
+            g.drawLine(12, getHeight-12, (int)x1, (int)y1);
+            x1 = 35 + 9*Math.cos(myProjection.getRotV());
+            y1 = getHeight-12 -9*Math.sin(myProjection.getRotV());
+            g.drawLine(35, getHeight-12, (int)x1, (int)y1);
+        } else {
+            // TODO is not correct
+            g.drawString(" " + ((540 - (int)Math.toDegrees(myProjection.getRot()))%360) + "° ", getWidth / 2, getHeight - myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+        }
 
+
+    }
     /**
      * Update height and Azimuth for object pointed by cursor
      */
@@ -948,6 +948,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
     /**
      *
      * @param keyCode
+     * TODO add synchronized key word ?
      */
     protected void keyPressed(int keyCode) {
         // =====================================================================
@@ -962,15 +963,66 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
             myProjection.incZoom();
             project();
         }
+        
+        if (keyCode == KEY_POUND) {
+            if (myHelp.isDisplayed())
+                myHelp.setDisplayed(false);
+            else
+                myHelp.setDisplayed(true);
+        }
+
         if (!myMidlet.getMyParameter().isCursorDisplayed()) {
             // =================================================================
             // ===================== Default mode ==============================
             // * = Next display
             if (keyCode == KEY_STAR) {
+//#ifdef JSR184
                 if (myMidlet.getMyParameter().isSupport3D()) {
-                    running = false;
-                    myMidlet.nextDisplay();
+                    runningCmd = false;
+                    if (myProjection.is3D() == true) {
+                        // Switch to system solar view
+                        myHelp.setText(Help.STAR, LocalizationSupport.getMessage("ZEV"));
+                        try {
+                            Thread.sleep(MS_PER_FRAME);
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                        while (running == true) {}                              // Wait for the end of the thread before starting it again
+                        myProjection = new ZenithProj(myMidlet, getHeight(), getWidth());
+                        myProjection.setView();
+                        myProjection.init();
+                        screenCoordMessier = myProjection.getScreenCoordMessier();
+                        screenCoordMoon = myProjection.getScreenCoordMoon();
+                        screenCoordPlanets = myProjection.getScreenCoordPlanets();
+                        screenCoordStars = myProjection.getScreenCoordStars();
+                        screenCoordSun = myProjection.getScreenCoordSun();
+//                        myMidlet.nextDisplay();
+                        myProjection.setView();
+                        myProjection.project();
+                        runningCmd = true;
+                        new Thread(this).start();
+                    } else {
+                        // Switch to horizontal 3D view
+                        try {
+                            Thread.sleep(MS_PER_FRAME);
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                        while (running == true) {}                              // Wait for the end of the thread before starting it again
+                        myProjection = new EyeProj(myMidlet, getHeight(), getWidth());
+                        myProjection.setView();
+                        myProjection.init();
+                        screenCoordMessier = myProjection.getScreenCoordMessier();
+                        screenCoordMoon = myProjection.getScreenCoordMoon();
+                        screenCoordPlanets = myProjection.getScreenCoordPlanets();
+                        screenCoordStars = myProjection.getScreenCoordStars();
+                        screenCoordSun = myProjection.getScreenCoordSun();
+                        myProjection.project();
+                        runningCmd = true;
+                        new Thread(this).start();
+                    }
                 }
+//#endif
             }
             // 0 = Show cursor
             if (keyCode == KEY_NUM0) {
@@ -1016,6 +1068,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
             // 0 = Hide cursor
             if (keyCode == KEY_NUM0) {
                 myMidlet.getMyParameter().setCursor(false);
+                typeClosestObject = SkyObject.NONE;
             }
             if (getGameAction(keyCode) == UP) {
                 decYCursor();
@@ -1053,11 +1106,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
      * @param keyCode
      */
     protected void keyRepeated(int keyCode) {
-        if (keyCode == KEY_POUND) {
-            help = !help;
-        } else {
-            keyPressed(keyCode);
-        }
+        keyPressed(keyCode);
     }
 
     /**
@@ -1067,7 +1116,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
         if (xCursor < getWidth - myProjection.getZoom() * 2) {
             xCursor += myProjection.getZoom() * 2;
         } else {
-            myProjection.left();
+            myProjection.right();
             project();
         }
     }
@@ -1079,7 +1128,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
         if (xCursor > 2 * myProjection.getZoom() - 1) {
             xCursor -= 2 * myProjection.getZoom();
         } else {
-            myProjection.right();
+            myProjection.left();
             project();
         }
     }
@@ -1112,7 +1161,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
      * Stop the thread
      */
     public void stop() {
-        running = false;
+        runningCmd = false;
     }
 
     /**
@@ -1125,7 +1174,8 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
 
         getHeight = getHeight();                                                // Due to bug of 6680 and 6630
         getWidth = getWidth();                                                  // Due to bug of 6680 and 6630
-        while (running) {
+        running = true;
+        while (runningCmd) {
             cycleStartTime = System.currentTimeMillis();
             // Check if we need to calculate position
             if (counter == 0) {
@@ -1139,7 +1189,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
             }
             // Display scene.
             render(graphics);
-            flushGraphics();
+            flushGraphics(0,0,getWidth,getHeight);
 
             /* Thread is set to sleep if it remains some time before next frame */
             long timeSinceStart = (System.currentTimeMillis() - cycleStartTime);
@@ -1151,6 +1201,7 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
                 }
             }
         }
+        running = false;
     }
 
     /**
@@ -1166,8 +1217,8 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
      */
     protected void showNotify() {
         super.showNotify();
-        if (running == false) {
-            running = true;
+        if (runningCmd == false) {
+            runningCmd = true;
             new Thread(this).start();
         }
     }
@@ -1188,6 +1239,8 @@ public class SideralisCanvas extends GameCanvas implements Runnable {
         if (touchScreen != null) {
             touchScreen.setSize(w, h);
         }
+        // Set dimension of help
+        myHelp.setView(w, h);
     }
     /**
      *

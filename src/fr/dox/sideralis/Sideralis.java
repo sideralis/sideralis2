@@ -31,7 +31,7 @@ package fr.dox.sideralis;
  *          Add day, month and year selection                                   DONE
  *          Add key press continue on globe                                     DONE
  *          Add real time or select time display.                               DONE
- * v0.8.5   Add more constellations
+ * v0.8.5   Add more constellations                                             DONE
  *          Add dictionnary                                                     DONE
  *          Add horizon view.                                                   DONE
  *          Add possibility to shift right and left.                            DONE
@@ -67,25 +67,31 @@ package fr.dox.sideralis;
  *          Add more stars                                                      Done
  *          Display right ascension and declination                             Done     
  *          Support for large screen                                            Done
- * v1.3.5   GUI Code full rewrite                                               Done
+ * v1.5.0   GUI Code full rewrite                                               Done
  *          Support of multiple keys press                                      Done
- *          Support for sensors
  *          Add Uranus and Neptune                                              Done
  *          Improve precision for large planet                                  Done
  *          Add atmoshpere refraction                                           Done
  *          Add drawing of missing constellations                               Done
  *          Add more stars                                                      Done
  *          Add support for touch screen                                        Done
- *          Add 3D view                                                         Done
+ *          Add possibility to zoom and scroll in horizontal view               Done
+ *          Add new help system                                                 Done
+ * v1.6.0
+ *          Support for sensors
+ *          Add 3D system solar view
  *          Display moon phase.
- * v1.4.0   Add possibility to zoom and scroll in horizontal view
  *          Add altitude in position information/selection              
  *          Add Messier object pictures
  *          Add zoom centered on cursor
  *          Stars are displayed only during days
- * v1.5.0   Add milky way
+ *          Add light in 3D view
+ *          Add object in horizon view
+ * v1.7.0   Add milky way
  *          All corrections (nutation (p48), aberration (p50), parallaxe, ... ?)
- *          
+ */
+
+/*
  * v?.?.?   
  *          Keep backligh on
  *          Identify the moon of Jupiter
@@ -106,25 +112,30 @@ package fr.dox.sideralis;
  *          Add horizontal and vertical compass
  *          Add real sphere view
  *          Improve precision of moon by using elp82b
- *
- *  CODE IMPROVEMENT:
- *  - A SkyObject object father of all objects.                                 Done
- *  - Use of resources for color, ?                                             Not possible
- *  - New class for support of touch screen                                     Done
- *  - New canvas class for all views                                            On going
- *  - messages.properties in a new package                                      Done
- *  - A better format of data (for star, constellation and Messier objects)     Done
  */
 
-/** Supported phones 
- * Nokia 6233, E51, E65, N70, N73, N90
- * SE W300, W810i, K770i, K610i
- * Samsung SGH E-740, F480 
+/*
+ *  CODE IMPROVEMENT:
  */
-/** Not supported phones
- * SE P910
- * Nokia 6680
+
+/*
+ * TODO: Test on all Nokia phones
+ * TODO: Change touch screen support
+ * TODO: Perf and memory profiling
+ * TODO: Add constellation text
+ * TODO: add latitude and longitude
+ * TODO: Correct scrolling when using upper part
  */
+
+/*
+ * TODO: Later: Add light in system solar view
+ * TODO: Later: Add orbit in system solar view
+ * TODO: Later: Add ring to saturn
+ * TODO: Later: Add cursor in system solar view
+ * TODO: Later: Add touch screen support in system solar view
+ *
+ */
+
 import fr.dox.sideralis.data.ConstellationCatalog;
 import fr.dox.sideralis.data.MessierCatalog;
 import fr.dox.sideralis.data.Sky;
@@ -137,8 +148,7 @@ import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.object.CityObject;
 import fr.dox.sideralis.view.GlobeCanvas;
 //#ifdef JSR184
-import fr.dox.sideralis.view.Sideralis3DCanvas;
-import fr.dox.sideralis.view.SideralisEyesCanvas;
+//import fr.dox.sideralis.view.Sideralis3DCanvas;
 //#endif
 import fr.dox.sideralis.view.SideralisCanvas;
 import fr.dox.sideralis.view.SplashCanvas;
@@ -153,7 +163,7 @@ import javax.microedition.rms.RecordStore;
 
 /**
  * The MIDlet class. This is the first class called.
- * This class will also define all main objects: Position, BrightStars, HorizontalCoordinate, Sky
+ * This class will also define all main objects: Position, Sky, Canvas
  * All the forms are declared in this class. Only the canvas are declared in external class.
  *
  * @author  Bernard
@@ -163,20 +173,24 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     public String version,build;
     /** How often the calculation of position is refreshed */
     public static final long REFRESH_TIME_CALC = 1 * 10 * 1000;
-    
+    /** The position of the user */
     private Position myPosition;
+    /** The sky object coantaining all objects from the sky */
     private Sky mySky;
-    /** All the canvas */
+    /** The main canvas */
     private SideralisCanvas myCanvas;
+    /** The intro canvas */
     private final SplashCanvas mySplashCanvas;
+    /** The globe canvas */
     private GlobeCanvas globeCanvas;
 //#ifdef JSR184
-    private Sideralis3DCanvas my3DCanvas;
-    private SideralisEyesCanvas myEyesCanvas;
+    //private Sideralis3DCanvas my3DCanvas;
 //#endif
-
+    /** The display */
     private final Display myDisplay;
-    private boolean starting;
+    /** A boolean indicating if all objects have been created */
+    private boolean allObjectsCreated;
+    /** An object describing all the parameters that the user can set or unset */
     private ConfigParameters myParameter;
 
     /** The position form */
@@ -235,6 +249,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private StringItem[] helpStringItem;
     /** Some items for the info form */
     private StringItem[] infoStringItem;
+    /** The string indicating how much free memory we have */
+    private StringItem freeMemStringItem;
     /** Some items for the dico form */
     private StringItem[] dicoStringItem;
     /** Some items for the language form */
@@ -261,7 +277,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
      */
     public Sideralis() {
         // Flag to indicate that all objects have not yet been created
-        starting = true;
+        allObjectsCreated = true;
         pauseFlag = false;
         // Select language
         if (loadLanguage()) {
@@ -276,8 +292,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         // Display splash screen
         myDisplay = Display.getDisplay(this);
         myDisplay.setCurrent(mySplashCanvas);
-
-
     }
     /**
      * Creation of main objects (it takes time)
@@ -285,7 +299,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
      */
     protected void startApp() {
         if (pauseFlag == false) {
-            // Get versions and build number
+            // =====================================
+            // === Get versions and build number ===
             version = "v"+getAppProperty("MIDlet-Version");
             build = getAppProperty("build");
             int pos1 = build.indexOf('.');
@@ -307,14 +322,18 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 build = build.substring(1,build.length());
                 st = build.startsWith("0");
             }
-            // Set position and time
+            // =============================
+            // === Set position and time ===
             myPosition = new Position();
-            // Load position and parameters
+            // ====================================
+            // === Load position and parameters ===
             myParameter = new ConfigParameters();
             loadData();
-            // Create a sky
+            // ====================
+            // === Create a sky ===
             mySky = new Sky(myPosition);
-            // Create a search object
+            // ==============================
+            // === Create a search object ===
             mySearch = new Search(mySky);
             mySearch.createListOfObjets();
             // Calculate position of all objects
@@ -331,28 +350,30 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             else
                 myParameter.setSupport3D(false);
 
-//#ifdef JSR184
-            if (myParameter.isSupport3D()) {
-                my3DCanvas = new Sideralis3DCanvas(this);
-                my3DCanvas.setFullScreenMode(true);
-                my3DCanvas.init();
+            if ((System.getProperty("microedition.location.version") != null) && (System.getProperty("microedition.location.version").equals("1.0"))) // If API location exists on the phone
+                myParameter.setSupportGPS(true);
+            else
+                myParameter.setSupportGPS(false);
 
-                myEyesCanvas = new SideralisEyesCanvas(this);
-                myEyesCanvas.setFullScreenMode(true);
-                myEyesCanvas.init();
-                myEyesCanvas.project2D();
-            }
+//#ifdef JSR184
+//            if (myParameter.isSupport3D()) {
+//                my3DCanvas = new Sideralis3DCanvas(this);
+//                my3DCanvas.setFullScreenMode(true);
+//                my3DCanvas.init();
+//            }
 //#endif
-            // Create user interface
+            // ===============================
+            // ==== Create user interface ====
             createGUI();
+
             // Flag to indicate that everything is ready (all objects have been created)
-            starting = false;
+            allObjectsCreated = false;
         } else {
             pauseFlag = false;
          }
     }
     /**
-     *
+     * Called when the application is paused (for ex incomming call)
      */
     protected void pauseApp() {
         pauseFlag = true;
@@ -361,7 +382,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         }
     }
     /**
-     *
+     * To stop the application
      * @param unconditional
      * @throws MIDletStateChangeException
      */
@@ -430,9 +451,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         positionForm.append(realTimeButton);
         positionForm.addCommand(globeCommand);
         positionForm.addCommand(cityCommand);
-        if ((System.getProperty("microedition.location.version") != null) && (System.getProperty("microedition.location.version").equals("1.0"))) {// If API location exists on the phone
+        if (myParameter.isSupportGPS())                                         // If API location exists on the phone
             positionForm.addCommand(autoPositionCommand);
-        }
         positionForm.addCommand(cancelCommand);
         positionForm.addCommand(okCommand);
         positionForm.setCommandListener(this);
@@ -495,21 +515,15 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         // Create the help form
         helpForm = new Form(LocalizationSupport.getMessage("AH"));
         helpStringItem = new StringItem[]{
-                    new StringItem("Sideralis " + version+" b"+build, " © DoX - 2009"),
-                    new StringItem(LocalizationSupport.getMessage("AI"), "© Luc Bianco -- http://lucbianco.free.fr --"),
+                    new StringItem("Sideralis " + version+" b"+build, " © DoX 2005-2010"),
                     new StringItem(LocalizationSupport.getMessage("AJ"), LocalizationSupport.getMessage("AK")),
                     new StringItem("Sideralis ", LocalizationSupport.getMessage("AL")),
-                    new StringItem(LocalizationSupport.getMessage("AM"), ""),
-                    new StringItem(LocalizationSupport.getMessage("AN"), LocalizationSupport.getMessage("AO")),
-                    new StringItem(LocalizationSupport.getMessage("AP"), LocalizationSupport.getMessage("AQ")),
-                    new StringItem(LocalizationSupport.getMessage("AR"), LocalizationSupport.getMessage("AS")),
-                    new StringItem("0:", LocalizationSupport.getMessage("AT")),
-                    new StringItem(LocalizationSupport.getMessage("AU"), LocalizationSupport.getMessage("AV")),
-                    new StringItem("#:", LocalizationSupport.getMessage("AW")),
+                    new StringItem(LocalizationSupport.getMessage("AO")+" 1:", LocalizationSupport.getMessage("AM")),
+                    new StringItem(LocalizationSupport.getMessage("AO")+" 2:", LocalizationSupport.getMessage("AN")),
                     new StringItem(LocalizationSupport.getMessage("AX"), "-- sideralis@free.fr -- http://sideralis.free.fr --"),
                 };
         for (int i = 0; i < helpStringItem.length; i++) {
-            if (i == 4) {// Add a spacer before commands text.
+            if (i == 3 || i == 5) {// Add a spacer before commands text.
                 helpForm.append(new Spacer(400, 10));
             }
             helpForm.append(helpStringItem[i]);
@@ -526,10 +540,18 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                     new StringItem(LocalizationSupport.getMessage("B1"), new Integer(Sky.NB_OF_PLANETS).toString()),
                     new StringItem(LocalizationSupport.getMessage("B2"), "1"),
                     new StringItem(LocalizationSupport.getMessage("B3"), new Integer(MessierCatalog.getNumberOfObjects()).toString()),
+                    new StringItem(LocalizationSupport.getMessage("3D"),(myParameter.isSupport3D()==true)?LocalizationSupport.getMessage("YES"):LocalizationSupport.getMessage("NO")),
+                    new StringItem(LocalizationSupport.getMessage("GPS"),(myParameter.isSupportGPS()==true)?LocalizationSupport.getMessage("YES"):LocalizationSupport.getMessage("NO")),
                 };
+        freeMemStringItem = new StringItem(LocalizationSupport.getMessage("FRM"),new Long(Runtime.getRuntime().freeMemory()).toString()+" "+LocalizationSupport.getMessage("BYTES"));
+
         for (int i = 0; i < infoStringItem.length; i++) {
+            if (i==5)
+                infoForm.append(new Spacer(400,10));
             infoForm.append(infoStringItem[i]);
         }
+        infoForm.append(freeMemStringItem);
+
         infoForm.addCommand(backCommand);
         infoForm.setCommandListener(this);
 
@@ -630,6 +652,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             myDisplay.setCurrent(helpForm);
         } else if (c == infoCommand) {
             // To select info
+            freeMemStringItem.setText(new Long(Runtime.getRuntime().freeMemory()).toString()+" bytes");
             myDisplay.setCurrent(infoForm);
         } else if (c == dicoCommand) {
             // To select info
@@ -815,7 +838,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
 //#endif
 
     /**
-     *
+     * Called when the user is pressing a key or when the user is touching the screen
+     * Will move to the main canvas
      */
     public void endOfSplash() {
         myDisplay.setCurrent(myCanvas);
@@ -825,31 +849,18 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
      */
     public void nextDisplay() {
 //#ifdef JSR184
-        if (myDisplay.getCurrent() == my3DCanvas)
-            myDisplay.setCurrent(myCanvas);
-        else if (myDisplay.getCurrent() == myCanvas)
-            myDisplay.setCurrent(myEyesCanvas);
-        else
-            myDisplay.setCurrent(my3DCanvas);
+//        if (myDisplay.getCurrent() == my3DCanvas)
+//            myDisplay.setCurrent(myCanvas);
+//        else if (myDisplay.getCurrent() == myCanvas)
+//            myDisplay.setCurrent(my3DCanvas);
 //#endif
-    }
-    /**
-     *
-     */
-    public void end() {
-        try {
-            destroyApp(true);
-        } catch (MIDletStateChangeException ex) {
-            ex.printStackTrace();
-        }
-        notifyDestroyed();
     }
     /**
      * Return a boolean indicating if all objects have been created
      * @return true if all objects have not yet been created (in startApp()), false if they have all been created
      */
-    public boolean isStarting() {
-        return starting;
+    public boolean isAllObjectsCreated() {
+        return allObjectsCreated;
     }
 
     /**

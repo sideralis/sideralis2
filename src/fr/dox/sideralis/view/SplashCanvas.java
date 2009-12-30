@@ -143,7 +143,7 @@ public class SplashCanvas extends Canvas implements Runnable {
             g.drawString("" + myMidlet.version+" b"+myMidlet.build, getWidth / 2, getHeight - myFontNormal.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
         }
 
-        if (!myMidlet.isStarting()) {
+        if (!myMidlet.isAllObjectsCreated()) {
             g.setFont(myFontNormal);
             g.setColor(166, 34, 170);
             g.drawString(pressAnyKey, getWidth / 2, getHeight, Graphics.HCENTER | Graphics.BOTTOM);
@@ -155,7 +155,7 @@ public class SplashCanvas extends Canvas implements Runnable {
      */
     protected void keyPressed(int keyCode) {
         super.keyPressed(keyCode);
-        if (!myMidlet.isStarting()) {
+        if (!myMidlet.isAllObjectsCreated()) {
             running = false;
             myMidlet.endOfSplash();
         }
@@ -167,7 +167,7 @@ public class SplashCanvas extends Canvas implements Runnable {
      */
     protected void pointerPressed(int x, int y) {
         super.pointerPressed(x, y);
-        if (!myMidlet.isStarting()) {
+        if (!myMidlet.isAllObjectsCreated()) {
             running = false;
             myMidlet.endOfSplash();
         }

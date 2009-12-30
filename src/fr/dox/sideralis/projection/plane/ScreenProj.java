@@ -27,8 +27,6 @@ public abstract class ScreenProj {
     protected int shiftXView;
     /** Y offset of view inside display */
     protected int shiftYView;
-    /** The zoom of the screen */
-    protected float zoom;
     /** The rotation of the screen */
     protected float rot;
 
@@ -37,27 +35,17 @@ public abstract class ScreenProj {
     /** A reference to my midlet */
     protected Sideralis myMidlet;
 
-
+    /**
+     * The constructor of this abstract class
+     * @param myMidlet a reference to the calling midlet
+     * @param hD Height of the display
+     * @param wD Width of the display
+     */
     public ScreenProj(Sideralis myMidlet,int hD,int wD) {
         heightDisplay = hD;
         widthDisplay = wD;
         this.myMidlet = myMidlet;
         mySky = myMidlet.getMySky();
-    }
-
-    /**
-     * Return the zoom value
-     * @return the zoom value
-     */
-    public float getZoom() {
-        return zoom;
-    }
-    /**
-     * Set a value to the zoom
-     * @param zoom the new value of the zoom
-     */
-    public void setZoom(float zoom) {
-        this.zoom = zoom;
     }
 
     public abstract void left();
@@ -68,6 +56,9 @@ public abstract class ScreenProj {
     public abstract void scrollVer(float val);
     public abstract void incZoom();
     public abstract void decZoom();
+    public abstract float getZoom();
+    public abstract void setZoom(float zoom);
+    public abstract float getRotV();
     public abstract void project();
     public abstract void init();
     public abstract ScreenCoord[] getScreenCoordMessier();
@@ -77,7 +68,7 @@ public abstract class ScreenProj {
     public abstract ScreenCoord getScreenCoordSun();
     public abstract void drawHorizon(Graphics g);
     public abstract void setView();
-
+    public abstract boolean is3D();
 
     /**
      * Called in case of display change (rotation, ...)
@@ -93,7 +84,10 @@ public abstract class ScreenProj {
     public void setWidthDisplay(int widthDisplay) {
         this.widthDisplay = widthDisplay;
     }
-
+    /**
+     * Return the horizontal rotation in radian
+     * @return the angle of the horizontal rotation
+     */
     public double getRot() {
         return rot;
     }

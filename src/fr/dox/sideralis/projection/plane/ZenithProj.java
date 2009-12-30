@@ -14,9 +14,6 @@ import javax.microedition.lcdui.Graphics;
  * @author Bernard
  */
 public class ZenithProj extends ScreenProj {
-
-    /** the x shift of the screen */
-    private float shiftX;
     /** The y shift of the screen */
     private float shiftY;
     /** Table to store x and y position on screen of stars */
@@ -25,21 +22,24 @@ public class ZenithProj extends ScreenProj {
     private ScreenCoord screenCoordSun;
     private ScreenCoord screenCoordMoon;
     private ScreenCoord[] screenCoordPlanets;
+    /** The zoom of the screen */
+    private float zoom;
 
     /**
      * Constructor
+     * @param myMidlet the calling midlet
      * @param hD height of display
      * @param wD width of display
      */
     public ZenithProj(Sideralis myMidlet, int hD, int wD) {
         super(myMidlet,hD,wD);
         rot = 0;
-        shiftX = shiftY = 0;
+        shiftY = 0;
         zoom = 1.0F;
         setView();
     }
     /**
-     *
+     * Initialization of all variables
      */
     public void init() {
         screenCoordMessier = new ScreenCoord[MessierCatalog.getNumberOfObjects()];
@@ -55,13 +55,6 @@ public class ZenithProj extends ScreenProj {
         screenCoordPlanets = new ScreenCoord[Sky.NB_OF_PLANETS];
         for (int k=0;k<Sky.NB_OF_PLANETS;k++)
             screenCoordPlanets[k] = new ScreenCoord();
-    }
-    /**
-     * Return the rotation of the view
-     * @return the angle of rotation of the view
-     */
-    public double getRot() {
-        return rot;
     }
     /**
      * Set the new rotation of the view
@@ -131,7 +124,7 @@ public class ZenithProj extends ScreenProj {
         }
     }
     /**
-     * Increment the zoom by 0.5 (limited to 5) and scroll view ?
+     * Increment the zoom by 0.5 (limited to 5)
      */
     public void incZoom() {
         if (zoom < 5)
@@ -144,15 +137,6 @@ public class ZenithProj extends ScreenProj {
         if (shiftY < (1 - zoom)) {
             shiftY = 1 - zoom;
         }
-
-        if (shiftX > (zoom - 1)) {
-            shiftX = zoom - 1;
-        }
-
-        if (shiftX < (1 - zoom)) {
-            shiftX = 1 - zoom;
-        }
-
     }
     /**
      * Decrement zoom by 0.5 (limited to 1)
@@ -169,14 +153,9 @@ public class ZenithProj extends ScreenProj {
         if (shiftY < (1 - zoom)) {
             shiftY = 1 - zoom;
         }
-
-        if (shiftX > (zoom - 1)) {
-            shiftX = zoom - 1;
-        }
-
-        if (shiftX < (1 - zoom)) {
-            shiftX = 1 - zoom;
-        }
+    }
+    public float getRotV() {
+        return shiftY;
     }
     /**
      * Return the real x value on the screen from a x from a virtual display.
@@ -187,7 +166,7 @@ public class ZenithProj extends ScreenProj {
     public int getX(double virtualX) {
         double x;
 
-        x = 1 + virtualX * zoom + shiftX;
+        x = 1 + virtualX * zoom;
         x = x * getWidth/2 + shiftXView;
 
         return (int)x;
@@ -237,7 +216,10 @@ public class ZenithProj extends ScreenProj {
 
         return y;
     }
-
+    /**
+     * Project all the objects of the sky on the screen.
+     * Fill the screenCoordXXX variables
+     */
     public void project() {
         // === Stars ===
         for (int k = 0; k < getScreenCoordStars().length; k++) {
@@ -291,6 +273,7 @@ public class ZenithProj extends ScreenProj {
         }
     }
     /**
+     * Return the reference to the screen coordinates of the stars
      * @return the screenCoordStars
      */
     public ScreenCoord[] getScreenCoordStars() {
@@ -298,6 +281,7 @@ public class ZenithProj extends ScreenProj {
     }
 
     /**
+     * Return the reference to the screen coordinates of the Messier objects
      * @return the screenCoordMessier
      */
     public ScreenCoord[] getScreenCoordMessier() {
@@ -305,6 +289,7 @@ public class ZenithProj extends ScreenProj {
     }
 
     /**
+     * Return the reference to the screen coordinates of the Sun
      * @return the screenCoordSun
      */
     public ScreenCoord getScreenCoordSun() {
@@ -312,6 +297,7 @@ public class ZenithProj extends ScreenProj {
     }
 
     /**
+     * Return the reference to the screen coordinates of the Moon
      * @return the screenCoordMoon
      */
     public ScreenCoord getScreenCoordMoon() {
@@ -319,21 +305,46 @@ public class ZenithProj extends ScreenProj {
     }
 
     /**
+     * Return the reference to the screen coordinates of the planets
      * @return the screenCoordPlanets
      */
     public ScreenCoord[] getScreenCoordPlanets() {
         return screenCoordPlanets;
     }
-
+    /**
+     * Return the zoom value
+     * @return the zoom value
+     */
+    public float getZoom() {
+        return zoom;
+    }
+    /**
+     * Set a value to the zoom
+     * @param zoom the new value of the zoom
+     */
+    public void setZoom(float zoom) {
+        this.zoom = zoom;
+    }
+    /**
+     * Draw the horizon
+     * @param g the graphic object on which we draw
+     */
     public void drawHorizon(Graphics g) {
+        double x1,y1,x2,y2;
         // ----------------------------
         // -----   Clear screen   -----
         g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_BACKGROUND]);
-        g.fillRect(0, 0, getWidth, getHeight);
+        g.fillRect(0, 0, widthDisplay, heightDisplay);
         // ----------------------
         // ---- Draw horizon ----
         g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_ZENITH_BACKGROUND]);
-        g.fillRect(0, 0, getWidth, getHeight);
+
+        x1 = getX(-1);
+        y1 = getY(-1);
+        x2 = getX(1) - x1;
+        y2 = getY(1) - y1;
+
+        g.fillArc((int) x1, (int) y1, (int) x2, (int) y2, 0, 360);
     }
     /**
      * Set the new dimension of the view (a view size differs from the display size
@@ -345,5 +356,11 @@ public class ZenithProj extends ScreenProj {
         shiftXView = (widthDisplay>heightDisplay?(widthDisplay-heightDisplay)/2:0);
         shiftYView = (heightDisplay>widthDisplay?(heightDisplay-widthDisplay)/2:0);
     }
-
+    /**
+     * Indicates that it is a zenith view
+     * @return false
+     */
+    public boolean is3D() {
+        return false;
+    }
 }
