@@ -14,12 +14,15 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
 /**
- *
+ * This is the Canvas for the intro screen
  * @author gautier
  */
 public class SplashCanvas extends Canvas implements Runnable {
+    /** Height of the display */
     private int getHeight;
+    /** Width of the display */
     private int getWidth;
+    /** Boolean indicating if the task associated to this canvas is running or not */
     private boolean running;
     /** String used to store text and to avoid recurrent calls to LocalizationSupport */
     private String pleaseWait,pressAnyKey;
@@ -33,20 +36,26 @@ public class SplashCanvas extends Canvas implements Runnable {
     /** Different values for state machine of the splash screen display */
     static final short COUNT0 = -5;                                             // Constant color red screen
     static final short COUNT1 = 0;                                              // Decreasing color from red to black
-    static final short COUNT2 = 5;                                             // Constant color logo DoX
+    static final short COUNT2 = 5;                                              // Constant color logo DoX
     static final short COUNT3 = 15;
     static final short COUNT4 = 25;
+    /** The object to store the main image of the splash screen */
     private Image introImg;
+    /** The object to store the DoX logo of the splash screen */
     private Image logoImg;
+    /** The reference to the calling midlet */
     private final Sideralis myMidlet;
+    /** The 2 fonts used */
     private final Font myFontBold, myFontNormal;
 
     /**
-     *
+     * The constructor
+     * @param myMidlet the reference to the calling midlet
      */
     public SplashCanvas(Sideralis myMidlet) {
         this.myMidlet = myMidlet;
-
+        setFullScreenMode(true);
+        
         counter = COUNT0;
         myFontBold = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_LARGE);
         myFontNormal = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM);
@@ -61,7 +70,7 @@ public class SplashCanvas extends Canvas implements Runnable {
     }
 
     /**
-     *
+     * The main task, used to update the display
      */
     public void run() {
         long cycleStartTime;
@@ -84,11 +93,16 @@ public class SplashCanvas extends Canvas implements Runnable {
             }
         }
     }
-
+    /**
+     * Called when hide
+     */
     protected void hideNotify() {
         super.hideNotify();
     }
-
+    /**
+     * Called when displayed
+     * Here it is used to start the main task
+     */
     protected void showNotify() {
         super.showNotify();
         if (running == false) {
@@ -98,8 +112,8 @@ public class SplashCanvas extends Canvas implements Runnable {
     }
 
     /**
-     *
-     * @param g
+     * The paint method
+     * @param g the graphics object on which we draw
      */
     protected void paint(Graphics g) {
         if (counter<COUNT4+10)
@@ -143,31 +157,31 @@ public class SplashCanvas extends Canvas implements Runnable {
             g.drawString("" + myMidlet.version+" b"+myMidlet.build, getWidth / 2, getHeight - myFontNormal.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
         }
 
-        if (!myMidlet.isAllObjectsCreated()) {
+        if (myMidlet.isAllObjectsCreated()) {
             g.setFont(myFontNormal);
             g.setColor(166, 34, 170);
             g.drawString(pressAnyKey, getWidth / 2, getHeight, Graphics.HCENTER | Graphics.BOTTOM);
         }
     }
     /**
-     *
-     * @param keyCode
+     * The method called when a key is pressed
+     * @param keyCode the code of the key
      */
     protected void keyPressed(int keyCode) {
         super.keyPressed(keyCode);
-        if (!myMidlet.isAllObjectsCreated()) {
+        if (myMidlet.isAllObjectsCreated()) {
             running = false;
             myMidlet.endOfSplash();
         }
     }
     /**
-     *
-     * @param x
-     * @param y
+     * The method called when the user clicks on the display
+     * @param x the x coordinate to the clicked point
+     * @param y the y coordinate to the clicked point
      */
     protected void pointerPressed(int x, int y) {
         super.pointerPressed(x, y);
-        if (!myMidlet.isAllObjectsCreated()) {
+        if (myMidlet.isAllObjectsCreated()) {
             running = false;
             myMidlet.endOfSplash();
         }

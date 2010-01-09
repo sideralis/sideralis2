@@ -45,8 +45,15 @@ public abstract class Color {
             COL_BOX = COL_BOX_TEXT + 1,
             COL_MENUBAR = COL_BOX + 1,
             COL_MENUBAR2 = COL_MENUBAR + 1,
-            COL_MESSIER = COL_MENUBAR2 + 1,
-            COL_HIGHLIGHT = COL_MESSIER + 1;
+            COL_MESSIER_MAG0 = COL_MENUBAR2 + 1,
+            COL_MESSIER_MAG1 = COL_MESSIER_MAG0 + 1,
+            COL_MESSIER_MAG2 = COL_MESSIER_MAG1 + 1,
+            COL_MESSIER_MAG3 = COL_MESSIER_MAG2 + 1,
+            COL_MESSIER_MAG4 = COL_MESSIER_MAG3 + 1,
+            COL_MESSIER_MAG5 = COL_MESSIER_MAG4 + 1,
+            COL_HIGHLIGHT = COL_MESSIER_MAG5 + 1,
+            COL_KEYBOARD = COL_HIGHLIGHT +1;
+
     public static final int colorDay[] = {
             /* BACKGROUND */0x00000000,
             /* HELP       */ 0x00ffffff,
@@ -62,7 +69,7 @@ public abstract class Color {
             /* HISTORY    */ 0x00ffffff,
             /* INFO       */ 0x00ff0000,
             /* HORIZON    */ 0x00ff0000,
-            /* ZENITH_BCK */ 0x00000010,
+            /* ZENITH_BCK */ 0x00000038,
             /* ZENITH_EDGE*/ 0x00000005,
             /* CROSS      */ 0x003c3c3c,
             /* N_S_E_O    */ 0x007f00ff,
@@ -83,8 +90,14 @@ public abstract class Color {
             /* BOX        */ 0x000000c8,
             /* MENUBAR    */ 0x00FB16FF,
             /* MENUBAR2   */ 0x00803A7D,
-            /* MESSIER    */ 0x00ffff00,
+            /* MESSIER_MA0*/ 0x00ffff00,
+            /* MESSIER_MA1*/ 0x00d0d000,
+            /* MESSIER_MA2*/ 0x00a0a000,
+            /* MESSIER_MA3*/ 0x00707000,
+            /* MESSIER_MA4*/ 0x00404000,
+            /* MESSIER_MA5*/ 0x00101000,
             /* HIGHLIGHT  */ 0x000080ff,
+            /* KEYBOARD   */ 0x000000ff,
         };
     public static final int colorNight[] = {
             /* BACKGROUND */0x00000000,
@@ -122,7 +135,13 @@ public abstract class Color {
             /* BOX        */ 0x00ff0000,
             /* MENUBAR    */ 0x00B00000,
             /* MENUBAR2   */ 0x00800000,
-            /* MESSIER    */ 0x00800000,
+            /* MESSIER_MA0*/ 0x00ff0000,
+            /* MESSIER_MA1*/ 0x00d00000,
+            /* MESSIER_MA2*/ 0x00a00000,
+            /* MESSIER_MA3*/ 0x00700000,
+            /* MESSIER_MA4*/ 0x00400000,
+            /* MESSIER_MA5*/ 0x00100000,
             /* HIGHLIGHT  */ 0x00800000,
+            /* KEYBOARD   */ 0x00ff0000,
         };
 }

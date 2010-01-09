@@ -9,7 +9,7 @@ import fr.dox.sideralis.object.MessierObject;
  * @author Bernard
  */
 public class MessierCatalog {
-
+    /** The definition of all Messier objects */
     private static final MessierObject[] messierObject = {
         new MessierObject(5.575F,22.0166666666667F,(short)84,6.3F,"M 1"),
         new MessierObject(21.5583333333333F,-0.816666666666667F,(short)65,36F,"M 2"),

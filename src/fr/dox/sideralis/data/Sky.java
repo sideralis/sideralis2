@@ -18,6 +18,7 @@ import fr.dox.sideralis.projection.sphere.SunProj;
  * @author Bernard
  */
 public class Sky implements Runnable {
+    /** A variable to store the progress of in calculation of positions */
     private int progress;
     /** The projection (height, azimuth) of all my stars */
     private final StarProj[] starsProj;
@@ -53,10 +54,11 @@ public class Sky implements Runnable {
     private final PlanetObject neptuneObject;
     /** The Earth planet description */
     private final PlanetObject earthObject;
-
+    /** A table storing all planets objects */
     private final PlanetObject[] planetObjects;
+    /** A table storing all projections of planets */
     private final PlanetProj[] planetProj;
-
+    /** Indicate if the calculation of projection is done */
     private boolean calculationDone;
 
     /** Number of planets */
@@ -67,7 +69,7 @@ public class Sky implements Runnable {
      */
     public Sky(Position myPosition) {
         int i,i1,i2;
-        // Create all stars - We cumulate the catalog
+        // Create all stars - We cumulate the 2 catalogs
         starsProj = new StarProj[StarCatalogConst.getNumberOfStars()+StarCatalogMag.getNumberOfStars()];
         for (i=i1=i2=0;i<starsProj.length;i++) {
             if (i<StarCatalogConst.getNumberOfStars())
@@ -165,6 +167,7 @@ public class Sky implements Runnable {
             messierProj[i] = new MessierProj(MessierCatalog.getObject(i));
         }
         
+        calculationDone = false;
         this.myPosition = myPosition;
         Projection.setPosition(myPosition);                                     // Set the static field myPosition in Projection objects
     }
@@ -236,7 +239,7 @@ public class Sky implements Runnable {
         return calculationDone;
     }
     /**
-     *
+     * To set the boolean indicating if the calculation of projection is done
      * @param calculationDone
      */
     public void setCalculationDone(boolean calculationDone) {
@@ -248,10 +251,9 @@ public class Sky implements Runnable {
      */
     public void run() {
         calculate();
-        calculationDone = true;
     }
     /**
-     * 
+     * Calculate all time variables
      */
     public void calculateTimeVariables() {
         myPosition.getTemps().adjustDate();
@@ -261,7 +263,7 @@ public class Sky implements Runnable {
         Projection.calcStaticVar();
     }
     /**
-     * Add time, calculate new time variables and calculates the star position and other objects
+     * Add time, calculate new time variables and calculates the stars position and all other objects
      */
     public void calculate() {
     	setProgress(0);
@@ -285,7 +287,6 @@ public class Sky implements Runnable {
                 step += 100;
                 setProgress(step/size);
             }
-
         }
 
         // ----------------------------------
@@ -317,6 +318,7 @@ public class Sky implements Runnable {
             }
         }
     	setProgress(100);
+        calculationDone = true;
     }
     /**
      * Return the progress index in the calculation of the projection of all object
@@ -326,11 +328,10 @@ public class Sky implements Runnable {
         return progress;
     }
     /**
-     *
+     * Used to reset the progress indicator
      * @param progress
      */
     public void setProgress(int progress) {
         this.progress = progress;
     }
-
 }

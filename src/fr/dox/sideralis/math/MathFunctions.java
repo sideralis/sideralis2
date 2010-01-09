@@ -33,8 +33,8 @@ public class MathFunctions {
             for (k=1;k<PREC_ARCSIN;k++) {
                 tmp3 *= (0.5+k-1);
                 tmp1 = tmp3;
-                tmp2 = 1;
-                for (i=0;i<2*k+1;i++)
+                tmp2 = z;
+                for (i=1;i<2*k+1;i++)
                     tmp2 *= z;
                 tmp1 *= tmp2;
                 tmp1 /= (2*k+1);
@@ -52,8 +52,8 @@ public class MathFunctions {
             for (k=1;k<PREC_ARCSIN;k++) {
                 tmp3 *= (0.5 + k-1);
                 tmp1 = tmp3;
-                tmp2 = 1;
-                for (i=0;i<k;i++)
+                tmp2 = ((1-z)/2);
+                for (i=1;i<k;i++)
                     tmp2 *= ((1-z)/2);
                 tmp1 *= tmp2;
                 tmp1 /= (2*k+1);
@@ -67,8 +67,8 @@ public class MathFunctions {
             // = (-Pi/2 + Racine de 2*racine de z+1)*Sum(k=0 a N) de (produit de j=0 a k-1 de (0.5+j))*(z+1) exp k) div (2exp k * k! * 2k+1)
             for (k=0;k<PREC_ARCSIN;k++) {
                 tmp1 = PochHammer(0.5,k);
-                tmp2 = 1;
-                for (i=0;i<k;i++)
+                tmp2 = ((z+1)/2);
+                for (i=1;i<k;i++)
                     tmp2 *= ((z+1)/2);
                 tmp1 *= tmp2;
                 tmp1 /= (2*k+1);
@@ -190,9 +190,12 @@ public class MathFunctions {
         tmp = (tmp - m)*60;
         s = (int)tmp;
         val2 = (int)((val - ((int)(val*1000))/1000)*1000);
-        res = res + deg + "\u00BA"+m+"'"+s+"\"";
+        res = res + deg + "\u00B0"+m+"'"+s+"\"";
+        String t = ""+val2;
+        while (t.length()!=3)
+            t = "0".concat(t);
         if (flag)
-            res += " (" + (int)val+"."+val2+"\u00BA)";
+            res += " (" + (int)val+"."+t+"\u00B0)";
 
         return res;        
     }
@@ -238,10 +241,16 @@ public class MathFunctions {
      */
     private static double PochHammer(double a,int n) {
         int k;
-        double res=1;
-        
-        for (k=0;k<n;k++)
-            res *= (a+k);
+        double res;
+
+        if (n==0) {
+            res =  1;
+        } else {
+            res = a;
+
+            for (k=1;k<n;k++)
+                res *= (a+k);
+        }
         return res;
         
     }

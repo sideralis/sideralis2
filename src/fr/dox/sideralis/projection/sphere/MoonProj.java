@@ -212,7 +212,7 @@ public class MoonProj extends Projection {
                - 0.000023*Math.cos(2*F-2*D+Mp)
                + e*0.000019*Math.cos(4*D-M-Mp);
         
-        dist = 6378.14/Math.sin(Math.toRadians(pi));
+        dist = (float)(6378.14/Math.sin(Math.toRadians(pi)));
                
         
         o1 = 0.0004664*Math.cos(O);

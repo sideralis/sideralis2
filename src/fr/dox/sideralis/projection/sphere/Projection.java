@@ -30,7 +30,7 @@ public class Projection {
     /** Theta value for the sun */
     static protected double theta,thetaApp,epsilon;
     /** The distance from earth of this object */
-    protected double dist;
+    protected float dist;
     /** The precession values */
     protected double dAlpha,dDelta; 
     /** Angle horaire */
@@ -70,7 +70,7 @@ public class Projection {
      * Return the distance from earth to object
      * @return distance in km or ua from earth to object
      */
-    public double getDistance() {
+    public float getDistance() {
         return dist;
     }
     /** 
@@ -247,7 +247,6 @@ public class Projection {
             R = 7.5262-2.2204*MathFunctions.log(hDeg+2.6);
             R *= R/60;
         }
-        //System.out.println("R="+R);
         return Math.toRadians(hDeg+R);
     }
     /**
@@ -304,5 +303,13 @@ public class Projection {
         longitudeDiv15 = myPosition.getLongitude()/15;
         latitudeInRad = Math.toRadians(myPosition.getLatitude());
         HS = myPosition.getTemps().getHS();
+    }
+
+    public String toString() {
+        String s;
+
+        s = "H:"+hau + " / A:"+az;
+
+        return s;
     }
 }

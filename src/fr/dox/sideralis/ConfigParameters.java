@@ -14,7 +14,7 @@ import fr.dox.sideralis.object.CityObject;
 import fr.dox.sideralis.view.color.Color;
 
 /**
- *
+ * A class used to store and manage all parameters of the application
  * @author Bernard
  */
 public class ConfigParameters {
@@ -36,6 +36,8 @@ public class ConfigParameters {
     private boolean support3D;
     /** True if GPS is supported */
     private boolean supportGPS;
+    /** To know if we are displaying the debug info */
+    private boolean debug;
     
     /** A table storing the names of all parameters */
     private static final String[] paramNames = new String[] {LocalizationSupport.getMessage("PARAM_CONST"),
@@ -64,7 +66,10 @@ public class ConfigParameters {
     public static final short SID_TIME =NB_PARAM+1;                             // No variable
     // Total number of values and parameters
     public static final short NB_OPT = NB_PARAM+2;
-        
+
+    /** */
+    private long[] timeCalculate, timeDisplay;
+    private static final int TIME_SIZE = 40;
     /**
      * Creates a new instance of ConfigParameters 
      */
@@ -74,6 +79,10 @@ public class ConfigParameters {
         constStory = false;
         horizontalView = false;
         support3D = false;
+        debug = false;
+        timeCalculate = new long[TIME_SIZE];
+        timeDisplay = new long[TIME_SIZE];
+
 
         // Boolean parameters
         parameters = new boolean[paramNames.length];
@@ -81,7 +90,7 @@ public class ConfigParameters {
         parameters[CONSTELLATIONS_NAME_LATIN_DISPLAYED] = false;
         parameters[CONSTELLATIONS_DISPLAYED] = true;
         parameters[PLANETS_DISPLAYED] = true;
-        parameters[PLANETS_NAME_DISPLAYED] = false;        
+        parameters[PLANETS_NAME_DISPLAYED] = true;
         parameters[STARS_AS_FILLED_CIRCLES]= false;
         parameters[STARS_COLORED] = true;
         parameters[NIGHT_VIEW] = false;
@@ -367,5 +376,51 @@ public class ConfigParameters {
     public void setSupportGPS(boolean supportGPS) {
         this.supportGPS = supportGPS;
     }
+    /**
+     *
+     * @return
+     */
+    public boolean isDebug() {
+        return debug;
+    }
+    /**
+     *
+     * @param debug
+     */
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
 
+    public void addTimeCalculate(long l) {
+        for (int i=0;i<TIME_SIZE-1;i++)
+            timeCalculate[i+1] = timeCalculate[i];
+        timeCalculate[0] = l;
+    }
+
+    public void addTimeDisplay(long l) {
+        for (int i=0;i<TIME_SIZE-1;i++)
+            timeDisplay[i+1] = timeDisplay[i];
+        timeDisplay[0] = l;
+    }
+
+    public long getTimeCalculate() {
+        long res = 0;
+        int nb = 0;
+        for (int i=0;i<TIME_SIZE;i++) {
+            res += timeCalculate[i];
+            if (timeCalculate[i] != 0)
+                nb++;
+        }
+        if (nb != 0)
+            return res/nb;
+        else
+            return 0;
+    }
+
+    public long getTimeDisplay() {
+        long res = 0;
+        for (int i=0;i<TIME_SIZE;i++)
+            res += timeDisplay[i];
+        return res/TIME_SIZE;
+    }
  }

@@ -9,7 +9,6 @@ import fr.dox.sideralis.data.Sky;
 import fr.dox.sideralis.object.PlanetObject;
 import fr.dox.sideralis.object.ScreenCoord;
 import fr.dox.sideralis.view.color.Color;
-import java.io.IOException;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -23,7 +22,6 @@ import javax.microedition.m3g.Light;
 import javax.microedition.m3g.Material;
 import javax.microedition.m3g.Mesh;
 import javax.microedition.m3g.PolygonMode;
-import javax.microedition.m3g.Sprite3D;
 import javax.microedition.m3g.Transform;
 import javax.microedition.m3g.TriangleStripArray;
 import javax.microedition.m3g.VertexArray;
@@ -83,7 +81,7 @@ public class Sideralis3DCanvas extends GameCanvas implements Runnable {
     private Image2D image2D;
     /**
      * The constructor
-     * @param myMidleta reference to the calling midlet
+     * @param myMidlet a reference to the calling midlet
      */
     public Sideralis3DCanvas(Sideralis myMidlet) {
         super(false);

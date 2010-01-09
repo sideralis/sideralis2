@@ -13,7 +13,7 @@ import javax.microedition.location.LocationProvider;
 
 
 /**
- *
+ * A class used to access the GPS information
  * @author Bernard
  */
 public class LocateMe extends Thread {

@@ -4,6 +4,7 @@
  */
 package fr.dox.sideralis;
 
+import fr.dox.sideralis.view.color.Color;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
@@ -21,6 +22,9 @@ public class Help {
     private int x,y,w,h,keyHeight,keyWidth;
     /** boolean indicating if help must be displayed or not*/
     private boolean displayed;
+    /** The calling midlet */
+    private final Sideralis myMidlet;
+
     /** All keys 0-9 + '*' + '#'+ 4 directions */
     private static final short NB_OF_KEYS = 12;
     /** The index of keys */
@@ -41,23 +45,25 @@ public class Help {
      * The basic constructor
      * All help text is initialized by empty string
      */
-    public Help() {
+    public Help(Sideralis myMidlet) {
         keyText = new String[NB_OF_KEYS];
         for (int i = 0; i < NB_OF_KEYS; i++) {
             keyText[i] = "";
         }
         displayed = false;
+        this.myMidlet = myMidlet;
     }
     /**
      * The constructor
      * @param text A table of string defining the meaning of each key
      */
-    public Help(String[] text) {
+    public Help(Sideralis myMidlet, String[] text) {
         keyText = new String[NB_OF_KEYS];
         for (int i = 0; i < NB_OF_KEYS; i++) {
             keyText[i] = new String(text[i]);
         }
         displayed = false;
+        this.myMidlet = myMidlet;
     }
     /**
      * Set the help text of a given key
@@ -114,7 +120,7 @@ public class Help {
         g.fillRect(x, y, w, h);
 
         // Draw the 12 keys: 0-9 + # + *
-        g.setColor(0xff);                                                       // TODO: call color
+        g.setColor(myMidlet.getMyParameter().getColor()[Color.COL_KEYBOARD]);
         for (int i = 0; i < 12; i++) {
             g.drawRoundRect(x + (i % 3) * keyWidth, y + (i / 3) * keyHeight, keyWidth, keyHeight,15,15);
             if (i == STAR) {

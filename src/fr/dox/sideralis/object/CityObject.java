@@ -43,6 +43,5 @@ public class CityObject {
      */
     public String getName() {
         return name;
-    }
-    
+    } 
 }

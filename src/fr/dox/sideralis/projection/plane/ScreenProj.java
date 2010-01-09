@@ -9,41 +9,34 @@ import fr.dox.sideralis.Sideralis;
 import fr.dox.sideralis.data.Sky;
 import fr.dox.sideralis.object.ScreenCoord;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.game.GameCanvas;
 
 /**
  *
  * @author Bernard
  */
 public abstract class ScreenProj {
-    /** The height of the screen */
-    protected int heightDisplay;
-    /** the width of the screen */
-    protected int widthDisplay;
-    /** The height of the view */
+    /** The height of the display */
     protected int getHeight;
-    /** The width of the view */
+    /** The width of the display */
     protected int getWidth;
-    /** X offset of view inside display */
-    protected int shiftXView;
-    /** Y offset of view inside display */
-    protected int shiftYView;
     /** The rotation of the screen */
     protected float rot;
 
     /** A reference to the sky */
-    protected Sky mySky;
+    protected final Sky mySky;
     /** A reference to my midlet */
-    protected Sideralis myMidlet;
+    protected final Sideralis myMidlet;
 
     /**
      * The constructor of this abstract class
      * @param myMidlet a reference to the calling midlet
-     * @param hD Height of the display
      * @param wD Width of the display
+     * @param hD Height of the display
      */
-    public ScreenProj(Sideralis myMidlet,int hD,int wD) {
-        heightDisplay = hD;
-        widthDisplay = wD;
+    public ScreenProj(Sideralis myMidlet,int wD,int hD) {
+        getHeight = hD;
+        getWidth = wD;
         this.myMidlet = myMidlet;
         mySky = myMidlet.getMySky();
     }
@@ -67,29 +60,23 @@ public abstract class ScreenProj {
     public abstract ScreenCoord getScreenCoordMoon();
     public abstract ScreenCoord getScreenCoordSun();
     public abstract void drawHorizon(Graphics g);
-    public abstract void setView();
+    public abstract void setView(int w,int h);
     public abstract boolean is3D();
 
-    /**
-     * Called in case of display change (rotation, ...)
-     * @param heightDisplay the new height of the display
-     */
-    public void setHeightDisplay(int heightDisplay) {
-        this.heightDisplay = heightDisplay;
-    }
-    /**
-     * Called in case of display change (rotation, ...)
-     * @param widthDisplay the new width of the display
-     */
-    public void setWidthDisplay(int widthDisplay) {
-        this.widthDisplay = widthDisplay;
-    }
     /**
      * Return the horizontal rotation in radian
      * @return the angle of the horizontal rotation
      */
     public double getRot() {
         return rot;
+    }
+
+    public int getHeight() {
+        return getHeight;
+    }
+
+    public int getWidth() {
+        return getWidth;
     }
 
 }

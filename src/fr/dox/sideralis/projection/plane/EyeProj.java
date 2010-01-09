@@ -14,7 +14,6 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.m3g.Appearance;
 import javax.microedition.m3g.Camera;
 import javax.microedition.m3g.Graphics3D;
-import javax.microedition.m3g.Light;
 import javax.microedition.m3g.Mesh;
 import javax.microedition.m3g.PolygonMode;
 import javax.microedition.m3g.Transform;
@@ -40,7 +39,7 @@ public class EyeProj extends ScreenProj {
     /** The horizon */
     private Mesh horizon;
     /** The lights */
-    private Light lightSun, lightMoon;
+//    private Light lightSun, lightMoon;
     /** The camera */
     private Camera camera;
     /** The Camera Transform */
@@ -62,22 +61,23 @@ public class EyeProj extends ScreenProj {
     private VertexBuffer genericVertexBuffer;
     private VertexArray genericVertexPositions;
 
-    private int SUN = Sky.NB_OF_PLANETS;
-    private int MOON = SUN + 1;
+    private static final int SUN = Sky.NB_OF_PLANETS;
+    private static final int MOON = SUN + 1;
     /**
      * The constructor
      * @param myMidlet a reference to the calling midlet
-     * @param hD the height of the display
      * @param wD the width of the display
+     * @param hD the height of the display
      */
-    public EyeProj(Sideralis myMidlet, int hD, int wD) {
-        super(myMidlet, hD, wD);
+    public EyeProj(Sideralis myMidlet, int wD, int hD) {
+        super(myMidlet, wD, hD);
+        setView(wD,hD);
     }
     /**
      * Intialization
      */
     public void init() {
-        double x,y,z;
+        graphics3D = Graphics3D.getInstance();
 
         fov = 70;
         near = 1;
@@ -108,22 +108,20 @@ public class EyeProj extends ScreenProj {
         coord2DMessiers = new float[MessierCatalog.getNumberOfObjects() *4];
 
 
-        graphics3D = Graphics3D.getInstance();
-
         // Create a sky
         createSky();
 
         // Create the lights
-        if (mySky.getSun().getHeight()>0) {
-            lightSun = new Light();
-            lightSun.setMode(Light.DIRECTIONAL);
-            lightSun.setIntensity(10);
-            x = Math.cos(mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
-            y = Math.sin(mySky.getSun().getHeight());
-            z = Math.sin(mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
-            lightSun.translate((float)x, (float)y, (float)z);
-            graphics3D.addLight(lightSun, null);
-        }
+//        if (mySky.getSun().getHeight()>0) {
+//            lightSun = new Light();
+//            lightSun.setMode(Light.DIRECTIONAL);
+//            lightSun.setIntensity(10);
+//            x = Math.cos(mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
+//            y = Math.sin(mySky.getSun().getHeight());
+//            z = Math.sin(mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
+//            lightSun.translate((float)x, (float)y, (float)z);
+//            graphics3D.addLight(lightSun, null);
+//        }
 
         // Create an horizon
         horizon = createHorizon();
@@ -272,12 +270,12 @@ public class EyeProj extends ScreenProj {
         cameraTransform.setIdentity();
         cameraTransform.postRotate((float)Math.toDegrees(rotV), (float) Math.cos(rot), 0, (float) Math.sin(rot));
         cameraTransform.postRotate(-(float)Math.toDegrees(rot), 0, 1, 0);
-//        cameraTransform.postTranslate(0,1000,0);
 
         invertedCameraTransform = new Transform(cameraTransform);
         invertedCameraTransform.invert();
 
         camera.setPerspective(fov, aspectRatio, near, far);
+        //DebugOutput.store("Ratio "+aspectRatio);
         graphics3D.setCamera(camera, cameraTransform);
     }
 
@@ -388,7 +386,7 @@ public class EyeProj extends ScreenProj {
 
             screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
             screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
-            if (coord2DPlanets[i * 4 + 2] <= 0 || mySky.getPlanet(i).getHeight() < 0) {
+            if (coord2DPlanets[i * 4 + 2] <= 1 || mySky.getPlanet(i).getHeight() < 0) {
                 screenCoordPlanets[i].setVisible(false);
             } else {
                 screenCoordPlanets[i].setVisible(true);
@@ -401,7 +399,7 @@ public class EyeProj extends ScreenProj {
 
         screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
         screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
-        if (coord2DPlanets[i * 4 + 2] <= 0 || mySky.getSun().getHeight() < 0) {
+        if (coord2DPlanets[i * 4 + 2] <= 1 || mySky.getSun().getHeight() < 0) {
             screenCoordPlanets[i].setVisible(false);
         } else {
             screenCoordPlanets[i].setVisible(true);
@@ -414,7 +412,7 @@ public class EyeProj extends ScreenProj {
 
         screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
         screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
-        if (coord2DPlanets[i * 4 + 2] <= 0 || mySky.getMoon().getHeight() < 0) {
+        if (coord2DPlanets[i * 4 + 2] <= 1 || mySky.getMoon().getHeight() < 0) {
             screenCoordPlanets[i].setVisible(false);
         } else {
             screenCoordPlanets[i].setVisible(true);
@@ -438,7 +436,7 @@ public class EyeProj extends ScreenProj {
 
             screenCoordStars[i].x = (short) ((coord2DStars[i * 4 + 0] * getWidth + getWidth) / 2);
             screenCoordStars[i].y = (short) ((-coord2DStars[i * 4 + 1] * getHeight + getHeight) / 2);
-            if (coord2DStars[i * 4 + 2] <= 0 || mySky.getStar(i).getHeight() < 0) {
+            if (coord2DStars[i * 4 + 2] <= 1 || mySky.getStar(i).getHeight() < 0) {
                 screenCoordStars[i].setVisible(false);
             } else {
                 screenCoordStars[i].setVisible(true);
@@ -464,7 +462,7 @@ public class EyeProj extends ScreenProj {
 
             screenCoordMessiers[i].x = (short) ((coord2DMessiers[i * 4 + 0] * getWidth + getWidth) / 2);
             screenCoordMessiers[i].y = (short) ((-coord2DMessiers[i * 4 + 1] * getHeight + getHeight) / 2);
-            if (coord2DMessiers[i * 4 + 2] <= 0 || mySky.getMessier(i).getHeight() < 0) {
+            if (coord2DMessiers[i * 4 + 2] <= 1 || mySky.getMessier(i).getHeight() < 0) {
                 screenCoordMessiers[i].setVisible(false);
             } else {
                 screenCoordMessiers[i].setVisible(true);
@@ -622,7 +620,7 @@ public class EyeProj extends ScreenProj {
         byte[] colors = new byte[vertexCount * 3];
 
         for (int i = 0; i < colors.length; i++) {
-            if (i%3 == 1)
+            if (i%3 == 0)
                 colors[i] = (byte) 200;
             else
                 colors[i] = (byte) random.nextInt(256);
@@ -644,21 +642,28 @@ public class EyeProj extends ScreenProj {
      * @param g The graphic object on which to draw
      */
     public void drawHorizon(Graphics g) {
-        graphics3D.bindTarget(g);
+        graphics3D.bindTarget(g,true,Graphics3D.DITHER | Graphics3D.TRUE_COLOR);
         graphics3D.setViewport(0, 0, getWidth, getHeight);
+//        DebugOutput.storeOnce("Render: "+getWidth+"/"+getHeight);
         graphics3D.clear(null);
         graphics3D.render(horizon, null);
         graphics3D.releaseTarget();
+
     }
     /**
      * Set the new dimension of the view (a view size differs from the display size
      * in order to avoid deformation of the view)
+     * @param w the width of the display
+     * @param h the height of the display
      */
-    public void setView() {
-        getHeight = heightDisplay;
-        getWidth = widthDisplay;
+    public void setView(int w,int h) {
+        getHeight = h;
+        getWidth = w;
         aspectRatio = (float)getWidth/(float)getHeight;
 
+        if (camera != null)
+            setCamera();
+//        DebugOutput.store("Setview: "+getWidth+"/"+getHeight);
     }
     /**
      * Indicate that this projection is a 3D projection

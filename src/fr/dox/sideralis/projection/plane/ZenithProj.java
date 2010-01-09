@@ -1,10 +1,12 @@
 package fr.dox.sideralis.projection.plane;
 
+import fr.dox.sideralis.LocalizationSupport;
 import fr.dox.sideralis.Sideralis;
 import fr.dox.sideralis.data.MessierCatalog;
 import fr.dox.sideralis.data.Sky;
 import fr.dox.sideralis.object.ScreenCoord;
 import fr.dox.sideralis.view.color.Color;
+import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
 /**
@@ -24,19 +26,32 @@ public class ZenithProj extends ScreenProj {
     private ScreenCoord[] screenCoordPlanets;
     /** The zoom of the screen */
     private float zoom;
+    /** The height of the view */
+    private int heightView;
+    /** The width of the view */
+    private int widthView;
+    /** The horizontal and vertical shift of the view so it appears in the midle of the display */
+    private int shiftXView, shiftYView;
+    /** The string used to indicat the cardinate pole */
+    private static String northString, southString, eastString, westString;
+
 
     /**
      * Constructor
      * @param myMidlet the calling midlet
-     * @param hD height of display
      * @param wD width of display
+     * @param hD height of display
      */
-    public ZenithProj(Sideralis myMidlet, int hD, int wD) {
-        super(myMidlet,hD,wD);
+    public ZenithProj(Sideralis myMidlet, int wD, int hD) {
+        super(myMidlet,wD,hD);
+        setView(wD,hD);
         rot = 0;
         shiftY = 0;
         zoom = 1.0F;
-        setView();
+        northString = LocalizationSupport.getMessage("NORTH");
+        westString = LocalizationSupport.getMessage("WEST");
+        southString = LocalizationSupport.getMessage("SOUTH");
+        eastString = LocalizationSupport.getMessage("EAST");
     }
     /**
      * Initialization of all variables
@@ -167,7 +182,7 @@ public class ZenithProj extends ScreenProj {
         double x;
 
         x = 1 + virtualX * zoom;
-        x = x * getWidth/2 + shiftXView;
+        x = x * widthView/2 + shiftXView;
 
         return (int)x;
     }
@@ -181,7 +196,7 @@ public class ZenithProj extends ScreenProj {
         double y;
 
         y = 1 + virtualY * zoom + shiftY;
-        y = y * getHeight/2 + shiftYView;
+        y = y * heightView/2 + shiftYView;
 
         return (int)y;
     }
@@ -330,11 +345,15 @@ public class ZenithProj extends ScreenProj {
      * @param g the graphic object on which we draw
      */
     public void drawHorizon(Graphics g) {
-        double x1,y1,x2,y2;
+        double x1,y1,x2,y2,x3,y3,x4,y4;
+        Font myFont;
+
+        myFont = g.getFont();
+
         // ----------------------------
         // -----   Clear screen   -----
         g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_BACKGROUND]);
-        g.fillRect(0, 0, widthDisplay, heightDisplay);
+        g.fillRect(0, 0, getWidth, getHeight);
         // ----------------------
         // ---- Draw horizon ----
         g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_ZENITH_BACKGROUND]);
@@ -345,16 +364,42 @@ public class ZenithProj extends ScreenProj {
         y2 = getY(1) - y1;
 
         g.fillArc((int) x1, (int) y1, (int) x2, (int) y2, 0, 360);
+
+        // -----------------------------
+        // --- Draw Cardinate points ---
+        x1 = getX(Math.cos(-rot) * .95);
+        y1 = getY(Math.sin(-rot) * .95);
+        x2 = getX(Math.cos(-rot + Math.PI) * .95);
+        y2 = getY(Math.sin(-rot + Math.PI) * .95);
+        x3 = getX(Math.cos(-rot + Math.PI / 2) * .95);
+        y3 = getY(Math.sin(-rot + Math.PI / 2) * .95);
+        x4 = getX(Math.cos(-rot + 3 * Math.PI / 2) * .95);
+        y4 = getY(Math.sin(-rot + 3 * Math.PI / 2) * .95);
+        g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_CROSS]);
+        g.setStrokeStyle(Graphics.DOTTED);
+        g.drawLine((int) x1, (int) y1, (int) x2, (int) y2);
+        g.drawLine((int) x3, (int) y3, (int) x4, (int) y4);
+        g.setStrokeStyle(Graphics.SOLID);
+        g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_N_S_E_O]);
+        g.drawString(westString, (int) x1, (int) y1 - myFont.getHeight() / 2, Graphics.HCENTER | Graphics.TOP);
+        g.drawString(eastString, (int) x2, (int) y2 - myFont.getHeight() / 2, Graphics.HCENTER | Graphics.TOP);
+        g.drawString(southString, (int) x3, (int) y3 - myFont.getHeight() / 2, Graphics.HCENTER | Graphics.TOP);
+        g.drawString(northString, (int) x4, (int) y4 - myFont.getHeight() / 2, Graphics.HCENTER | Graphics.TOP);
+
     }
     /**
      * Set the new dimension of the view (a view size differs from the display size
      * in order to avoid deformation of the view)
+     * @param w the width of the display
+     * @param h the height of the display
      */
-    public void setView() {
-        getHeight = Math.min(heightDisplay, widthDisplay);
-        getWidth = Math.min(heightDisplay, widthDisplay);
-        shiftXView = (widthDisplay>heightDisplay?(widthDisplay-heightDisplay)/2:0);
-        shiftYView = (heightDisplay>widthDisplay?(heightDisplay-widthDisplay)/2:0);
+    public void setView(int w, int h) {
+        getHeight = h;
+        getWidth = w;
+        heightView = Math.min(getHeight, getWidth);
+        widthView = Math.min(getHeight, getWidth);
+        shiftXView = (getWidth>getHeight?(getWidth-getHeight)/2:0);
+        shiftYView = (getHeight>getWidth?(getHeight-getWidth)/2:0);
     }
     /**
      * Indicates that it is a zenith view

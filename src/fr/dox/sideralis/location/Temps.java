@@ -1,6 +1,5 @@
 package fr.dox.sideralis.location;
 
-import fr.dox.sideralis.Sideralis;
 import java.util.*;
 
 /**

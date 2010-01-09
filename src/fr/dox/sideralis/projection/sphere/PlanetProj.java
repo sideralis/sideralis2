@@ -125,11 +125,11 @@ public class PlanetProj extends Projection {
         lambda = MathFunctions.arctan(N/DD, N>=0?true:false);
         lambda += theta;
         // Calcul de delta;
-        dist = N*N + DD*DD + r*Math.sin(b)*r*Math.sin(b);
-        dist = Math.sqrt(dist);
+//        dist = N*N + DD*DD + r*Math.sin(b)*r*Math.sin(b);
+        dist = (float)Math.sqrt(N*N + DD*DD + r*Math.sin(b)*r*Math.sin(b));
         // Calcul de beta
         double beta;
-        beta = MathFunctions.arcsin(r/dist*Math.sin(b));
+        beta = MathFunctions.arcsin(r/(double)dist*Math.sin(b));
         // Calcul de alpha et delta
         double sinD, tanA,tanAp;
         double eps;
