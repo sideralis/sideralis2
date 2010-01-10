@@ -378,7 +378,7 @@ public class ConfigParameters {
     }
     /**
      *
-     * @return
+     * @return is debug display activated
      */
     public boolean isDebug() {
         return debug;

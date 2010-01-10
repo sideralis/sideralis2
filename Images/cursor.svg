@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   id="svg2574"
+   sodipodi:version="0.32"
+   inkscape:version="0.46"
+   sodipodi:docname="cursor.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape"
+   inkscape:export-filename="C:\Users\Bernard\Documents\NetBeansProjects\Sideralis2\res\Images\cursor2.png"
+   inkscape:export-xdpi="8.2352953"
+   inkscape:export-ydpi="8.2352953">
+  <defs
+     id="defs2576">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective2582" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.75354285"
+     inkscape:cx="608.92826"
+     inkscape:cy="526.18109"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1680"
+     inkscape:window-height="1000"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     borderlayer="false"
+     inkscape:showpageshadow="true"
+     inkscape:snap-global="true" />
+  <metadata
+     id="metadata2579">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#ff0000"
+       d="M 168.38098,374.64773 L 168.38098,359.02885 L 231.23794,359.02885 L 294.09522,359.02885 L 294.09522,374.64773 L 294.09522,390.26693 L 231.23794,390.26693 L 168.38098,390.26693 L 168.38098,374.64773 z"
+       id="path2558" />
+    <path
+       style="fill:#ff0000"
+       d="M 294.85714,294.64773 L 294.85714,231.79077 L 310.47602,231.79077 L 326.09522,231.79077 L 326.09522,294.64773 L 326.09522,357.50501 L 310.47602,357.50501 L 294.85714,357.50501 L 294.85714,294.64773 z"
+       id="path2560" />
+    <path
+       style="fill:#ff0000"
+       d="M 358.85714,294.64773 L 358.85714,231.79077 L 374.47602,231.79077 L 390.09522,231.79077 L 390.09522,294.64773 L 390.09522,357.50501 L 374.47602,357.50501 L 358.85714,357.50501 L 358.85714,294.64773 z"
+       id="path2562" />
+    <path
+       style="fill:#ff0000"
+       d="M 391.61906,375.40965 L 391.61906,359.79077 L 454.47602,359.79077 L 517.3333,359.79077 L 517.3333,375.40965 L 517.3333,391.02885 L 454.47602,391.02885 L 391.61906,391.02885 L 391.61906,375.40965 z"
+       id="path2564" />
+    <path
+       style="fill:#ff0000"
+       d="M 392.38098,438.64773 L 392.38098,423.02885 L 455.23794,423.02885 L 518.09522,423.02885 L 518.09522,438.64773 L 518.09522,454.26693 L 455.23794,454.26693 L 392.38098,454.26693 L 392.38098,438.64773 z"
+       id="path2566" />
+    <path
+       style="fill:#ff0000"
+       d="M 358.85714,518.64773 L 358.85714,455.79077 L 374.47602,455.79077 L 390.09522,455.79077 L 390.09522,518.64773 L 390.09522,581.50501 L 374.47602,581.50501 L 358.85714,581.50501 L 358.85714,518.64773 z"
+       id="path2568" />
+    <path
+       style="fill:#ff0000"
+       d="M 295.61906,518.64773 L 295.61906,455.79077 L 311.23794,455.79077 L 326.85714,455.79077 L 326.85714,518.64773 L 326.85714,581.50501 L 311.23794,581.50501 L 295.61906,581.50501 L 295.61906,518.64773 z"
+       id="path2570" />
+    <path
+       style="fill:#ff0000"
+       d="M 167.61906,438.64773 L 167.61906,423.02885 L 230.47602,423.02885 L 293.3333,423.02885 L 293.3333,438.64773 L 293.3333,454.26693 L 230.47602,454.26693 L 167.61906,454.26693 L 167.61906,438.64773 z"
+       id="path2572" />
+  </g>
+</svg>

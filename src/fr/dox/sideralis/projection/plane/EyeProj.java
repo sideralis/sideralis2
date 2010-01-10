@@ -77,6 +77,8 @@ public class EyeProj extends ScreenProj {
      * Intialization
      */
     public void init() {
+//        double x,y,z;
+
         graphics3D = Graphics3D.getInstance();
 
         fov = 70;
@@ -115,12 +117,16 @@ public class EyeProj extends ScreenProj {
 //        if (mySky.getSun().getHeight()>0) {
 //            lightSun = new Light();
 //            lightSun.setMode(Light.DIRECTIONAL);
+//            lightSun.setColor(0x0000ff00);
 //            lightSun.setIntensity(10);
 //            x = Math.cos(mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
 //            y = Math.sin(mySky.getSun().getHeight());
 //            z = Math.sin(mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
-//            lightSun.translate((float)x, (float)y, (float)z);
-//            graphics3D.addLight(lightSun, null);
+////            lightSun.translate((float)x, (float)y, (float)z);
+//            Transform tr = new Transform();
+//            tr.postTranslate(0, 400, 0);
+//            graphics3D.resetLights();
+//            graphics3D.addLight(lightSun, tr);
 //        }
 
         // Create an horizon
@@ -195,11 +201,11 @@ public class EyeProj extends ScreenProj {
      */
     private Mesh createHorizon() {
         Random random = new Random();
-        final short scale = Short.MAX_VALUE/10;
-        short dim = 63;
+        final short scale = Short.MAX_VALUE/10;                                 // The size of the horizon
+        short dim = 63;                                                         // The number of square defining the horizon
         int height = 128;
         short heightOffset = -128;
-        final short step = (short)(2*scale/dim);
+        final short step = (short)(2*scale/dim);                                // The size of square
         double dist;
 
         short[] positions = new short[(dim+1) * (dim+1) * 3];
@@ -241,7 +247,6 @@ public class EyeProj extends ScreenProj {
                 dist = (float)(x*x + z*z)/(float)(scale*scale)*Math.PI;
                 y = (short) (heightOffset*Math.sin(dist)-random.nextInt(height));
                 x = (short) (x + step);
-//                if (x<step && x>0) System.out.println(""+x+" "+y+" "+z);
                 positions[index++] = x;
                 positions[index++] = y;
                 positions[index++] = z;
@@ -644,8 +649,7 @@ public class EyeProj extends ScreenProj {
     public void drawHorizon(Graphics g) {
         graphics3D.bindTarget(g,true,Graphics3D.DITHER | Graphics3D.TRUE_COLOR);
         graphics3D.setViewport(0, 0, getWidth, getHeight);
-//        DebugOutput.storeOnce("Render: "+getWidth+"/"+getHeight);
-        graphics3D.clear(null);
+        graphics3D.clear(null);        
         graphics3D.render(horizon, null);
         graphics3D.releaseTarget();
 

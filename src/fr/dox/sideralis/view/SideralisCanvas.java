@@ -215,14 +215,74 @@ public class SideralisCanvas extends Canvas implements Runnable {
         // =============================================================
         // TODO to correct the centering of searched object
         if (!myMidlet.getSearch().isFlagCentered()) {
-            if (myProjection.getZoom() > 1) {
-                myProjection.decZoom();
-                project();
+            double diffAz=0, diffHe=0;
+            short x=0,y=0;
+
+            switch (myMidlet.getSearch().getTypeHighlight()) {
+                case SkyObject.STAR:
+                    diffAz = mySky.getStar(myMidlet.getSearch().getIdxHighlight()).getAzimuth() + Math.PI/2;
+                    diffHe = myProjection.getRotV() - mySky.getStar(myMidlet.getSearch().getIdxHighlight()).getHeight();
+                    x = screenCoordStars[myMidlet.getSearch().getIdxHighlight()].x;
+                    y = screenCoordStars[myMidlet.getSearch().getIdxHighlight()].y;
+                    break;
+                case SkyObject.MESSIER:
+                    diffAz = mySky.getMessier(myMidlet.getSearch().getIdxHighlight()).getAzimuth() + Math.PI/2;
+                    diffHe = myProjection.getRotV() - mySky.getMessier(myMidlet.getSearch().getIdxHighlight()).getHeight();
+                    x = screenCoordMessier[myMidlet.getSearch().getIdxHighlight()].x;
+                    y = screenCoordMessier[myMidlet.getSearch().getIdxHighlight()].y;
+                    break;
+                case SkyObject.PLANET:
+                    diffAz = mySky.getPlanet(myMidlet.getSearch().getIdxHighlight()).getAzimuth() + Math.PI/2;
+                    diffHe = myProjection.getRotV() - mySky.getPlanet(myMidlet.getSearch().getIdxHighlight()).getHeight();
+                    x = screenCoordPlanets[myMidlet.getSearch().getIdxHighlight()].x;
+                    y = screenCoordPlanets[myMidlet.getSearch().getIdxHighlight()].y;
+                    break;
+                case SkyObject.SUN:
+                    diffAz = mySky.getSun().getAzimuth() + Math.PI/2;
+                    diffHe = myProjection.getRotV() - mySky.getSun().getHeight();
+                    x = screenCoordSun.x;
+                    y = screenCoordSun.y;
+                    break;
+                case SkyObject.MOON:
+                    diffAz = mySky.getMoon().getAzimuth() + Math.PI/2;
+                    diffHe = myProjection.getRotV() - mySky.getMoon().getHeight();
+                    x = screenCoordMoon.x;
+                    y = screenCoordMoon.y;
+                    break;
+
             }
-            if (myProjection.getZoom() == 1) {
-                myMidlet.getSearch().setFlagCentered(true);
+            if (myProjection.is3D()) {
+                diffAz = (2*Math.PI + diffAz) % (2*Math.PI);
+                diffAz = myProjection.getRot() - diffAz;
+                if (diffAz>Math.PI)
+                    diffAz -= 2*Math.PI;
+                if (diffAz<-Math.PI)
+                    diffAz += 2*Math.PI;
+
+                diffHe = (2*Math.PI + diffHe) % (2*Math.PI);
+                if (diffHe>Math.PI)
+                    diffHe -= 2*Math.PI;
+                if (diffHe<-Math.PI)
+                    diffHe += 2*Math.PI;
+
+                if (Math.abs(diffAz) > 0.05 || Math.abs(diffHe) > 0.05) {
+                    myProjection.scrollHor((float)diffAz*4);
+                    myProjection.scrollVer(-(float)diffHe*4);
+                    project();
+                } else {
+                    myMidlet.getSearch().setFlagCentered(true);
+                }
+            } else {
+                if (Math.abs(myProjection.getWidth()/2-x)> 10 || (myProjection.getZoom() != 1 && Math.abs(myProjection.getHeight()/2-y)>10)) {
+                    myProjection.scrollHor((float)(myProjection.getWidth()/2-x)/64F);
+                    myProjection.scrollVer((float)(myProjection.getHeight()/2-y)/64F);
+                    project();
+                } else {
+                    myMidlet.getSearch().setFlagCentered(true);
+                }
             }
         }
+        
         if (myMidlet.getMyParameter().isDebug())
             paintDebug(g);
         else
