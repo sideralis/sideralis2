@@ -125,7 +125,6 @@ package fr.dox.sideralis;
  * TODO: Perf and memory profiling
  * TODO: add latitude and longitude to know where we are looing
  * TODO: Correct scrolling when using upper part
- * TODO: correct bug2: Some lines of some constellations go through all display
  * TODO: Define test set
  */
 
@@ -247,6 +246,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private StringItem searchItemSearch;
     private StringItem searchItemCancelSearch;
     private ChoiceGroup displayOptionsChoiceGroup;
+    private Gauge sensitivityGauge;
     /** Some items for the help form */
     private StringItem[] helpStringItem;
     /** Some items for the info form */
@@ -512,9 +512,12 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         displayOptionsStringItem = new StringItem(LocalizationSupport.getMessage("AF"), "");
         displayOptionsChoiceGroup = new ChoiceGroup(LocalizationSupport.getMessage("AG"), ChoiceGroup.MULTIPLE, ConfigParameters.getParamNames(), null);
         displayOptionsTextMaxMag = new TextField(ConfigParameters.getName(ConfigParameters.MAX_MAG), Float.toString(myParameter.getMaxMag()), 15, TextField.DECIMAL);
+        sensitivityGauge = new Gauge("Sensitivity Touch Screen", true, 40, myParameter.getSensitivity());
         displayOptionsForm.append(displayOptionsStringItem);
         displayOptionsForm.append(displayOptionsChoiceGroup);
         displayOptionsForm.append(displayOptionsTextMaxMag);
+        displayOptionsForm.append(new Spacer(400,10));
+        displayOptionsForm.append(sensitivityGauge);
         displayOptionsForm.addCommand(cancelCommand);
         displayOptionsForm.addCommand(okCommand);
         displayOptionsForm.setCommandListener(this);
@@ -622,6 +625,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             // Display display options
             displayOptionsChoiceGroup.setSelectedFlags(myParameter.getSelectedFlags());
             displayOptionsTextMaxMag.setString(String.valueOf(myParameter.getMaxMag()));
+            sensitivityGauge.setValue(myParameter.getSensitivity());
             myDisplay.setCurrent(displayOptionsForm);
         } else if (c == searchCommand) {
             // Search command
@@ -726,6 +730,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                     myParameter.setMaxMag(Float.parseFloat(displayOptionsTextMaxMag.getString()));
                 else
                     myParameter.setMaxMag(0);
+                myParameter.setSensitivity(sensitivityGauge.getValue());
                 myDisplay.setCurrent(myCanvas);
                 saveData();
             } else if (myDisplay.getCurrent() == langForm) {

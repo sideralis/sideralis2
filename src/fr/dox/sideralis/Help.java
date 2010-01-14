@@ -132,13 +132,22 @@ public class Help {
             } else {
                 s = new Integer((i + 1) % 10).toString();
             }
+            // Draw the key
             g.drawString(s, x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight, Graphics.HCENTER | Graphics.TOP);
+            // Draw the help text associated to the key
             if (myFont.stringWidth(keyText[i])<keyWidth)
                 g.drawString(keyText[i], x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2, Graphics.HCENTER | Graphics.TOP);
             else {
-                int pos = keyText[i].indexOf(' ');
-                g.drawString(keyText[i].substring(0, pos), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2, Graphics.HCENTER | Graphics.BOTTOM);
-                g.drawString(keyText[i].substring(pos+1, keyText[i].length()), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2 + myFont.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
+                int pos1 = keyText[i].indexOf(' ');
+                int pos2 = keyText[i].indexOf(' ',pos1+1);
+                if ((pos2 == -1) & (pos1 != -1)) {
+                    g.drawString(keyText[i].substring(0, pos1), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2, Graphics.HCENTER | Graphics.BOTTOM);
+                    g.drawString(keyText[i].substring(pos1+1, keyText[i].length()), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2 + myFont.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
+                } else if (pos2 != -1) {
+                    g.drawString(keyText[i].substring(0, pos1), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                    g.drawString(keyText[i].substring(pos1+1, pos2), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + 2*myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                    g.drawString(keyText[i].substring(pos2+1, keyText[i].length()), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + 3*myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                }
             }
         }
     }

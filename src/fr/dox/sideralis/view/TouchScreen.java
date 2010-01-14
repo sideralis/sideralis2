@@ -5,6 +5,8 @@
 
 package fr.dox.sideralis.view;
 
+import fr.dox.sideralis.ConfigParameters;
+import fr.dox.sideralis.Sideralis;
 import java.io.IOException;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -31,7 +33,7 @@ public class TouchScreen {
     /** Position of pressed */
     private int xPressed,yPressed;
     /** My icons */
-    private Image zoomInIcon,zoomOutIcon,rotateLeftIcon,rotateRightIcon;
+    private Image zoomInIcon,zoomOutIcon,maxIcon,minIcon;
     /** My counter used to make icons vanish */
     private int counterVanishIcon;
     /** Time variable used when dragging screen */
@@ -40,6 +42,8 @@ public class TouchScreen {
     private boolean scroll;
     private float rotDir,yDir;
     private int xOrg,yOrg;
+    /** Boolean to indicate if we are in full screen mode or not */
+    private boolean fullScreen;
 
     private static final int COUNTER_VANISH_ICON = 100;
     /** The result of the action on the touch screen */
@@ -48,31 +52,33 @@ public class TouchScreen {
     public static final short NOTHING = 30;
     public static final short ZOOM_IN = 0;
     public static final short ZOOM_OUT = 1;
-    public static final short ROT_RIGHT = 2;
-    public static final short ROT_LEFT =3;
+    public static final short MIN_MAX = 2;
     /** Default size of icon */
-    private static final int SIZE_ICON = 32;
+    private static final int SIZE_ICON = 48;
     /** Number of icon */
-    private static final int NB_ICON = 2;
+    private static final int NB_ICON = 3;
     /** Sensitivity drag vs click */
-    private static final int SENSITIVITY = 14;
+    private ConfigParameters myParameter;
     /** Sensitivity for dragging - If dragging event are too much time separated, dragging is not taken into acount */
     private long MAX_TIME_BETWEEN_DRAG = 20;
+
 
     /**
      * Constructor
      */
-    public TouchScreen(int width, int height) {
+    public TouchScreen(int width, int height, Sideralis myMidlet) {
         counterVanishIcon = 0;
         setSize(width, height);
         xTouchScreen = 0;
         yTouchScreen = 0;
         barPressed = false;
+        fullScreen = true;
+        myParameter = myMidlet.getMyParameter();
         try {
             zoomInIcon = Image.createImage("/View-zoom-in.png");
             zoomOutIcon = Image.createImage("/View-zoom-out.png");
-//            rotateLeftIcon = Image.createImage("/rotate_left.png");
-//            rotateRightIcon = Image.createImage("/rotate_right.png");
+            maxIcon = Image.createImage("/max.png");
+            minIcon = Image.createImage("/min.png");
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -98,12 +104,18 @@ public class TouchScreen {
             if (vertical) {
                 g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
                 g.drawImage(zoomOutIcon, x, y+sizeIcon, Graphics.HCENTER | Graphics.VCENTER);
-//                g.drawImage(rotateLeftIcon, x, y+sizeIcon*2, Graphics.HCENTER | Graphics.VCENTER);
+                if (fullScreen)
+                    g.drawImage(minIcon, x, y+sizeIcon*2, Graphics.HCENTER | Graphics.VCENTER);
+                else
+                    g.drawImage(maxIcon, x, y+sizeIcon*2, Graphics.HCENTER | Graphics.VCENTER);
 //                g.drawImage(rotateRightIcon, x, y+sizeIcon*3, Graphics.HCENTER | Graphics.VCENTER);
             } else {
                 g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
                 g.drawImage(zoomOutIcon, x+sizeIcon, y, Graphics.HCENTER | Graphics.VCENTER);
-//                g.drawImage(rotateLeftIcon, x+sizeIcon*2, y, Graphics.HCENTER | Graphics.VCENTER);
+                if (fullScreen)
+                    g.drawImage(minIcon, x+sizeIcon*2, y, Graphics.HCENTER | Graphics.VCENTER);
+                else
+                    g.drawImage(maxIcon, x+sizeIcon*2, y, Graphics.HCENTER | Graphics.VCENTER);
 //                g.drawImage(rotateRightIcon, x+sizeIcon*3, y, Graphics.HCENTER | Graphics.VCENTER);
             }
         }
@@ -133,7 +145,6 @@ public class TouchScreen {
                 xPressed = x;                                                   // Store the position of the touch
                 yPressed = y;
             }
-            //System.out.println("Pressed: "+ barPressed + " "+barDragged+" / "+screenPressed+" "+screenDragged);
         }
     }
     /**
@@ -173,7 +184,7 @@ public class TouchScreen {
         int dist;
         if (counterVanishIcon != 0) {
             dist = (x-xPressed)*(x-xPressed)+(y-yPressed)*(y-yPressed);
-            if (dist > SENSITIVITY) {
+            if (dist > myParameter.getSensitivity()) {
                 if (barPressed) {
                     xTouchScreen = xTouchScreenDrag + x - xPressed;
                     yTouchScreen = yTouchScreenDrag + y - yPressed;
@@ -226,7 +237,6 @@ public class TouchScreen {
         rotDir /= 1.5F;
         if ((yDir < 0.2F) && (rotDir <0.2F) && (screenPressed == false))          // If the user has released its touch and scroll is neglictible then scroll is stopped
             scroll = false;
-//        System.out.println("Scroll - rotDir: "+rotDir+ " / yDir: "+yDir);
     }
     /**
      * Return true if scroll is active (meaning that scroll inc is still > 0.2)
@@ -243,9 +253,17 @@ public class TouchScreen {
         this.scroll = scroll;
         //System.out.println("---------------------");
     }
+    /**
+     *
+     * @return
+     */
     public float getRotDir() {
         return rotDir;
     }
+    /**
+     *
+     * @return
+     */
     public float getYScroll() {
         return yDir;
     }
@@ -305,6 +323,20 @@ public class TouchScreen {
             heightTouchScreen = sizeIcon;
             widthTouchScreen = NB_ICON*heightTouchScreen;
         }
+    }
+    
+    /**
+     * Switch from full screen to non full screen and vice versa
+     */
+    void toggleFullScreen() {
+        fullScreen = !fullScreen;
+    }
+    /**
+     *
+     * @return
+     */
+    public boolean isFullScreen() {
+        return fullScreen;
     }
 
 }

@@ -156,7 +156,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
     public void init() {
 
         if (hasPointerEvents()) {
-            touchScreen = new TouchScreen(getWidth(), getHeight());
+            touchScreen = new TouchScreen(getWidth(), getHeight(),myMidlet);
         } else {
             touchScreen = null;
         }
@@ -167,7 +167,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     LocalizationSupport.getMessage("LFT"), "",
                     LocalizationSupport.getMessage("RIT"), "",
                     LocalizationSupport.getMessage("DWN"), "",
-                    LocalizationSupport.getMessage("PARAM_HOR"),
+                    LocalizationSupport.getMessage("ZEV"),
                     LocalizationSupport.getMessage("DIC"),
                     LocalizationSupport.getMessage("DIH")});
         myHelp.setView(getWidth(), getHeight());
@@ -185,6 +185,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
         //#endif
         } else {
             myProjection = new ZenithProj(myMidlet, getWidth(), getHeight());
+            myHelp.setText(Help.STAR, "");
         }
 
         myProjection.init();
@@ -213,11 +214,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
         // =============================================================
         // === Check if we need to center screen to searched object ====
         // =============================================================
-        // TODO to correct the centering of searched object
         if (!myMidlet.getSearch().isFlagCentered()) {
             double diffAz=0, diffHe=0;
             short x=0,y=0;
-
+            // Get information about searched object
             switch (myMidlet.getSearch().getTypeHighlight()) {
                 case SkyObject.STAR:
                     diffAz = mySky.getStar(myMidlet.getSearch().getIdxHighlight()).getAzimuth() + Math.PI/2;
@@ -249,8 +249,8 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     x = screenCoordMoon.x;
                     y = screenCoordMoon.y;
                     break;
-
             }
+            // Calculate distance to searched object and move toward it
             if (myProjection.is3D()) {
                 diffAz = (2*Math.PI + diffAz) % (2*Math.PI);
                 diffAz = myProjection.getRot() - diffAz;
@@ -273,7 +273,9 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     myMidlet.getSearch().setFlagCentered(true);
                 }
             } else {
-                if (Math.abs(myProjection.getWidth()/2-x)> 10 || (myProjection.getZoom() != 1 && Math.abs(myProjection.getHeight()/2-y)>10)) {
+                if (Math.abs(myProjection.getWidth()/2-x)> 10 
+                        || ((myProjection.getRotV() != (myProjection.getZoom()-1)) && (myProjection.getRotV() != (1-myProjection.getZoom())) && Math.abs(myProjection.getHeight()/2-y)>10)) {
+                    // as long as we are far from the center or as long as we have not reached the edge on height
                     myProjection.scrollHor((float)(myProjection.getWidth()/2-x)/64F);
                     myProjection.scrollVer((float)(myProjection.getHeight()/2-y)/64F);
                     project();
@@ -1237,14 +1239,9 @@ public class SideralisCanvas extends Canvas implements Runnable {
             myProjection.decZoom();
             project();
         }
-        if (keyCode == TouchScreen.ROT_LEFT) {
-            myProjection.left();
-            project();
-        }
-        // Rotation
-        if (keyCode == TouchScreen.ROT_RIGHT) {
-            myProjection.right();
-            project();
+        if (keyCode == TouchScreen.MIN_MAX) {
+            touchScreen.toggleFullScreen();
+            setFullScreenMode(touchScreen.isFullScreen());
         }
 
         if (keyCode == TouchScreen.CURSOR_ON) {
@@ -1338,8 +1335,8 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 if (myMidlet.getMyParameter().isSupport3D()) {
                     runningCmd = false;
                     if (myProjection.is3D() == true) {
-                        // Switch to system solar view
-                        myHelp.setText(Help.STAR, LocalizationSupport.getMessage("ZEV"));
+                        // Switch to zenith view
+                        myHelp.setText(Help.STAR, LocalizationSupport.getMessage("PARAM_HOR"));
                         try {
                             Thread.sleep(MS_PER_FRAME);
                         } catch (InterruptedException ex) {
@@ -1360,6 +1357,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                         new Thread(this).start();
                     } else {
                         // Switch to horizontal 3D view
+                        myHelp.setText(Help.STAR, LocalizationSupport.getMessage("ZEV"));
                         try {
                             Thread.sleep(MS_PER_FRAME);
                         } catch (InterruptedException ex) {
@@ -1379,7 +1377,6 @@ public class SideralisCanvas extends Canvas implements Runnable {
                         runningCmd = true;
                         new Thread(this).start();
                     }
-
                 }
 //#endif
             }
@@ -1631,8 +1628,6 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     protected void sizeChanged(int w, int h) {
         super.sizeChanged(w, h);
-//        DebugOutput.reset();
-//        DebugOutput.store("Size Changed: "+w+"/"+h);
 
         // Set screen new dimension
         if (myProjection != null) {

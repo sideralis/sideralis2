@@ -14,7 +14,6 @@ public class SunProj extends Projection {
      */
     public SunProj(SkyObject object) {
         super(object);
-        //calculate();                              // TODO confirm this line can be removed
     }
     /**
      *  Calculate Ascension, declinaison and then height and azimuth among others
