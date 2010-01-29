@@ -310,6 +310,9 @@ public class SideralisCanvas extends Canvas implements Runnable {
             g.setColor(0x000000FF);
             g.drawString(LocalizationSupport.getMessage("PLEASE_WAIT"), myProjection.getWidth() / 2, myProjection.getHeight() / 2, Graphics.HCENTER | Graphics.BASELINE);
             project();
+            // Recalculate the lights position
+            if (myProjection.is3D())
+                ((EyeProj)myProjection).setLights();
         } else {
             timeDisplay = System.currentTimeMillis();
             // ------------------------------------------------
@@ -1045,7 +1048,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      * @param g
      */
     private void drawDirections(Graphics g) {
-        g.setColor(0xff);
+        g.setColor(0xff0000);
         if (myProjection.is3D()) {
             g.drawArc(2, myProjection.getHeight() - 22, 20, 20, 0, 360);
             g.drawArc(25, myProjection.getHeight() - 22, 20, 20, 0, 360);
@@ -1056,10 +1059,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             x1 = 35 + 9 * Math.cos(myProjection.getRotV());
             y1 = myProjection.getHeight() - 12 - 9 * Math.sin(myProjection.getRotV());
             g.drawLine(35, myProjection.getHeight() - 12, (int) x1, (int) y1);
-        } else {
-            // TODO is not correct
-//            g.drawString(" " + ((540 - (int) Math.toDegrees(myProjection.getRot())) % 360) + "° ", myProjection.getWidth() / 2, myProjection.getHeight() - heightFont, Graphics.HCENTER | Graphics.TOP);
-        }
+        } 
     }
 
     /**

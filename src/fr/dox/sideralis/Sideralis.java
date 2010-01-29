@@ -123,9 +123,16 @@ package fr.dox.sideralis;
  * TODO: Change touch screen support
  * TODO: manage touch screen support for history of constellation
  * TODO: Perf and memory profiling
- * TODO: add latitude and longitude to know where we are looing
+ * TODO: add latitude and longitude to know where we are looking
  * TODO: Correct scrolling when using upper part
  * TODO: Define test set
+ * TODO: Touch screen: click on constellation name
+ * TODO: Touch screen: click on info box
+ * TODO: Save direction
+ * TODO: Increase size of help
+ * TODO: Add separate menu for touch screen
+ * TODO: Add ambient light only.
+ *
  */
 
 /*
