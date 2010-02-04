@@ -155,7 +155,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     public void init() {
 
-        if (hasPointerEvents()) {
+        if (myMidlet.getMyParameter().isSupportTouchScreen()) {
             touchScreen = new TouchScreen(getWidth(), getHeight(),myMidlet);
         } else {
             touchScreen = null;
@@ -249,6 +249,14 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     x = screenCoordMoon.x;
                     y = screenCoordMoon.y;
                     break;
+                case SkyObject.CONSTELLATION:
+                    int ref = ConstellationCatalog.getConstellation(myMidlet.getSearch().getIdxHighlight()).getRefStar4ConstellationName();
+                    diffAz = mySky.getStar(ref).getAzimuth() + Math.PI/2;
+                    diffHe = myProjection.getRotV() - mySky.getStar(ref).getHeight();
+                    x = screenCoordStars[ref].x;
+                    y = screenCoordStars[ref].y;
+                    break;
+
             }
             // Calculate distance to searched object and move toward it
             if (myProjection.is3D()) {
@@ -311,8 +319,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
             g.drawString(LocalizationSupport.getMessage("PLEASE_WAIT"), myProjection.getWidth() / 2, myProjection.getHeight() / 2, Graphics.HCENTER | Graphics.BASELINE);
             project();
             // Recalculate the lights position
+            //#ifdef JSR184
             if (myProjection.is3D())
                 ((EyeProj)myProjection).setLights();
+            //#endif
         } else {
             timeDisplay = System.currentTimeMillis();
             // ------------------------------------------------
@@ -1243,6 +1253,12 @@ public class SideralisCanvas extends Canvas implements Runnable {
             touchScreen.toggleFullScreen();
             setFullScreenMode(touchScreen.isFullScreen());
         }
+        if (keyCode== TouchScreen.VIEW) {
+            if (myMidlet.getMyParameter().isSupport3D()) {
+                touchScreen.toggleView();
+                switchScreen();
+            }
+        }
 
         if (keyCode == TouchScreen.CURSOR_ON) {
             xCursor = x;
@@ -1331,54 +1347,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             // ===================== Default mode ==============================
             // * = Next display
             if (keyCode == KEY_STAR) {
-//#ifdef JSR184
-                if (myMidlet.getMyParameter().isSupport3D()) {
-                    runningCmd = false;
-                    if (myProjection.is3D() == true) {
-                        // Switch to zenith view
-                        myHelp.setText(Help.STAR, LocalizationSupport.getMessage("PARAM_HOR"));
-                        try {
-                            Thread.sleep(MS_PER_FRAME);
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        }
-
-                        while (running == true) {
-                        }                                                       // Wait for the end of the thread before starting it again
-                        myProjection = new ZenithProj(myMidlet, getWidth(), getHeight());
-                        myProjection.init();
-                        screenCoordMessier = myProjection.getScreenCoordMessier();
-                        screenCoordMoon = myProjection.getScreenCoordMoon();
-                        screenCoordPlanets = myProjection.getScreenCoordPlanets();
-                        screenCoordStars = myProjection.getScreenCoordStars();
-                        screenCoordSun = myProjection.getScreenCoordSun();
-                        myProjection.project();
-                        runningCmd = true;
-                        new Thread(this).start();
-                    } else {
-                        // Switch to horizontal 3D view
-                        myHelp.setText(Help.STAR, LocalizationSupport.getMessage("ZEV"));
-                        try {
-                            Thread.sleep(MS_PER_FRAME);
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        }
-
-                        while (running == true) {
-                        }                                                       // Wait for the end of the thread before starting it again
-                        myProjection = new EyeProj(myMidlet, getWidth(), getHeight());
-                        myProjection.init();
-                        screenCoordMessier = myProjection.getScreenCoordMessier();
-                        screenCoordMoon = myProjection.getScreenCoordMoon();
-                        screenCoordPlanets = myProjection.getScreenCoordPlanets();
-                        screenCoordStars = myProjection.getScreenCoordStars();
-                        screenCoordSun = myProjection.getScreenCoordSun();
-                        myProjection.project();
-                        runningCmd = true;
-                        new Thread(this).start();
-                    }
-                }
-//#endif
+                switchScreen();
             }
             // 0 = Show cursor
             if (keyCode == KEY_NUM0) {
@@ -1641,5 +1610,58 @@ public class SideralisCanvas extends Canvas implements Runnable {
         // Set dimension of help
         if (myHelp != null)
             myHelp.setView(w, h);
+    }
+    /** 
+     * Use to switch betwen horizontal view and zenith view
+     */
+    private void switchScreen() {
+//#ifdef JSR184
+        if (myMidlet.getMyParameter().isSupport3D()) {
+            runningCmd = false;
+            if (myProjection.is3D() == true) {
+                // Switch to zenith view
+                myHelp.setText(Help.STAR, LocalizationSupport.getMessage("PARAM_HOR"));
+                try {
+                    Thread.sleep(MS_PER_FRAME);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+
+                while (running == true) {
+                }                                                       // Wait for the end of the thread before starting it again
+                myProjection = new ZenithProj(myMidlet, getWidth(), getHeight());
+                myProjection.init();
+                screenCoordMessier = myProjection.getScreenCoordMessier();
+                screenCoordMoon = myProjection.getScreenCoordMoon();
+                screenCoordPlanets = myProjection.getScreenCoordPlanets();
+                screenCoordStars = myProjection.getScreenCoordStars();
+                screenCoordSun = myProjection.getScreenCoordSun();
+                myProjection.project();
+                runningCmd = true;
+                new Thread(this).start();
+            } else {
+                // Switch to horizontal 3D view
+                myHelp.setText(Help.STAR, LocalizationSupport.getMessage("ZEV"));
+                try {
+                    Thread.sleep(MS_PER_FRAME);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+
+                while (running == true) {
+                }                                                       // Wait for the end of the thread before starting it again
+                myProjection = new EyeProj(myMidlet, getWidth(), getHeight());
+                myProjection.init();
+                screenCoordMessier = myProjection.getScreenCoordMessier();
+                screenCoordMoon = myProjection.getScreenCoordMoon();
+                screenCoordPlanets = myProjection.getScreenCoordPlanets();
+                screenCoordStars = myProjection.getScreenCoordStars();
+                screenCoordSun = myProjection.getScreenCoordSun();
+                myProjection.project();
+                runningCmd = true;
+                new Thread(this).start();
+            }
+        }
+//#endif
     }
 }

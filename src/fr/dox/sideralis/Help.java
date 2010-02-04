@@ -82,8 +82,8 @@ public class Help {
         getWidth = width;
         getHeight = height;
 
-        h = getHeight * 9 / 10;                                                 // The height of the help drawing is taking 9/10 of the whole screen
-        w = h * 3 / 4;                                                          // The width of the help drawing is equal to 3/4 of the height
+        h = getHeight * 19 / 20;                                                // The height of the help drawing is taking 9/10 of the whole screen
+        w = getWidth * 7 / 8;                                                   // The width of the help drawing is equal to 3/4 of the height
 
         x = getWidth / 2 - w / 2;                                               // x origin of the help draw
         y = getHeight / 2 - h / 2;                                              // y origin of the help draw
@@ -138,15 +138,31 @@ public class Help {
             if (myFont.stringWidth(keyText[i])<keyWidth)
                 g.drawString(keyText[i], x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2, Graphics.HCENTER | Graphics.TOP);
             else {
-                int pos1 = keyText[i].indexOf(' ');
-                int pos2 = keyText[i].indexOf(' ',pos1+1);
-                if ((pos2 == -1) & (pos1 != -1)) {
+                int pos1,pos2;
+                pos1 = keyText[i].indexOf(' ');
+                if (pos1 != -1)
+                    pos2 = keyText[i].indexOf(' ',pos1+1);
+                else
+                    pos2 = -1;
+                if ((pos2 == -1) && (pos1 != -1)) {
+                    // One single space. We display on two lines
                     g.drawString(keyText[i].substring(0, pos1), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2, Graphics.HCENTER | Graphics.BOTTOM);
                     g.drawString(keyText[i].substring(pos1+1, keyText[i].length()), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2 + myFont.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
                 } else if (pos2 != -1) {
-                    g.drawString(keyText[i].substring(0, pos1), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
-                    g.drawString(keyText[i].substring(pos1+1, pos2), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + 2*myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
-                    g.drawString(keyText[i].substring(pos2+1, keyText[i].length()), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + 3*myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                    // 2 spaces. We have to decide if we still need to display on 3 lines.
+                    if (myFont.stringWidth(keyText[i].substring(0, pos2))<keyWidth) {
+                        g.drawString(keyText[i].substring(0, pos2), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2, Graphics.HCENTER | Graphics.BOTTOM);
+                        g.drawString(keyText[i].substring(pos2+1, keyText[i].length()), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2 + myFont.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
+                    } else if (myFont.stringWidth(keyText[i].substring(pos1+1, pos2))<keyWidth) {
+                        g.drawString(keyText[i].substring(0, pos1), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2, Graphics.HCENTER | Graphics.BOTTOM);
+                        g.drawString(keyText[i].substring(pos1+1, keyText[i].length()), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2 + myFont.getHeight(), Graphics.HCENTER | Graphics.BOTTOM);
+                    } else {
+                        g.drawString(keyText[i].substring(0, pos1), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                        g.drawString(keyText[i].substring(pos1+1, pos2), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + 2*myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                        g.drawString(keyText[i].substring(pos2+1, keyText[i].length()), x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + 3*myFont.getHeight(), Graphics.HCENTER | Graphics.TOP);
+                    }
+                } else {
+                    g.drawString(keyText[i], x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight + keyHeight / 2, Graphics.HCENTER | Graphics.TOP);
                 }
             }
         }

@@ -6,7 +6,10 @@
  */
 package test;
 
+import fr.dox.sideralis.location.Temps;
 import fr.dox.sideralis.math.MathFunctions;
+import java.util.Calendar;
+import java.util.Date;
 import jmunit.framework.cldc10.*;
 
 /**
@@ -16,7 +19,7 @@ public class Test extends TestCase {
 
     public Test() {
         //The first parameter of inherited constructor is the number of test cases
-        super(4, "Test");
+        super(5, "Test");
     }
 
     public void test(int testNumber) throws Throwable {
@@ -33,7 +36,9 @@ public class Test extends TestCase {
             case 3:
                 test003();
                 break;
-
+            case 4:
+                test004();
+                break;
         }
     }
 
@@ -131,6 +136,56 @@ public class Test extends TestCase {
                 ok = false;
             }
         }
+
+        assertTrue(ok);
+    }
+    /**
+     * Test the temps class
+     * Test the calculation of Julian day
+     * @throws Exception
+     */
+    private void test004() throws Exception {
+        Temps t;
+        Date d;
+        double jj;
+        boolean ok = true;
+
+        t = new Temps();
+        Calendar cal = Calendar.getInstance();
+
+        cal.set(Calendar.YEAR, 2010);
+        cal.set(Calendar.MONTH,Calendar.JANUARY);
+        cal.set(Calendar.DAY_OF_MONTH,30);
+        cal.set(Calendar.HOUR_OF_DAY,17);
+        cal.set(Calendar.MINUTE, 40);
+        cal.set(Calendar.SECOND,31);
+        d = cal.getTime();
+
+        t.calculateTimeOffset(d);
+        t.adjustDate();
+
+        t.calculateJourJulien();
+        jj = t.getJJ();
+
+        if (Math.abs(jj-2455227.1948032407D)>0.000000001D)
+            ok = false;
+
+        cal.set(Calendar.YEAR, 2020);
+        cal.set(Calendar.MONTH,Calendar.NOVEMBER);
+        cal.set(Calendar.DAY_OF_MONTH,30);
+        cal.set(Calendar.HOUR_OF_DAY,03);
+        cal.set(Calendar.MINUTE, 40);
+        cal.set(Calendar.SECOND,31);
+        d = cal.getTime();
+
+        t.calculateTimeOffset(d);
+        t.adjustDate();
+
+        t.calculateJourJulien();
+        jj = t.getJJ();
+
+        if (Math.abs(jj-2459183.611469907D)>0.000000001D)
+            ok = false;
 
         assertTrue(ok);
     }

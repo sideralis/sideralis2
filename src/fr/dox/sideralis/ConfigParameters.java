@@ -36,6 +36,8 @@ public class ConfigParameters {
     private boolean support3D;
     /** True if GPS is supported */
     private boolean supportGPS;
+    /** True if touch screen is supported */
+    private boolean supportTouchScreen;
     /** To know if we are displaying the debug info */
     private boolean debug;
     /** Sensitivity of touch screen */
@@ -415,6 +417,20 @@ public class ConfigParameters {
      */
     public void setSupportGPS(boolean supportGPS) {
         this.supportGPS = supportGPS;
+    }
+    /**
+     *
+     * @return
+     */
+    public boolean isSupportTouchScreen() {
+        return supportTouchScreen;
+    }
+    /**
+     *
+     * @param supportTouchScreen
+     */
+    public void setSupportTouchScreen(boolean supportTouchScreen) {
+        this.supportTouchScreen = supportTouchScreen;
     }
 
     /**

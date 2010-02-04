@@ -129,9 +129,6 @@ package fr.dox.sideralis;
  * TODO: Touch screen: click on constellation name
  * TODO: Touch screen: click on info box
  * TODO: Save direction
- * TODO: Increase size of help
- * TODO: Add separate menu for touch screen
- * TODO: Add ambient light only.
  *
  */
 
@@ -219,6 +216,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private Form locateMeForm;
     /** The search form */
     private Form searchForm;
+    /** The touch screen form */
+    private Form touchScreeForm;
 
     /** Some commands */
     private Command exitCommand;
@@ -235,6 +234,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private Command dicoCommand;
     private Command langCommand;
     private Command searchCommand;
+    private Command touchScreenCommand;
+
     /** Some item in the position Form */
     private TextField latTextField;
     private TextField longTextField;
@@ -253,7 +254,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private StringItem searchItemSearch;
     private StringItem searchItemCancelSearch;
     private ChoiceGroup displayOptionsChoiceGroup;
-    private Gauge sensitivityGauge;
     /** Some items for the help form */
     private StringItem[] helpStringItem;
     /** Some items for the info form */
@@ -270,6 +270,9 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private StringItem langStringItem;
     private ChoiceGroup langChoiceGroup;
     private long myOffsetForCancellation;
+    /** Some items for the touch screen configuration form */
+    private Gauge sensitivityGauge;
+
     /** The locate me object */
 //#ifdef JSR179
     private LocateMe whereAmI;
@@ -343,17 +346,21 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             // === Load position and parameters ===
             myParameter = new ConfigParameters();
             loadData();
+            // ==================================
+            // === Check capability of mobile ===
+            // Check support for 3D
             String m3gVersion = System.getProperty("microedition.m3g.version");
             if (m3gVersion != null)
                 myParameter.setSupport3D(true);
             else
                 myParameter.setSupport3D(false);
-
+            // Check support for GPS
             if ((System.getProperty("microedition.location.version") != null) && (System.getProperty("microedition.location.version").equals("1.0"))) // If API location exists on the phone
                 myParameter.setSupportGPS(true);
             else
                 myParameter.setSupportGPS(false);
-
+            // Check support for touch screen
+            myParameter.setSupportTouchScreen(mySplashCanvas.supportTouchScreen());
             // ====================
             // === Create a sky ===
             mySky = new Sky(myPosition);
@@ -424,6 +431,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         infoCommand = new Command(LocalizationSupport.getMessage("CMD_INFO"), Command.SCREEN, 5);
         langCommand = new Command(LocalizationSupport.getMessage("CMD_LANGUAGE"), Command.SCREEN, 6);
         helpCommand = new Command(LocalizationSupport.getMessage("CMD_HELP"), Command.SCREEN, 7);
+        touchScreenCommand = new Command(LocalizationSupport.getMessage("CMD_TOUCH"), Command.SCREEN, 8);
 
         myCanvas.addCommand(exitCommand);
         myCanvas.addCommand(displayCommand);
@@ -433,6 +441,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         myCanvas.addCommand(infoCommand);
         myCanvas.addCommand(dicoCommand);
         myCanvas.addCommand(langCommand);
+        if (myParameter.isSupportTouchScreen())
+            myCanvas.addCommand(touchScreenCommand);
         myCanvas.setCommandListener(this);
 
         // Create a position form
@@ -502,13 +512,13 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
 
         // Create a search form
         searchForm = new Form(LocalizationSupport.getMessage("PARAM_SEARCH"));
-        searchTextSearch = new TextField("", "", 40, TextField.NON_PREDICTIVE);
+        searchTextSearch = new TextField(LocalizationSupport.getMessage("TEXT_SEARCH"), null, 30, TextField.NON_PREDICTIVE);
         searchItemSearch = new StringItem(LocalizationSupport.getMessage("PARAM_SEARCH"),"?",StringItem.BUTTON);
         searchItemSearch.setDefaultCommand(new Command(LocalizationSupport.getMessage("PARAM_SEARCH"),Command.ITEM,1));
         searchItemCancelSearch = new StringItem("",LocalizationSupport.getMessage("PARAM_SSEARCH"),StringItem.BUTTON);
         searchItemCancelSearch.setDefaultCommand(new Command(LocalizationSupport.getMessage("PARAM_SSEARCH"),Command.ITEM,1));
-        searchForm.append(searchItemSearch);
         searchForm.append(searchTextSearch);
+        searchForm.append(searchItemSearch);
         searchForm.append(searchItemCancelSearch);
         searchItemSearch.setItemCommandListener(this);
         searchItemCancelSearch.setItemCommandListener(this);
@@ -519,12 +529,9 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         displayOptionsStringItem = new StringItem(LocalizationSupport.getMessage("AF"), "");
         displayOptionsChoiceGroup = new ChoiceGroup(LocalizationSupport.getMessage("AG"), ChoiceGroup.MULTIPLE, ConfigParameters.getParamNames(), null);
         displayOptionsTextMaxMag = new TextField(ConfigParameters.getName(ConfigParameters.MAX_MAG), Float.toString(myParameter.getMaxMag()), 15, TextField.DECIMAL);
-        sensitivityGauge = new Gauge("Sensitivity Touch Screen", true, 40, myParameter.getSensitivity());
         displayOptionsForm.append(displayOptionsStringItem);
         displayOptionsForm.append(displayOptionsChoiceGroup);
         displayOptionsForm.append(displayOptionsTextMaxMag);
-        displayOptionsForm.append(new Spacer(400,10));
-        displayOptionsForm.append(sensitivityGauge);
         displayOptionsForm.addCommand(cancelCommand);
         displayOptionsForm.addCommand(okCommand);
         displayOptionsForm.setCommandListener(this);
@@ -610,6 +617,16 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         langForm.addCommand(cancelCommand);
         langForm.addCommand(okCommand);
         langForm.setCommandListener(this);
+
+        // Create the touch screen form
+        if (myParameter.isSupportTouchScreen()) {
+            touchScreeForm = new Form(LocalizationSupport.getMessage("TOUCH_FORM_TITLE"));
+            sensitivityGauge = new Gauge("Sensitivity Touch Screen", true, 40, myParameter.getSensitivity());
+            touchScreeForm.append(sensitivityGauge);
+            touchScreeForm.addCommand(cancelCommand);
+            touchScreeForm.addCommand(okCommand);
+            touchScreeForm.setCommandListener(this);
+        }
     }
     /**
      * React to user's choice.
@@ -626,13 +643,11 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
              } catch (MIDletStateChangeException ex) {
                 ex.printStackTrace();
             }
-            //myCanvas.setState(SideralisCanvas.END1);
         // === Form selection commands ===
         } else if (c == displayCommand) {
             // Display display options
             displayOptionsChoiceGroup.setSelectedFlags(myParameter.getSelectedFlags());
             displayOptionsTextMaxMag.setString(String.valueOf(myParameter.getMaxMag()));
-            sensitivityGauge.setValue(myParameter.getSensitivity());
             myDisplay.setCurrent(displayOptionsForm);
         } else if (c == searchCommand) {
             // Search command
@@ -654,7 +669,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 e.printStackTrace();
             }
 //#ifdef JSR179
-
         } else if (c == autoPositionCommand) {
             tempPos = new Position();
             whereAmI = new LocateMe(tempPos, this);
@@ -682,9 +696,13 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             // To select info
             myDisplay.setCurrent(dicoForm);
         } else if (c == langCommand) {
-            // To select language */
+            // To select language
             langChoiceGroup.setSelectedIndex(getLangAsInt(), true);
             myDisplay.setCurrent(langForm);
+        } else if (c == touchScreenCommand) {
+            // To configure touch screen
+            sensitivityGauge.setValue(myParameter.getSensitivity());
+            myDisplay.setCurrent(touchScreeForm);
 
         // === CANCEL command ===
         } else if (c == cancelCommand) {
@@ -705,6 +723,8 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 whereAmI = null;
                 myDisplay.setCurrent(positionForm);
 //#endif
+            } else if (myDisplay.getCurrent() == touchScreeForm) {
+                myDisplay.setCurrent(myCanvas);
             }
         // === OK command ===
         } else if (c == okCommand) {
@@ -750,6 +770,10 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 saveLanguage();
             } else if (myDisplay.getCurrent() == helpForm) {
                 myDisplay.setCurrent(myCanvas);
+            } else if (myDisplay.getCurrent() == touchScreeForm) {
+                myParameter.setSensitivity(sensitivityGauge.getValue());
+                myDisplay.setCurrent(myCanvas);
+                saveData();
             }
         } else if (c == backCommand) {
             myDisplay.setCurrent(myCanvas);
@@ -1112,7 +1136,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             if (sv.equals(version)) {
                 i = din.readInt();
                 setLang(i);
-                System.out.println("Language: "+i);
             }
 
             din.close();

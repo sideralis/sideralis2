@@ -33,7 +33,7 @@ public class TouchScreen {
     /** Position of pressed */
     private int xPressed,yPressed;
     /** My icons */
-    private Image zoomInIcon,zoomOutIcon,maxIcon,minIcon;
+    private Image zoomInIcon,zoomOutIcon,maxIcon,minIcon,zenithIcon,horizonIcon;
     /** My counter used to make icons vanish */
     private int counterVanishIcon;
     /** Time variable used when dragging screen */
@@ -44,19 +44,26 @@ public class TouchScreen {
     private int xOrg,yOrg;
     /** Boolean to indicate if we are in full screen mode or not */
     private boolean fullScreen;
+    /** Boolean to indicate if we are in horizon view or not */
+    private boolean horizonScreen;
 
     private static final int COUNTER_VANISH_ICON = 100;
     /** The result of the action on the touch screen */
+    public static final short NOTHING = 30;                                     // Click does nothing
+    public static final short ZOOM_IN = 0;                                      // To zoom in
+    public static final short ZOOM_OUT = 1;                                     // To zoom out
+    public static final short MIN_MAX = 2;                                      // Switch between full screen and not full screen
+    public static final short VIEW = 3;                                         // To switch between horizontal and zenith view
+
     public static final short CURSOR_ON = 10;
     public static final short MOVE = 20;
-    public static final short NOTHING = 30;
-    public static final short ZOOM_IN = 0;
-    public static final short ZOOM_OUT = 1;
-    public static final short MIN_MAX = 2;
+    public static final short DEBUG = 30;
+    public static final short CONST = 40;
+
     /** Default size of icon */
     private static final int SIZE_ICON = 48;
     /** Number of icon */
-    private static final int NB_ICON = 3;
+    private static final int NB_ICON = 4;
     /** Sensitivity drag vs click */
     private ConfigParameters myParameter;
     /** Sensitivity for dragging - If dragging event are too much time separated, dragging is not taken into acount */
@@ -74,21 +81,17 @@ public class TouchScreen {
         barPressed = false;
         fullScreen = true;
         myParameter = myMidlet.getMyParameter();
+        horizonScreen = true;
         try {
             zoomInIcon = Image.createImage("/View-zoom-in.png");
             zoomOutIcon = Image.createImage("/View-zoom-out.png");
             maxIcon = Image.createImage("/max.png");
             minIcon = Image.createImage("/min.png");
+            horizonIcon = Image.createImage("/HorView.png");
+            zenithIcon = Image.createImage("/ZenithView.png");
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-//        int[] rgbData = new int[zoomInIcon.getWidth() * zoomInIcon.getHeight()];
-//        zoomInIcon.getRGB(rgbData, 0, zoomInIcon.getWidth(), 0, 0, zoomInIcon.getWidth(), zoomInIcon.getHeight());
-//        for (int i=0;i<rgbData.length;i++) {
-//            rgbData[i] = rgbData[i] - (((rgbData[i]&0xff000000)/2)&0xff000000);
-//        }
-//        zoomInIcon = Image.createRGBImage(rgbData, zoomInIcon.getWidth(), zoomInIcon.getHeight(), true);
-
     }
     /**
      * Paint the touch screen bar
@@ -108,7 +111,10 @@ public class TouchScreen {
                     g.drawImage(minIcon, x, y+sizeIcon*2, Graphics.HCENTER | Graphics.VCENTER);
                 else
                     g.drawImage(maxIcon, x, y+sizeIcon*2, Graphics.HCENTER | Graphics.VCENTER);
-//                g.drawImage(rotateRightIcon, x, y+sizeIcon*3, Graphics.HCENTER | Graphics.VCENTER);
+                if (horizonScreen)
+                    g.drawImage(zenithIcon, x, y+sizeIcon*3, Graphics.HCENTER | Graphics.VCENTER);
+                else
+                    g.drawImage(horizonIcon, x, y+sizeIcon*3, Graphics.HCENTER | Graphics.VCENTER);
             } else {
                 g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
                 g.drawImage(zoomOutIcon, x+sizeIcon, y, Graphics.HCENTER | Graphics.VCENTER);
@@ -116,7 +122,10 @@ public class TouchScreen {
                     g.drawImage(minIcon, x+sizeIcon*2, y, Graphics.HCENTER | Graphics.VCENTER);
                 else
                     g.drawImage(maxIcon, x+sizeIcon*2, y, Graphics.HCENTER | Graphics.VCENTER);
-//                g.drawImage(rotateRightIcon, x+sizeIcon*3, y, Graphics.HCENTER | Graphics.VCENTER);
+                if (horizonScreen)
+                    g.drawImage(zenithIcon, x+sizeIcon*3, y, Graphics.HCENTER | Graphics.VCENTER);
+                else
+                    g.drawImage(horizonIcon, x+sizeIcon*3, y, Graphics.HCENTER | Graphics.VCENTER);
             }
         }
     }
@@ -157,6 +166,7 @@ public class TouchScreen {
      */
     public int setReleased(int x,int y) {
         if (counterVanishIcon != 0) {
+            // Clicks are only active if bar is displayed
             counterVanishIcon = COUNTER_VANISH_ICON;
             int ret = -1;
             if (barPressed && !barDragged) {
@@ -164,6 +174,7 @@ public class TouchScreen {
                 ret = getButton(x,y);
             }
             if (screenPressed && !screenDragged) {
+                
                 ret = CURSOR_ON;
             }
             barDragged = screenDragged = false;
@@ -337,6 +348,12 @@ public class TouchScreen {
      */
     public boolean isFullScreen() {
         return fullScreen;
+    }
+    /**
+     *
+     */
+    void toggleView() {
+        horizonScreen = ! horizonScreen;
     }
 
 }

@@ -196,4 +196,8 @@ public class SplashCanvas extends Canvas implements Runnable {
         getHeight = h;
         getWidth = w;
     }
+
+    public boolean supportTouchScreen() {
+        return hasPointerEvents();
+    }
 }

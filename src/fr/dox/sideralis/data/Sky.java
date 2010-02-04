@@ -87,35 +87,35 @@ public class Sky implements Runnable {
         sunProj = new SunProj(sunObject);
 
         // Create mercury
-        mercuryObject = new PlanetObject(0F, 0F, LocalizationSupport.getMessage("NAME_MERCURY"), (short)-10,
+        mercuryObject = new PlanetObject(0F, 0F, LocalizationSupport.getMessage("NAME_MERCURY"), (short)-23,
                 178.179078, 149474.07078, 0.0003011, 0, 0.3870986, 0.20561421, 0.00002046, -0.000000030, 0,
                 7.002881, 0.0018608, -0.0000183, 0, 28.753753, 0.3702806, 0.0001208, 0,
                 47.145944, 1.1852083, 0.0001739, 0, 102.27938, 149472.51529, 0.000007);
         mercuryProj = new PlanetProj(mercuryObject,SkyObject.MERCURE);
 
         // Create venus
-        venusObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_VENUS"),(short)-40,
+        venusObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_VENUS"),(short)-46,
                 342.767053, 58519.21191, 0.0003097, 0, 0.7233316, 0.00682069, -0.00004774, 0.000000091, 0,
                 3.393631, 0.0010058, -0.0000010, 0, 54.384186, 0.5081861, -0.0013864, 0,
                 75.779647, 0.8998500, 0.0004100, 0, 212.60322, 58517.80387, 0.001286);
         venusProj = new PlanetProj(venusObject,SkyObject.VENUS);
 
         // Create Mars
-        marsObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_MARS"),(short)15,
+        marsObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_MARS"),(short)-29,
                 293.737334, 19141.69551, 0.0003107, 0, 1.5236883, 0.09331290, 0.000092064, -0.000000077, 0,
                 1.850333, -0.0006750, 0.0000126, 0, 285.431761, 1.0697667, 0.0001313, 0.00000414,
                 48.786442, 0.7709917, -0.0000014, -0.00000533, 319.51913, 19139.85475, 0.000181);
         marsProj = new PlanetProj(marsObject,SkyObject.MARS);
 
         // Create Jupiter
-        jupiterObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_JUPITER"),(short)-16,
+        jupiterObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_JUPITER"),(short)-29,
                 238.049257, 3036.301986, 0.0003347, -0.00000165, 5.202561, 0.04833475, 0.000164180, -0.0000004676, -0.000000017,
                 1.308736, -0.0056961, 0.0000039, 0,273.277558, 0.5994317, 0.00070405, 0.00000508,
                 99.443414, 1.0105300, 0.00035222, -0.00000851, 225.32833, 3034.69202, -0.000722);
         jupiterProj = new PlanetProj(jupiterObject,SkyObject.JUPITER);
 
         // Create Saturn
-        saturnObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_SATURN"),(short)-7,
+        saturnObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_SATURN"),(short)-4,
                 266.564377, 1223.509884, 0.0003245, -0.0000058, 9.554747, 0.05589232, -0.00034550, -0.000000728, 0.00000000074,
                 2.492519, -0.0039189, -0.00001549, 0.00000004, 338.307800, 1.0852207, 0.00097854, 0.00000992,
                 112.790414, 0.8731951, -0.00015218, -0.00000531, 175.46622, 1221.55147, -0.000502);
@@ -129,7 +129,7 @@ public class Sky implements Runnable {
         uranusProj = new PlanetProj(uranusObject,SkyObject.URANUS);
 
         // Create Neptune
-        neptuneObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_NEPTUNE"),(short)79,
+        neptuneObject = new PlanetObject(0F,0F,LocalizationSupport.getMessage("NAME_NEPTUNE"),(short)78,
                 84.457994, 219.885914, 0.0003205, -0.00000060, 30.10957, 0.00899704, 0.000006330, -0.00000002, 0,
                 1.779242, -0.0095436, -0.0000091, 0, 276.045975, 0.3256394, 0.00014095, 0.000004113,
                 130.681389, 1.0989350, 0.00024987, -0.000004718, 37.7306, 218.46134 , -0.000070);
