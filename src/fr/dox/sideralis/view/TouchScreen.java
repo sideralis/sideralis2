@@ -14,6 +14,7 @@ import javax.microedition.lcdui.Image;
 /**
  *
  * @author Bernard
+ * TODO Color needs to be changed when red color
  */
 public class TouchScreen {
     /** Position of floating bar for pointer */
@@ -42,10 +43,6 @@ public class TouchScreen {
     private boolean scroll;
     private float rotDir,yDir;
     private int xOrg,yOrg;
-    /** Boolean to indicate if we are in full screen mode or not */
-    private boolean fullScreen;
-    /** Boolean to indicate if we are in horizon view or not */
-    private boolean horizonScreen;
 
     private static final int COUNTER_VANISH_ICON = 100;
     /** The result of the action on the touch screen */
@@ -79,9 +76,7 @@ public class TouchScreen {
         xTouchScreen = 0;
         yTouchScreen = 0;
         barPressed = false;
-        fullScreen = true;
         myParameter = myMidlet.getMyParameter();
-        horizonScreen = true;
         try {
             zoomInIcon = Image.createImage("/View-zoom-in.png");
             zoomOutIcon = Image.createImage("/View-zoom-out.png");
@@ -107,22 +102,22 @@ public class TouchScreen {
             if (vertical) {
                 g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
                 g.drawImage(zoomOutIcon, x, y+sizeIcon, Graphics.HCENTER | Graphics.VCENTER);
-                if (fullScreen)
+                if (myParameter.isFullScreen())
                     g.drawImage(minIcon, x, y+sizeIcon*2, Graphics.HCENTER | Graphics.VCENTER);
                 else
                     g.drawImage(maxIcon, x, y+sizeIcon*2, Graphics.HCENTER | Graphics.VCENTER);
-                if (horizonScreen)
+                if (myParameter.isHorizontalView())
                     g.drawImage(zenithIcon, x, y+sizeIcon*3, Graphics.HCENTER | Graphics.VCENTER);
                 else
                     g.drawImage(horizonIcon, x, y+sizeIcon*3, Graphics.HCENTER | Graphics.VCENTER);
             } else {
                 g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
                 g.drawImage(zoomOutIcon, x+sizeIcon, y, Graphics.HCENTER | Graphics.VCENTER);
-                if (fullScreen)
+                if (myParameter.isFullScreen())
                     g.drawImage(minIcon, x+sizeIcon*2, y, Graphics.HCENTER | Graphics.VCENTER);
                 else
                     g.drawImage(maxIcon, x+sizeIcon*2, y, Graphics.HCENTER | Graphics.VCENTER);
-                if (horizonScreen)
+                if (myParameter.isHorizontalView())
                     g.drawImage(zenithIcon, x+sizeIcon*3, y, Graphics.HCENTER | Graphics.VCENTER);
                 else
                     g.drawImage(horizonIcon, x+sizeIcon*3, y, Graphics.HCENTER | Graphics.VCENTER);
@@ -326,34 +321,13 @@ public class TouchScreen {
             vertical = false;
 
         if (vertical) {
-            sizeIcon = SIZE_ICON*w/240;
+            sizeIcon = SIZE_ICON;
             widthTouchScreen = sizeIcon;
             heightTouchScreen = NB_ICON*widthTouchScreen;
         } else {
-            sizeIcon = SIZE_ICON*h/320;
+            sizeIcon = SIZE_ICON;
             heightTouchScreen = sizeIcon;
             widthTouchScreen = NB_ICON*heightTouchScreen;
         }
     }
-    
-    /**
-     * Switch from full screen to non full screen and vice versa
-     */
-    void toggleFullScreen() {
-        fullScreen = !fullScreen;
-    }
-    /**
-     *
-     * @return
-     */
-    public boolean isFullScreen() {
-        return fullScreen;
-    }
-    /**
-     *
-     */
-    void toggleView() {
-        horizonScreen = ! horizonScreen;
-    }
-
 }

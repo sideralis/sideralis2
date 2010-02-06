@@ -57,7 +57,8 @@ public class EyeProj extends ScreenProj {
     /** Viewport aspect ration */
     private float aspectRatio;
     /** Camera near and far parameters */
-    private float near,far;
+    private static final float NEAR = 1;
+    private static final float FAR = 1000;
     /** The field of vision */
     private float fov;
 
@@ -85,8 +86,6 @@ public class EyeProj extends ScreenProj {
         graphics3D = Graphics3D.getInstance();
 
         fov = 70;
-        near = 1;
-        far = 1000;
         rotV = (float)Math.toRadians(20);
 
         positionsPlanets = new short[(Sky.NB_OF_PLANETS +2) * 3];               // 2 for Sun and Moon
@@ -122,20 +121,18 @@ public class EyeProj extends ScreenProj {
 
         // Create an horizon
         horizon = createHorizon2();
-//        addRandomColors(horizon);
         PolygonMode polygonMode = new PolygonMode();
         polygonMode.setPerspectiveCorrectionEnable(true);
         polygonMode.setCulling(PolygonMode.CULL_NONE);
 //        polygonMode.setShading(PolygonMode.SHADE_FLAT);
         horizon.getAppearance(0).setPolygonMode(polygonMode);
         
-        Material material = new Material();
-        material.setVertexColorTrackingEnable(true);
-        material.setColor(Material.SPECULAR, 0x00ffffff);
-        material.setColor(Material.DIFFUSE, 0x00666666);
-        material.setColor(Material.AMBIENT, 0x00ffffff);
-        horizon.getAppearance(0).setMaterial(material);
-
+        if (myMidlet.getMyParameter().isLight()) {
+            Material material = new Material();
+            material.setVertexColorTrackingEnable(true);
+            material.setColor(Material.AMBIENT, 0x00ffffff);
+            horizon.getAppearance(0).setMaterial(material);
+        }
 
         // Create a camera
         camera = new Camera();
@@ -153,59 +150,26 @@ public class EyeProj extends ScreenProj {
         lightAmbient.setMode(Light.AMBIENT);
         lightAmbient.setColor(0x00ffffff);
         lightAmbient.setIntensity(AMBIENT_VALUE);
-
-//        lightSun = new Light();
-//        lightSun.setMode(Light.OMNI);
-//        lightSun.setColor(0x00ffffff);
-//
-//        lightMoon = new Light();
-//        lightMoon.setMode(Light.OMNI);
-//        lightMoon.setColor(0x00ffffff);
     }
     /**
      *
      */
     public void setLights() {
-        double x,y,z;
-        float scale = Short.MAX_VALUE/64;
-        Transform tr;
+        if (myMidlet.getMyParameter().isLight()) {
+            // Create the lights
+            graphics3D.resetLights();
 
-        // Create the lights
-        graphics3D.resetLights();
+            float val = AMBIENT_VALUE;
 
-        float val = AMBIENT_VALUE;
-
-        if (mySky.getSun().getHeight()>0) {
-            val += (float)mySky.getSun().getHeight()/2;
-//            lightSun.setIntensity((float)mySky.getSun().getHeight()/2);
-//            x = Math.cos(Math.PI/2-mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
-//            y = Math.sin(mySky.getSun().getHeight());
-//            z = Math.sin(Math.PI/2-mySky.getSun().getAzimuth()) * Math.cos(mySky.getSun().getHeight());
-//            tr = new Transform();
-//            tr.setIdentity();
-//            tr.postRotate((float)Math.toDegrees(-mySky.getSun().getHeight()), (float) Math.cos(Math.PI/2-mySky.getSun().getAzimuth()), 0, (float) Math.sin(Math.PI/2-mySky.getSun().getAzimuth()));
-//            tr.postRotate((float)Math.toDegrees(Math.PI/2-mySky.getSun().getAzimuth()), 0, 1, 0);
-//            tr.postTranslate((float)(scale*x), (float)(scale*4*y), (float)(scale*z));
-//            System.out.println("Sun x= "+(scale*x)+" y="+(scale*y)+" z="+(scale*z)+" rot="+Math.toDegrees(mySky.getSun().getAzimuth()));
-//            graphics3D.addLight(lightSun, tr);
+            if (mySky.getSun().getHeight()>0) {
+                val += (float)mySky.getSun().getHeight()/2;
+            }
+            if (mySky.getMoon().getHeight()>0) {
+                val += (float)mySky.getMoon().getHeight()/20;
+            }
+            lightAmbient.setIntensity(val);
+            graphics3D.addLight(lightAmbient,null);
         }
-        if (mySky.getMoon().getHeight()>0) {
-            val += (float)mySky.getMoon().getHeight()/20;
-//            lightMoon.setIntensity((float)mySky.getMoon().getHeight()/20);
-//            x = Math.cos(Math.PI/2-mySky.getMoon().getAzimuth()) * Math.cos(mySky.getMoon().getHeight());
-//            y = Math.sin(mySky.getMoon().getHeight());
-//            z = Math.sin(Math.PI/2-mySky.getMoon().getAzimuth()) * Math.cos(mySky.getMoon().getHeight());
-//            tr = new Transform();
-//            tr.setIdentity();
-//            tr.postRotate((float)Math.toDegrees(-mySky.getMoon().getHeight()), (float) Math.cos(Math.PI/2-mySky.getMoon().getAzimuth()), 0, (float) Math.sin(Math.PI/2-mySky.getMoon().getAzimuth()));
-//            tr.postRotate((float)Math.toDegrees(Math.PI/2-mySky.getMoon().getAzimuth()), 0, 1, 0);
-//            tr.postTranslate((float)(scale*x), (float)(scale*4*y), (float)(scale*z));
-//            System.out.println("Moon x= "+(scale*x)+" y="+(scale*y)+" z="+(scale*z)+" i="+(float)mySky.getMoon().getHeight());
-//            graphics3D.addLight(lightMoon, tr);
-        }
-        lightAmbient.setIntensity(val);
-        graphics3D.addLight(lightAmbient,null);
-
     }
 
     /**
@@ -269,7 +233,6 @@ public class EyeProj extends ScreenProj {
         final short step = (short)(2*scale/dim);                                // The size of square
 
         short[] positions = new short[(dim+1) * (dim+1) * 3];
-//        short[] normals = new short[(dim+1) * (dim+1) * 3];
         byte[] colors = new byte[(dim+1) * (dim+1) * 3];
         int[] triangleIndices = new int[((dim+1)*2)*dim];
         int[] triangleLengths = new int[dim];
@@ -322,323 +285,20 @@ public class EyeProj extends ScreenProj {
             if (yt[i]>max)
                 max = yt[i];
         }
-        // Calculate all normals
-//        for (i=0;i<=dim;i++) {
-//            for (j=0;j<=dim;j++) {
-//                int k = i*(dim+1)+j;
-//                if (i==0 && j==0) {
-//                    // 1 triangle
-//                    vx1 = (short) (xt[dim+1]-xt[0]);
-//                    vy1 = (short) (yt[dim+1]-yt[0]);
-//                    vz1 = (short) (zt[dim+1]-zt[0]);
-//                    vx2 = (short) (xt[1]-xt[0]);
-//                    vy2 = (short) (yt[1]-yt[0]);
-//                    vz2 = (short) (zt[1]-zt[0]);
-//                    xnt[0] = (short)(vy1*vz2-vz1*vy2);
-//                    ynt[0] = (short)(vz1*vx2-vx1*vz2);
-//                    znt[0] = (short)(vx1*vy2-vy1*vx2);
-//                } else if (i==dim && j==dim) {
-//                    // 1 triangle
-//                    vx1 = (short) (xt[k-(dim+1)]-xt[k]);
-//                    vy1 = (short) (yt[k-(dim+1)]-yt[k]);
-//                    vz1 = (short) (zt[k-(dim+1)]-zt[k]);
-//                    vx2 = (short) (xt[k-1]-xt[k]);
-//                    vy2 = (short) (yt[k-1]-yt[k]);
-//                    vz2 = (short) (zt[k-1]-zt[k]);
-//                    xnt[k] = (short)(vy1*vz2-vz1*vy2);
-//                    ynt[k] = (short)(vz1*vx2-vx1*vz2);
-//                    znt[k] = (short)(vx1*vy2-vy1*vx2);
-//                } else if (i==dim && j==0) {
-//                    // 2 triangles
-//                    vx1 = (short) (xt[k+1]-xt[k]);
-//                    vy1 = (short) (yt[k+1]-yt[k]);
-//                    vz1 = (short) (zt[k+1]-zt[k]);
-//                    vx2 = (short) (xt[k-dim]-xt[k]);
-//                    vy2 = (short) (yt[k-dim]-yt[k]);
-//                    vz2 = (short) (zt[k-dim]-zt[k]);
-//                    vxt[0] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[0] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[0] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k-(dim+1)]-xt[k]);
-//                    vy2 = (short) (yt[k-(dim+1)]-yt[k]);
-//                    vz2 = (short) (zt[k-(dim+1)]-zt[k]);
-//                    vxt[1] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[1] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[1] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    xnt[k] = (short)((vxt[0]+vxt[1])/2);
-//                    ynt[k] = (short)((vyt[0]+vyt[1])/2);
-//                    znt[k] = (short)((vzt[0]+vzt[1])/2);
-//
-//                } else if (i==0 && j==dim) {
-//                    // 2 triangles
-//                    vx1 = (short) (xt[k-1]-xt[k]);
-//                    vy1 = (short) (yt[k-1]-yt[k]);
-//                    vz1 = (short) (zt[k-1]-zt[k]);
-//                    vx2 = (short) (xt[k+dim]-xt[k]);
-//                    vy2 = (short) (yt[k+dim]-yt[k]);
-//                    vz2 = (short) (zt[k+dim]-zt[k]);
-//                    vxt[0] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[0] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[0] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k+dim+1]-xt[k]);
-//                    vy2 = (short) (yt[k+dim+1]-yt[k]);
-//                    vz2 = (short) (zt[k+dim+1]-zt[k]);
-//                    vxt[1] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[1] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[1] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    xnt[k] = (short)((vxt[0]+vxt[1])/2);
-//                    ynt[k] = (short)((vyt[0]+vyt[1])/2);
-//                    znt[k] = (short)((vzt[0]+vzt[1])/2);
-//                } else if (i==0) {
-//                    // 3 triangles
-//                    vx1 = (short) (xt[k-1]-xt[k]);
-//                    vy1 = (short) (yt[k-1]-yt[k]);
-//                    vz1 = (short) (zt[k-1]-zt[k]);
-//                    vx2 = (short) (xt[k+dim]-xt[k]);
-//                    vy2 = (short) (yt[k+dim]-yt[k]);
-//                    vz2 = (short) (zt[k+dim]-zt[k]);
-//                    vxt[0] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[0] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[0] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k+dim+1]-xt[k]);
-//                    vy2 = (short) (yt[k+dim+1]-yt[k]);
-//                    vz2 = (short) (zt[k+dim+1]-zt[k]);
-//                    vxt[1] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[1] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[1] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k+1]-xt[k]);
-//                    vy2 = (short) (yt[k+1]-yt[k]);
-//                    vz2 = (short) (zt[k+1]-zt[k]);
-//                    vxt[2] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[2] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[2] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    xnt[k] = (short)((vxt[0]+vxt[1]+vxt[2])/3);
-//                    ynt[k] = (short)((vyt[0]+vyt[1]+vyt[2])/3);
-//                    znt[k] = (short)((vzt[0]+vzt[1]+vzt[2])/3);
-//
-//                } else if (i==dim) {
-//                    // 3 triangles
-//                    vx1 = (short) (xt[k+1]-xt[k]);
-//                    vy1 = (short) (yt[k+1]-yt[k]);
-//                    vz1 = (short) (zt[k+1]-zt[k]);
-//                    vx2 = (short) (xt[k-dim]-xt[k]);
-//                    vy2 = (short) (yt[k-dim]-yt[k]);
-//                    vz2 = (short) (zt[k-dim]-zt[k]);
-//                    vxt[0] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[0] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[0] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k-(dim+1)]-xt[k]);
-//                    vy2 = (short) (yt[k-(dim+1)]-yt[k]);
-//                    vz2 = (short) (zt[k-(dim+1)]-zt[k]);
-//                    vxt[1] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[1] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[1] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k-1]-xt[k]);
-//                    vy2 = (short) (yt[k-1]-yt[k]);
-//                    vz2 = (short) (zt[k-1]-zt[k]);
-//                    vxt[2] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[2] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[2] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    xnt[k] = (short)((vxt[0]+vxt[1]+vxt[2])/3);
-//                    ynt[k] = (short)((vyt[0]+vyt[1]+vyt[2])/3);
-//                    znt[k] = (short)((vzt[0]+vzt[1]+vzt[2])/3);
-//
-//                } else if (j==0) {
-//                    // 3 triangles
-//                    vx1 = (short) (xt[k+dim+1]-xt[k]);
-//                    vy1 = (short) (yt[k+dim+1]-yt[k]);
-//                    vz1 = (short) (zt[k+dim+1]-zt[k]);
-//                    vx2 = (short) (xt[k+1]-xt[k]);
-//                    vy2 = (short) (yt[k+1]-yt[k]);
-//                    vz2 = (short) (zt[k+1]-zt[k]);
-//                    vxt[0] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[0] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[0] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k-dim]-xt[k]);
-//                    vy2 = (short) (yt[k-dim]-yt[k]);
-//                    vz2 = (short) (zt[k-dim]-zt[k]);
-//                    vxt[1] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[1] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[1] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k-(dim+1)]-xt[k]);
-//                    vy2 = (short) (yt[k-(dim+1)]-yt[k]);
-//                    vz2 = (short) (zt[k-(dim+1)]-zt[k]);
-//                    vxt[2] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[2] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[2] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    xnt[k] = (short)((vxt[0]+vxt[1]+vxt[2])/3);
-//                    ynt[k] = (short)((vyt[0]+vyt[1]+vyt[2])/3);
-//                    znt[k] = (short)((vzt[0]+vzt[1]+vzt[2])/3);
-//
-//                } else if (j==dim) {
-//                    // 3 triangles
-//                    vx1 = (short) (xt[k-(dim+1)]-xt[k]);
-//                    vy1 = (short) (yt[k-(dim+1)]-yt[k]);
-//                    vz1 = (short) (zt[k-(dim+1)]-zt[k]);
-//                    vx2 = (short) (xt[k-1]-xt[k]);
-//                    vy2 = (short) (yt[k-1]-yt[k]);
-//                    vz2 = (short) (zt[k-1]-zt[k]);
-//                    vxt[0] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[0] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[0] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k+dim]-xt[k]);
-//                    vy2 = (short) (yt[k+dim]-yt[k]);
-//                    vz2 = (short) (zt[k+dim]-zt[k]);
-//                    vxt[1] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[1] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[1] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k+dim+1]-xt[k]);
-//                    vy2 = (short) (yt[k+dim+1]-yt[k]);
-//                    vz2 = (short) (zt[k+dim+1]-zt[k]);
-//                    vxt[2] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[2] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[2] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    xnt[k] = (short)((vxt[0]+vxt[1]+vxt[2])/3);
-//                    ynt[k] = (short)((vyt[0]+vyt[1]+vyt[2])/3);
-//                    znt[k] = (short)((vzt[0]+vzt[1]+vzt[2])/3);
-//                } else {
-//                    // 6 triangles
-//                    vx1 = (short) (xt[k-(dim+1)]-xt[k]);
-//                    vy1 = (short) (yt[k-(dim+1)]-yt[k]);
-//                    vz1 = (short) (zt[k-(dim+1)]-zt[k]);
-//                    vx2 = (short) (xt[k-1]-xt[k]);
-//                    vy2 = (short) (yt[k-1]-yt[k]);
-//                    vz2 = (short) (zt[k-1]-zt[k]);
-//                    vxt[0] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[0] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[0] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k+dim]-xt[k]);
-//                    vy2 = (short) (yt[k+dim]-yt[k]);
-//                    vz2 = (short) (zt[k+dim]-zt[k]);
-//                    vxt[1] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[1] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[1] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k+dim+1]-xt[k]);
-//                    vy2 = (short) (yt[k+dim+1]-yt[k]);
-//                    vz2 = (short) (zt[k+dim+1]-zt[k]);
-//                    vxt[2] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[2] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[2] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k+1]-xt[k]);
-//                    vy2 = (short) (yt[k+1]-yt[k]);
-//                    vz2 = (short) (zt[k+1]-zt[k]);
-//                    vxt[3] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[3] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[3] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k-dim]-xt[k]);
-//                    vy2 = (short) (yt[k-dim]-yt[k]);
-//                    vz2 = (short) (zt[k-dim]-zt[k]);
-//                    vxt[4] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[4] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[4] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    vx1 = vx2;
-//                    vy1 = vy2;
-//                    vz1 = vz2;
-//                    vx2 = (short) (xt[k-(dim+1)]-xt[k]);
-//                    vy2 = (short) (yt[k-(dim+1)]-yt[k]);
-//                    vz2 = (short) (zt[k-(dim+1)]-zt[k]);
-//                    vxt[5] = (short)(vy1*vz2-vz1*vy2);
-//                    vyt[5] = (short)(vz1*vx2-vx1*vz2);
-//                    vzt[5] = (short)(vx1*vy2-vy1*vx2);
-//
-//                    xnt[k] = (short)((vxt[0]+vxt[1]+vxt[2]+vxt[3]+vxt[4]+vxt[5])/6);
-//                    ynt[k] = (short)((vyt[0]+vyt[1]+vyt[2]+vyt[3]+vyt[4]+vyt[5])/6);
-//                    znt[k] = (short)((vzt[0]+vzt[1]+vzt[2]+vzt[3]+vzt[4]+vzt[5])/6);
-//                }
-////                System.out.println("xn="+xt[k]+" yn="+yt[k]+" znt="+zt[k]);
-////                if (yt[k]<min)
-////                    min = yt[k];
-////                if (yt[k]>max)
-////                    max = yt[k];
-//
-//            }
-//        }
-//        System.out.println("min="+min+" max="+max);
         // Create vertices
         for (i=0;i<=dim;i++) {
             for (j=0;j<=dim;j++) {
                 positions[index++] = xt[i*(dim+1)+j];
                 positions[index++] = yt[i*(dim+1)+j];
                 positions[index++] = zt[i*(dim+1)+j];
-//                normals[indexNor++] = (short)(xnt[i*(dim+1)+j]);
-//                normals[indexNor++] = (short)(ynt[i*(dim+1)+j]);
-//                normals[indexNor++] = (short)(znt[i*(dim+1)+j]);
                 if (yt[i*(dim+1)+j]>-15) {
                     colors[indexCol++] = (byte)0xff;
                     colors[indexCol++] = (byte)0xff;
                     colors[indexCol++] = (byte)0xff;
-//                } else if (yt[i*(dim+1)+j]==(short)(2*heightOffset - height)) {
-//                    colors[indexCol++] = (byte)0x00;
-//                    colors[indexCol++] = (byte)0x00;
-//                    colors[indexCol++] = (byte)0xff;
                 } else {
                     float r = (float)(max - yt[i*(dim+1)+j])/(float)(min-max);
                     colors[indexCol++] = (byte)(0xa0*(1+r));
                     colors[indexCol++] = (byte)(0xa0+0x3f*(1+r));
-//                    colors[indexCol++] = (byte)(0x90);
                     colors[indexCol++] = (byte)(0x21*(1+r));
                 }
             }
@@ -653,9 +313,6 @@ public class EyeProj extends ScreenProj {
 
         VertexBuffer planeVertexData = new VertexBuffer();
 
-//        VertexArray vertexNormals = new VertexArray(normals.length/3, 3, 2);
-//        vertexNormals.set(0, normals.length / 3, normals);
-
         VertexArray vertexPositions = new VertexArray(positions.length / 3, 3, 2);
         vertexPositions.set(0, positions.length / 3, positions);
 
@@ -663,7 +320,6 @@ public class EyeProj extends ScreenProj {
         vertexColors.set(0, colors.length / 3, colors);
 
         planeVertexData.setPositions(vertexPositions, 1, null);
-//        planeVertexData.setNormals(vertexNormals);
         planeVertexData.setColors(vertexColors);
 
         TriangleStripArray planeTriangles = new TriangleStripArray(triangleIndices, triangleLengths);
@@ -681,7 +337,7 @@ public class EyeProj extends ScreenProj {
         invertedCameraTransform = new Transform(cameraTransform);
         invertedCameraTransform.invert();
 
-        camera.setPerspective(fov, aspectRatio, near, far);
+        camera.setPerspective(fov, aspectRatio, NEAR, FAR);
         //DebugOutput.store("Ratio "+aspectRatio);
         graphics3D.setCamera(camera, cameraTransform);
     }
@@ -1018,26 +674,6 @@ public class EyeProj extends ScreenProj {
         return screenCoordPlanets[SUN];
     }
     /**
-     *
-     * @param mesh
-     */
-    public static void addRandomColors(Mesh mesh) {
-        Random random = new Random();
-        int vertexCount = mesh.getVertexBuffer().getVertexCount();
-        byte[] colors = new byte[vertexCount * 3];
-
-        for (int i = 0; i < colors.length; i++) {
-            if (i%3 == 1)
-                colors[i] = (byte)255;//(byte) (64+random.nextInt(128));
-            else
-                colors[i] = (byte) 64;
-        }
-
-        VertexArray vertexColors = new VertexArray(vertexCount, 3, 1);
-        vertexColors.set(0, vertexCount, colors);
-        mesh.getVertexBuffer().setColors(vertexColors);
-    }
-    /**
      * Project all the objects of the sky on the display
      */
     public void project() {
@@ -1069,7 +705,6 @@ public class EyeProj extends ScreenProj {
 
         if (camera != null)
             setCamera();
-//        DebugOutput.store("Setview: "+getWidth+"/"+getHeight);
     }
     /**
      * Indicate that this projection is a 3D projection

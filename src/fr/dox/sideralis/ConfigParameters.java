@@ -42,6 +42,11 @@ public class ConfigParameters {
     private boolean debug;
     /** Sensitivity of touch screen */
     private int sensitivity;
+    /** Enable lights in 3d view */
+    private boolean light;
+    /** To know if we are in full screen mode or not */
+    private boolean fullScreen;
+
     /** A table storing the names of all parameters */
     private static final String[] paramNames = new String[]{LocalizationSupport.getMessage("PARAM_CONST"),
         LocalizationSupport.getMessage("PARAM_CONSTN"), LocalizationSupport.getMessage("PARAM_CONSTNL"),
@@ -79,12 +84,14 @@ public class ConfigParameters {
         // Internal parameters (not known from user)
         cursor = false;
         constStory = false;
-        horizontalView = false;
+        horizontalView = true;
         support3D = false;
         debug = false;
         timeCalculate = new long[TIME_SIZE];
         timeDisplay = new long[TIME_SIZE];
         sensitivity = 15;
+        light = true;
+        fullScreen = true;
 
         // Boolean parameters
         parameters = new boolean[paramNames.length];
@@ -493,6 +500,18 @@ public class ConfigParameters {
 
     public void setSensitivity(int sensitivity) {
         this.sensitivity = sensitivity;
+    }
+
+    public boolean isLight() {
+        return light;
+    }
+
+    public boolean isFullScreen() {
+        return fullScreen;
+    }
+
+    public void setFullScreen(boolean fullScreen) {
+        this.fullScreen = fullScreen;
     }
 
 }

@@ -165,7 +165,8 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     LocalizationSupport.getMessage("UP"),
                     LocalizationSupport.getMessage("ZI"),
                     LocalizationSupport.getMessage("LFT"), "",
-                    LocalizationSupport.getMessage("RIT"), "",
+                    LocalizationSupport.getMessage("RIT"),
+                    LocalizationSupport.getMessage("NSC"),
                     LocalizationSupport.getMessage("DWN"), "",
                     LocalizationSupport.getMessage("ZEV"),
                     LocalizationSupport.getMessage("DIC"),
@@ -375,7 +376,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
             // -------------------------------
             // ------ Draw progress bar ------
-            g.setColor(0x00ff);                                                 // TODO set right color
+            g.setColor(myMidlet.getMyParameter().getColor()[Color.COL_PROGRESS]);
             if (mySky.getProgress() != 0) {
                 g.drawLine(0, 0, mySky.getProgress() * myProjection.getWidth() / 100, 0);
             }
@@ -1250,12 +1251,16 @@ public class SideralisCanvas extends Canvas implements Runnable {
             project();
         }
         if (keyCode == TouchScreen.MIN_MAX) {
-            touchScreen.toggleFullScreen();
-            setFullScreenMode(touchScreen.isFullScreen());
+            myMidlet.getMyParameter().setFullScreen(!myMidlet.getMyParameter().isFullScreen());
+            setFullScreenMode(myMidlet.getMyParameter().isFullScreen());
+            if (myMidlet.getMyParameter().isFullScreen())
+                myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("NSC"));
+            else
+                myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("FSC"));
         }
         if (keyCode== TouchScreen.VIEW) {
             if (myMidlet.getMyParameter().isSupport3D()) {
-                touchScreen.toggleView();
+                myMidlet.getMyParameter().setHorizontalView(!myMidlet.getMyParameter().isHorizontalView());
                 switchScreen();
             }
         }
@@ -1292,6 +1297,15 @@ public class SideralisCanvas extends Canvas implements Runnable {
             } else {
                 myHelp.setDisplayed(true);
             }
+        }
+        // Toggle full screen
+        if (keyCode == KEY_NUM7) {
+            myMidlet.getMyParameter().setFullScreen(!myMidlet.getMyParameter().isFullScreen());
+            setFullScreenMode(myMidlet.getMyParameter().isFullScreen());
+            if (myMidlet.getMyParameter().isFullScreen())
+                myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("NSC"));
+            else
+                myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("FSC"));
         }
         if (myMidlet.getMyParameter().isDebug()) {
             // ================================
@@ -1336,6 +1350,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 myHelp.setText(Help.ONE,LocalizationSupport.getMessage("ZO"));
                 myHelp.setText(Help.THREE, LocalizationSupport.getMessage("ZI"));
                 myHelp.setText(Help.ZERO,LocalizationSupport.getMessage("DIC2"));
+                myHelp.setText(Help.STAR, LocalizationSupport.getMessage("DDBG"));
 
                 myMidlet.getMyParameter().setCursor(true);
                 displayCursor = COUNTER_CURSOR;
@@ -1347,6 +1362,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             // ===================== Default mode ==============================
             // * = Next display
             if (keyCode == KEY_STAR) {
+                myMidlet.getMyParameter().setHorizontalView(!myMidlet.getMyParameter().isHorizontalView());
                 switchScreen();
             }
             // 0 = Show cursor
@@ -1445,6 +1461,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     myHelp.setText(Help.ONE,"");
                     myHelp.setText(Help.THREE, "");
                     myHelp.setText(Help.ZERO,"");
+                    myHelp.setText(Help.STAR, "");
                     myMidlet.getMyParameter().setDisplayConstHistory(true);
                     myMidlet.getMyParameter().setCursor(false);
                     yConstText = 0;

@@ -52,7 +52,8 @@ public abstract class Color {
             COL_MESSIER_MAG4 = COL_MESSIER_MAG3 + 1,
             COL_MESSIER_MAG5 = COL_MESSIER_MAG4 + 1,
             COL_HIGHLIGHT = COL_MESSIER_MAG5 + 1,
-            COL_KEYBOARD = COL_HIGHLIGHT +1;
+            COL_KEYBOARD = COL_HIGHLIGHT +1,
+            COL_PROGRESS = COL_KEYBOARD +1;
 
     public static final int colorDay[] = {
             /* BACKGROUND */0x00000000,
@@ -98,6 +99,7 @@ public abstract class Color {
             /* MESSIER_MA5*/ 0x00101000,
             /* HIGHLIGHT  */ 0x000080ff,
             /* KEYBOARD   */ 0x000000ff,
+            /* PROGRESS   */ 0x000000ff,
         };
     public static final int colorNight[] = {
             /* BACKGROUND */0x00000000,
@@ -143,5 +145,6 @@ public abstract class Color {
             /* MESSIER_MA5*/ 0x00100000,
             /* HIGHLIGHT  */ 0x00800000,
             /* KEYBOARD   */ 0x00ff0000,
+            /* PROGRESS   */ 0x00ff0000,
         };
 }
