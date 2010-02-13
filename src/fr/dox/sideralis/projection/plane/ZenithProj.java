@@ -408,4 +408,27 @@ public class ZenithProj extends ScreenProj {
     public boolean is3D() {
         return false;
     }
+    /**
+     * Not used in this projection
+     */
+    public void setLights() {
+    }
+
+    /**
+     * Not used in this projection
+     */
+    public void initLights() {
+    }
+
+    /**
+     * Not used in this projection
+     */
+    public void stopLights() {
+    }
+
+    /**
+     * Not used in this projection
+     */
+    public void setColors() {
+    }
 }

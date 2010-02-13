@@ -123,14 +123,31 @@ public class Help {
         g.setColor(myMidlet.getMyParameter().getColor()[Color.COL_KEYBOARD]);
         for (int i = 0; i < 12; i++) {
             g.drawRoundRect(x + (i % 3) * keyWidth, y + (i / 3) * keyHeight, keyWidth, keyHeight,15,15);
-            if (i == STAR) {
-                s = new String("*");
-            } else if (i == HASH) {
-                s = new String("#");
-            } else if (i == ZERO) {
-                s = new String("0");
-            } else {
-                s = new Integer((i + 1) % 10).toString();
+            switch (i) {
+                case STAR:
+                    s = new String("*");
+                    break;
+                case HASH:
+                    s = new String("#");
+                    break;
+                case ZERO:
+                    s = new String("0");
+                    break;
+                case TWO:
+                    s = "2 or \u02c4";
+                    break;
+                case FOUR:
+                    s = "4 or \u02c2";
+                    break;
+                case SIX:
+                    s = "6 or \u02c3";
+                    break;
+                case EIGHT:
+                    s = "8 or \u02c5";
+                    break;
+                default:
+                    s = new Integer((i + 1) % 10).toString();
+                    break;
             }
             // Draw the key
             g.drawString(s, x + (i % 3) * keyWidth + keyWidth / 2, y + (i / 3) * keyHeight, Graphics.HCENTER | Graphics.TOP);

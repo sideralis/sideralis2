@@ -753,6 +753,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 boolean[] b = new boolean[displayOptionsChoiceGroup.size()];
                 displayOptionsChoiceGroup.getSelectedFlags(b);
                 myParameter.setSelectedFlags(b);
+                myCanvas.updateColorAndLight();
                 if (displayOptionsTextMaxMag.getString().length()!=0)
                     myParameter.setMaxMag(Float.parseFloat(displayOptionsTextMaxMag.getString()));
                 else

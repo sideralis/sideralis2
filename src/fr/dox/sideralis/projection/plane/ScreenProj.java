@@ -9,7 +9,6 @@ import fr.dox.sideralis.Sideralis;
 import fr.dox.sideralis.data.Sky;
 import fr.dox.sideralis.object.ScreenCoord;
 import javax.microedition.lcdui.Graphics;
-import javax.microedition.lcdui.game.GameCanvas;
 
 /**
  *
@@ -62,6 +61,10 @@ public abstract class ScreenProj {
     public abstract void drawHorizon(Graphics g);
     public abstract void setView(int w,int h);
     public abstract boolean is3D();
+    public abstract void setLights();
+    public abstract void initLights();
+    public abstract void stopLights();
+    public abstract void setColors();
 
     /**
      * Return the horizontal rotation in radian

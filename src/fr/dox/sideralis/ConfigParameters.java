@@ -42,8 +42,6 @@ public class ConfigParameters {
     private boolean debug;
     /** Sensitivity of touch screen */
     private int sensitivity;
-    /** Enable lights in 3d view */
-    private boolean light;
     /** To know if we are in full screen mode or not */
     private boolean fullScreen;
 
@@ -53,7 +51,8 @@ public class ConfigParameters {
         LocalizationSupport.getMessage("PARAM_PLA"), LocalizationSupport.getMessage("PARAM_PLANA"),
         LocalizationSupport.getMessage("PARAM_STCIR"), LocalizationSupport.getMessage("PARAM_COLSTA"),
         LocalizationSupport.getMessage("PARAM_NIGHT"),
-        LocalizationSupport.getMessage("PARAM_MESSIER"), LocalizationSupport.getMessage("PARAM_MESSIERNA")};
+        LocalizationSupport.getMessage("PARAM_MESSIER"), LocalizationSupport.getMessage("PARAM_MESSIERNA"),
+        LocalizationSupport.getMessage("PARAM_LIGHT")};
     private static final String[] valueNames = new String[]{LocalizationSupport.getMessage("PARAM_MAX_MAG"),
         LocalizationSupport.getMessage("PARAM_SID_TIME")};
     // Parameters - boolean values
@@ -67,10 +66,11 @@ public class ConfigParameters {
     public static final short NIGHT_VIEW = 7;
     public static final short MESSIER_DISPLAYED = 8;
     public static final short MESSIER_NAME_DISPLAYED = 9;
-    public static final short NB_PARAM = 10;                                    // Total number of boolean parameters
+    public static final short LIGHT = 10;
+    public static final short NB_PARAM = 11;                                    // Total number of boolean parameters
     // Values - non boolean values
-    public static final short MAX_MAG = NB_PARAM + 0;                             // maxMag
-    public static final short SID_TIME = NB_PARAM + 1;                             // No variable
+    public static final short MAX_MAG = NB_PARAM + 0;                           // maxMag
+    public static final short SID_TIME = NB_PARAM + 1;                          // No variable
     // Total number of values and parameters
     public static final short NB_OPT = NB_PARAM + 2;
     /** */
@@ -90,7 +90,6 @@ public class ConfigParameters {
         timeCalculate = new long[TIME_SIZE];
         timeDisplay = new long[TIME_SIZE];
         sensitivity = 15;
-        light = true;
         fullScreen = true;
 
         // Boolean parameters
@@ -105,6 +104,7 @@ public class ConfigParameters {
         parameters[NIGHT_VIEW] = false;
         parameters[MESSIER_DISPLAYED] = true;
         parameters[MESSIER_NAME_DISPLAYED] = false;
+        parameters[LIGHT] = false;
 
         // Values parameters
         maxMag = 5.0F;
@@ -311,6 +311,13 @@ public class ConfigParameters {
     public boolean isNightView() {
         return parameters[NIGHT_VIEW];
     }
+    /**
+     * Return true if ambient light is activated in 3D view
+     * @return true if ambient light is activated in 3D view
+     */
+    public boolean isLight() {
+        return parameters[LIGHT];
+    }
 
     /**
      * Return the color mode the display should use
@@ -500,10 +507,6 @@ public class ConfigParameters {
 
     public void setSensitivity(int sensitivity) {
         this.sensitivity = sensitivity;
-    }
-
-    public boolean isLight() {
-        return light;
     }
 
     public boolean isFullScreen() {

@@ -40,8 +40,6 @@ public class EyeProj extends ScreenProj {
     private Mesh planetMesh,starMesh,messierMesh;
     /** The horizon */
     private Mesh horizon;
-    /** The lights from Sun and Moon */
-//    private Light lightSun, lightMoon;
     /** The global light */
     private Light lightAmbient;
     /** The camera */
@@ -111,27 +109,21 @@ public class EyeProj extends ScreenProj {
         coord2DStars = new float[mySky.getStarsProj().length * 4];
         coord2DMessiers = new float[MessierCatalog.getNumberOfObjects() *4];
 
-
         // Create a sky
         createSky();
 
-        // Create the lights
-        initLights();
-        setLights();
-
         // Create an horizon
-        horizon = createHorizon2();
+        horizon = createHorizon();
         PolygonMode polygonMode = new PolygonMode();
         polygonMode.setPerspectiveCorrectionEnable(true);
         polygonMode.setCulling(PolygonMode.CULL_NONE);
 //        polygonMode.setShading(PolygonMode.SHADE_FLAT);
         horizon.getAppearance(0).setPolygonMode(polygonMode);
         
+        // Create the lights
         if (myMidlet.getMyParameter().isLight()) {
-            Material material = new Material();
-            material.setVertexColorTrackingEnable(true);
-            material.setColor(Material.AMBIENT, 0x00ffffff);
-            horizon.getAppearance(0).setMaterial(material);
+            initLights();
+            setLights();
         }
 
         // Create a camera
@@ -143,33 +135,48 @@ public class EyeProj extends ScreenProj {
 
     }
     /**
-     * 
+     * Initialize the ambient light
      */
     public void initLights() {
-        lightAmbient = new Light();
-        lightAmbient.setMode(Light.AMBIENT);
-        lightAmbient.setColor(0x00ffffff);
-        lightAmbient.setIntensity(AMBIENT_VALUE);
+        if (lightAmbient == null) {
+            Material material = new Material();
+            material.setVertexColorTrackingEnable(true);
+            material.setColor(Material.AMBIENT, 0x00ffffff);
+            horizon.getAppearance(0).setMaterial(material);
+
+            lightAmbient = new Light();
+            lightAmbient.setMode(Light.AMBIENT);
+            lightAmbient.setColor(0x00ffffff);
+            lightAmbient.setIntensity(AMBIENT_VALUE);
+        }
     }
     /**
-     *
+     * Stop the ambiant light
+     */
+    public void stopLights() {
+        if (lightAmbient != null) {
+            graphics3D.resetLights();
+            lightAmbient = null;
+            horizon.getAppearance(0).setMaterial(null);
+        }
+    }
+    /**
+     * Configure the lights
      */
     public void setLights() {
-        if (myMidlet.getMyParameter().isLight()) {
-            // Create the lights
-            graphics3D.resetLights();
+        // Create the lights
+        graphics3D.resetLights();
 
-            float val = AMBIENT_VALUE;
+        float val = AMBIENT_VALUE;
 
-            if (mySky.getSun().getHeight()>0) {
-                val += (float)mySky.getSun().getHeight()/2;
-            }
-            if (mySky.getMoon().getHeight()>0) {
-                val += (float)mySky.getMoon().getHeight()/20;
-            }
-            lightAmbient.setIntensity(val);
-            graphics3D.addLight(lightAmbient,null);
+        if (mySky.getSun().getHeight()>0) {
+            val += (float)mySky.getSun().getHeight()/2;
         }
+        if (mySky.getMoon().getHeight()>0) {
+            val += (float)mySky.getMoon().getHeight()/20;
+        }
+        lightAmbient.setIntensity(val);
+        graphics3D.addLight(lightAmbient,null);
     }
 
     /**
@@ -223,8 +230,9 @@ public class EyeProj extends ScreenProj {
     /**
      * Create the horizon 3D object
      * @return the mesh representing the horizon
+     * TODO remove setting of color as done in setColor
      */
-    private Mesh createHorizon2() {
+    private Mesh createHorizon() {
         Random random = new Random();
         final short scale = Short.MAX_VALUE/64;                                 // The size of the horizon
         short dim = 63;                                                         // The number of square defining the horizon
@@ -241,19 +249,10 @@ public class EyeProj extends ScreenProj {
         xt = new short[(dim+1) * (dim+1)];
         yt = new short[(dim+1) * (dim+1)];
         zt = new short[(dim+1) * (dim+1)];
-        short[] xnt,ynt,znt;
-        xnt = new short[(dim+1) * (dim+1)];
-        ynt = new short[(dim+1) * (dim+1)];
-        znt = new short[(dim+1) * (dim+1)];
-        short[] vxt,vyt,vzt;
-        vxt = new short[6];
-        vyt = new short[6];
-        vzt = new short[6];
-        short vx1,vy1,vz1,vx2,vy2,vz2;
 
-        int i,j,index,tk,indexNor, indexCol;
+        int i,j,index,tk, indexCol;
 
-        index = indexNor = indexCol = 0;
+        index = indexCol = 0;
         tk = 0;
 
         // Calculate all points
@@ -291,15 +290,22 @@ public class EyeProj extends ScreenProj {
                 positions[index++] = xt[i*(dim+1)+j];
                 positions[index++] = yt[i*(dim+1)+j];
                 positions[index++] = zt[i*(dim+1)+j];
-                if (yt[i*(dim+1)+j]>-15) {
-                    colors[indexCol++] = (byte)0xff;
-                    colors[indexCol++] = (byte)0xff;
-                    colors[indexCol++] = (byte)0xff;
-                } else {
+                if (myMidlet.getMyParameter().isNightView()) {
                     float r = (float)(max - yt[i*(dim+1)+j])/(float)(min-max);
-                    colors[indexCol++] = (byte)(0xa0*(1+r));
-                    colors[indexCol++] = (byte)(0xa0+0x3f*(1+r));
-                    colors[indexCol++] = (byte)(0x21*(1+r));
+                    colors[indexCol++] = (byte)(0xf0*(1+r));
+                    colors[indexCol++] = (byte)(0);
+                    colors[indexCol++] = (byte)(0);
+                } else {
+                    if (yt[i*(dim+1)+j]>-15) {
+                        colors[indexCol++] = (byte)0xff;
+                        colors[indexCol++] = (byte)0xff;
+                        colors[indexCol++] = (byte)0xff;
+                    } else {
+                        float r = (float)(max - yt[i*(dim+1)+j])/(float)(min-max);
+                        colors[indexCol++] = (byte)(0xa0*(1+r));
+                        colors[indexCol++] = (byte)(0xa0+0x3f*(1+r));
+                        colors[indexCol++] = (byte)(0x21*(1+r));
+                    }
                 }
             }
             if (i!=0) {
@@ -712,5 +718,53 @@ public class EyeProj extends ScreenProj {
      */
     public boolean is3D() {
         return true;
+    }
+    /**
+     *
+     */
+    public void setColors() {
+        int vertexCount = horizon.getVertexBuffer().getVertexCount();
+        VertexArray vertexPositons;
+        short[] positions = new short[vertexCount * 3];
+        byte[] colors = new byte[vertexCount * 3];
+        int index = 0;
+
+        vertexPositons = horizon.getVertexBuffer().getPositions(null);
+        vertexPositons.get(0, vertexCount, positions);
+
+        short min = 200;
+        short max = -200;
+        for (int i = 1; i < positions.length; i+=3) {
+            if (positions[i]<min)
+                min = positions[i];
+            if (positions[i]>max)
+                max = positions[i];
+        }
+
+        for (int i = 0; i < vertexCount; i++) {
+            short y;
+            y = positions[index+1];
+            if (myMidlet.getMyParameter().isNightView()) {
+                float r = (float)(max - y)/(float)(min-max);
+                colors[index++] = (byte)(0xf0*(1+r));
+                colors[index++] = (byte)(0);
+                colors[index++] = (byte)(0);
+            } else {
+                if (y>-15) {
+                    colors[index++] = (byte)0xff;
+                    colors[index++] = (byte)0xff;
+                    colors[index++] = (byte)0xff;
+                } else {
+                    float r = (float)(max - y)/(float)(min-max);
+                    colors[index++] = (byte)(0xa0*(1+r));
+                    colors[index++] = (byte)(0xa0+0x3f*(1+r));
+                    colors[index++] = (byte)(0x21*(1+r));
+                }
+            }
+        }
+
+        VertexArray vertexColors = new VertexArray(vertexCount, 3, 1);
+        vertexColors.set(0, vertexCount, colors);
+        horizon.getVertexBuffer().setColors(vertexColors);
     }
 }

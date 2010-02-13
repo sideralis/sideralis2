@@ -9,6 +9,7 @@ package fr.dox.sideralis.view;
  * Open. You can then make changes to the template in the Source Editor.
  */
 
+import fr.dox.sideralis.view.touchscreen.TouchScreenMode1;
 import fr.dox.sideralis.ConfigParameters;
 import fr.dox.sideralis.Help;
 import fr.dox.sideralis.LocalizationSupport;
@@ -25,6 +26,7 @@ import fr.dox.sideralis.projection.plane.*;
 import fr.dox.sideralis.projection.sphere.MoonProj;
 import fr.dox.sideralis.projection.sphere.Projection;
 import fr.dox.sideralis.view.color.Color;
+import fr.dox.sideralis.view.touchscreen.TouchScreen;
 import java.io.IOException;
 import java.util.Calendar;
 import javax.microedition.lcdui.Canvas;
@@ -156,7 +158,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
     public void init() {
 
         if (myMidlet.getMyParameter().isSupportTouchScreen()) {
-            touchScreen = new TouchScreen(getWidth(), getHeight(),myMidlet);
+            touchScreen = new TouchScreenMode1(getWidth(), getHeight(),myMidlet);
         } else {
             touchScreen = null;
         }
@@ -320,10 +322,8 @@ public class SideralisCanvas extends Canvas implements Runnable {
             g.drawString(LocalizationSupport.getMessage("PLEASE_WAIT"), myProjection.getWidth() / 2, myProjection.getHeight() / 2, Graphics.HCENTER | Graphics.BASELINE);
             project();
             // Recalculate the lights position
-            //#ifdef JSR184
-            if (myProjection.is3D())
-                ((EyeProj)myProjection).setLights();
-            //#endif
+            if (myMidlet.getMyParameter().isLight())
+                myProjection.setLights();
         } else {
             timeDisplay = System.currentTimeMillis();
             // ------------------------------------------------
@@ -331,7 +331,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             if (touchScreen != null && touchScreen.isScroll()) {
                 myProjection.scrollHor(touchScreen.getRotDir());
                 myProjection.scrollVer(touchScreen.getYScroll());
-                touchScreen.scroll(touchScreen.isScreenPressed());
+                touchScreen.updateScrollParameters();
                 project();
             }
             // ----------------------------
@@ -1214,12 +1214,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      * @param y
      */
     protected void pointerDragged(int x, int y) {
-        int keyCode;
-        keyCode = touchScreen.drag(x, y);
-
-        if (keyCode == TouchScreen.MOVE) {
-            touchScreen.setScroll(x, y, touchScreen.getxPressed(), touchScreen.getyPressed());
-        }
+        touchScreen.pointerDragged(x, y);
     }
 
     /**
@@ -1228,9 +1223,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      * @param y
      */
     protected void pointerPressed(int x, int y) {
-        touchScreen.setTimeBaseForScroll(System.currentTimeMillis());
-        touchScreen.setPressed(x, y);
-        touchScreen.setScroll(false);
+        touchScreen.pointerPressed(x, y);
     }
 
     /**
@@ -1240,17 +1233,19 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     protected void pointerReleased(int x, int y) {
         int keyCode;
-        keyCode = touchScreen.setReleased(x, y);
 
-        if (keyCode == TouchScreen.ZOOM_IN) {
+        touchScreen.pointerReleased(x, y);                                      // Pointer is released
+        keyCode = touchScreen.getAction();                                      // Get action given by pointer released
+
+        if (keyCode == TouchScreenMode1.ZOOM_IN) {
             myProjection.incZoom();
             project();
         }
-        if (keyCode == TouchScreen.ZOOM_OUT) {
+        if (keyCode == TouchScreenMode1.ZOOM_OUT) {
             myProjection.decZoom();
             project();
         }
-        if (keyCode == TouchScreen.MIN_MAX) {
+        if (keyCode == TouchScreenMode1.MIN_MAX) {
             myMidlet.getMyParameter().setFullScreen(!myMidlet.getMyParameter().isFullScreen());
             setFullScreenMode(myMidlet.getMyParameter().isFullScreen());
             if (myMidlet.getMyParameter().isFullScreen())
@@ -1258,14 +1253,14 @@ public class SideralisCanvas extends Canvas implements Runnable {
             else
                 myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("FSC"));
         }
-        if (keyCode== TouchScreen.VIEW) {
+        if (keyCode== TouchScreenMode1.VIEW) {
             if (myMidlet.getMyParameter().isSupport3D()) {
                 myMidlet.getMyParameter().setHorizontalView(!myMidlet.getMyParameter().isHorizontalView());
                 switchScreen();
             }
         }
 
-        if (keyCode == TouchScreen.CURSOR_ON) {
+        if (keyCode == TouchScreenMode1.CURSOR_ON) {
             xCursor = x;
             yCursor = y;
             int tmp1, tmp2;
@@ -1635,7 +1630,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
 //#ifdef JSR184
         if (myMidlet.getMyParameter().isSupport3D()) {
             runningCmd = false;
-            if (myProjection.is3D() == true) {
+            if (myProjection.is3D()) {
                 // Switch to zenith view
                 myHelp.setText(Help.STAR, LocalizationSupport.getMessage("PARAM_HOR"));
                 try {
@@ -1680,5 +1675,18 @@ public class SideralisCanvas extends Canvas implements Runnable {
             }
         }
 //#endif
+    }
+    /**
+     * For 3d view, when the user has changed the light enabling or the color some paramters need to be recalculated
+     * This is done in this function
+     */
+    public void updateColorAndLight() {
+        if (myMidlet.getMyParameter().isLight()) {
+            myProjection.initLights();
+            myProjection.setLights();
+        } else {
+            myProjection.stopLights();
+        }
+        myProjection.setColors();
     }
 }

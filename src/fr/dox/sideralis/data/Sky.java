@@ -334,4 +334,5 @@ public class Sky implements Runnable {
     public void setProgress(int progress) {
         this.progress = progress;
     }
+
 }
