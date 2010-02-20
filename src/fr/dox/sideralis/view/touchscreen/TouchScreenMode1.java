@@ -19,7 +19,7 @@ public class TouchScreenMode1 extends TouchScreen {
     private int xOrg,yOrg;
 
     /** Sensitivity for dragging - If dragging event are too much time separated, dragging is not taken into acount */
-    private long MAX_TIME_BETWEEN_DRAG = 20;
+    public static final int MAX_TIME_BETWEEN_DRAG = 100;
 
 
     /**
@@ -48,7 +48,7 @@ public class TouchScreenMode1 extends TouchScreen {
         int dist;
         if (counterVanishIcon != 0) {
             dist = (x-xPressed)*(x-xPressed)+(y-yPressed)*(y-yPressed);
-            if (dist > myParameter.getSensitivity()) {
+            if (dist > myParameter.getSensitivityTouchScreen()) {
                 if (barPressed) {
                     xBar = xBarOrigine + x - xPressed;
                     yBar = yBarOrigine + y - yPressed;
@@ -68,7 +68,7 @@ public class TouchScreenMode1 extends TouchScreen {
     public void setScrollParameters(int x, int y) {
         timeOffset = System.currentTimeMillis() - timeBase;
         timeBase = System.currentTimeMillis();
-        if (timeOffset <= MAX_TIME_BETWEEN_DRAG) {
+        if (timeOffset <= myParameter.getMaxTimeDragEventTouchScreen()) {
             if (scroll == false) {
                 // First scroll movement
                 scroll = true;
@@ -84,13 +84,18 @@ public class TouchScreenMode1 extends TouchScreen {
                 yOrg = y;
             }
         }
+        //System.out.println("x="+x+" y="+y+" off="+timeOffset);
     }
     /**
      * Scroll the display (used only with touch screen)
      */
     public void updateScrollParameters() {
-        yDir /= 1.5F;
-        rotDir /= 1.5F;
+        if (myParameter.getInertiaTouchScreen() != 0) {
+            yDir /= myParameter.getInertiaTouchScreen();
+            rotDir /= myParameter.getInertiaTouchScreen();
+        } else {
+            yDir = rotDir = 0;
+        }
         if ((yDir < 0.2F) && (rotDir <0.2F) && (screenPressed == false))          // If the user has released its touch and scroll is neglictible then scroll is stopped
             scroll = false;
     }

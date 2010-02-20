@@ -84,6 +84,7 @@ public class EyeProj extends ScreenProj {
         graphics3D = Graphics3D.getInstance();
 
         fov = 70;
+        rot = myMidlet.getMyParameter().getRotView();
         rotV = (float)Math.toRadians(20);
 
         positionsPlanets = new short[(Sky.NB_OF_PLANETS +2) * 3];               // 2 for Sun and Moon
@@ -456,9 +457,9 @@ public class EyeProj extends ScreenProj {
             screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
             screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
             if (coord2DPlanets[i * 4 + 2] <= 1 || mySky.getPlanet(i).getHeight() < 0) {
-                screenCoordPlanets[i].setVisible(false);
+                screenCoordPlanets[i].visible = (false);
             } else {
-                screenCoordPlanets[i].setVisible(true);
+                screenCoordPlanets[i].visible = (true);
             }
         }
         // Sun
@@ -469,9 +470,9 @@ public class EyeProj extends ScreenProj {
         screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
         screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
         if (coord2DPlanets[i * 4 + 2] <= 1 || mySky.getSun().getHeight() < 0) {
-            screenCoordPlanets[i].setVisible(false);
+            screenCoordPlanets[i].visible = (false);
         } else {
-            screenCoordPlanets[i].setVisible(true);
+            screenCoordPlanets[i].visible = (true);
         }
         // Moon
         i += 1;
@@ -482,9 +483,9 @@ public class EyeProj extends ScreenProj {
         screenCoordPlanets[i].x = (short) ((coord2DPlanets[i * 4 + 0] * getWidth + getWidth) / 2);
         screenCoordPlanets[i].y = (short) ((-coord2DPlanets[i * 4 + 1] * getHeight + getHeight) / 2);
         if (coord2DPlanets[i * 4 + 2] <= 1 || mySky.getMoon().getHeight() < 0) {
-            screenCoordPlanets[i].setVisible(false);
+            screenCoordPlanets[i].visible = (false);
         } else {
-            screenCoordPlanets[i].setVisible(true);
+            screenCoordPlanets[i].visible = (true);
         }
         // =============
         // === Stars ===
@@ -506,9 +507,9 @@ public class EyeProj extends ScreenProj {
             screenCoordStars[i].x = (short) ((coord2DStars[i * 4 + 0] * getWidth + getWidth) / 2);
             screenCoordStars[i].y = (short) ((-coord2DStars[i * 4 + 1] * getHeight + getHeight) / 2);
             if (coord2DStars[i * 4 + 2] <= 1 || mySky.getStar(i).getHeight() < 0) {
-                screenCoordStars[i].setVisible(false);
+                screenCoordStars[i].visible = (false);
             } else {
-                screenCoordStars[i].setVisible(true);
+                screenCoordStars[i].visible = (true);
             }
         }
 
@@ -532,9 +533,9 @@ public class EyeProj extends ScreenProj {
             screenCoordMessiers[i].x = (short) ((coord2DMessiers[i * 4 + 0] * getWidth + getWidth) / 2);
             screenCoordMessiers[i].y = (short) ((-coord2DMessiers[i * 4 + 1] * getHeight + getHeight) / 2);
             if (coord2DMessiers[i * 4 + 2] <= 1 || mySky.getMessier(i).getHeight() < 0) {
-                screenCoordMessiers[i].setVisible(false);
+                screenCoordMessiers[i].visible = (false);
             } else {
-                screenCoordMessiers[i].setVisible(true);
+                screenCoordMessiers[i].visible = (true);
             }
         }
 
@@ -562,8 +563,8 @@ public class EyeProj extends ScreenProj {
      */
     public void up() {
         rotV += Math.toRadians(5f/70f)*fov;
-        if (rotV>2*Math.PI)
-            rotV -= 2*Math.PI;
+        if (rotV>Math.PI/2)
+            rotV = (float)Math.PI/2;
         setCamera();
     }
     /**
@@ -572,7 +573,7 @@ public class EyeProj extends ScreenProj {
     public void down() {
         rotV -= Math.toRadians(5f/70f)*fov;
         if (rotV<0)
-            rotV += 2*Math.PI;
+            rotV = 0;
         setCamera();
     }
     /**
@@ -580,7 +581,8 @@ public class EyeProj extends ScreenProj {
      * @param val
      */
     public void scrollHor(float val) {
-        rot -= Math.toRadians(val/70f)*fov;
+        float scSp = myMidlet.getMyParameter().getScrollSpeedHorizonTouchScreen();
+        rot -= Math.toRadians(val/scSp)*fov;
         if (rot<0)
             rot += 2*Math.PI;
         if (rot>2*Math.PI)
@@ -593,11 +595,12 @@ public class EyeProj extends ScreenProj {
      * @param val
      */
     public void scrollVer(float val) {
-        rotV += Math.toRadians(val/70f)*fov;
+        float scSp = myMidlet.getMyParameter().getScrollSpeedHorizonTouchScreen();
+        rotV += Math.toRadians(val/scSp)*fov;
         if (rotV<0)
-            rotV += 2*Math.PI;
-        if (rotV>2*Math.PI)
-            rotV -= 2*Math.PI;
+            rotV = 0;
+        if (rotV>Math.PI/2)
+            rotV = (float)Math.PI/2;
         setCamera();
     }
     /**
@@ -605,8 +608,8 @@ public class EyeProj extends ScreenProj {
      */
     public void decZoom() {
         fov += 10;
-        if (fov >= 180) {
-            fov = 179;
+        if (fov >= 170) {
+            fov = 170;
         }
         setCamera();
     }
@@ -615,8 +618,8 @@ public class EyeProj extends ScreenProj {
      */
     public void incZoom() {
         fov -= 10;
-        if (fov < 1) {
-            fov = 1;
+        if (fov < 10) {
+            fov = 10;
         }
         setCamera();
     }

@@ -11,6 +11,8 @@ package fr.dox.sideralis;
 
 import fr.dox.sideralis.object.CityObject;
 import fr.dox.sideralis.view.color.Color;
+import fr.dox.sideralis.view.touchscreen.TouchScreen;
+import fr.dox.sideralis.view.touchscreen.TouchScreenMode1;
 
 /**
  * A class used to store and manage all parameters of the application
@@ -40,8 +42,24 @@ public class ConfigParameters {
     private boolean supportTouchScreen;
     /** To know if we are displaying the debug info */
     private boolean debug;
-    /** Sensitivity of touch screen */
-    private int sensitivity;
+    /** Sensitivity of touch screen (between drag & click)*/
+    private int sensitivityTouchScreen;
+    /** Inertia of touch screen */
+    private float inertiaTouchScreen;
+    /** Scroll speed in horizontal view */
+    private int scrollSpeedHorizonTouchScreen;
+    /** Horizontal scroll speed in zenith view */
+    private int scrollSpeedHorZenithTouchScreen;
+    /** Vertical scroll speed in zenith view */
+    private int scrollSpeedVerZenithTouchScreen;
+    /** Threshold to skip event if max time between drag is over */
+    private int maxTimeDragEventTouchScreen;
+
+    /** Horizontal direction */
+    private float rotView;
+
+
+
     /** To know if we are in full screen mode or not */
     private boolean fullScreen;
 
@@ -89,7 +107,15 @@ public class ConfigParameters {
         debug = false;
         timeCalculate = new long[TIME_SIZE];
         timeDisplay = new long[TIME_SIZE];
-        sensitivity = 15;
+        sensitivityTouchScreen = TouchScreen.SENSITIVITY_DRAG_CLICK;
+        inertiaTouchScreen = TouchScreen.INERTIA;
+        scrollSpeedHorizonTouchScreen = TouchScreen.SCROLL_SPEED_HORIZON;
+        scrollSpeedHorZenithTouchScreen = TouchScreen.SCROLL_SPEED_HOR_ZENITH;
+        scrollSpeedVerZenithTouchScreen = TouchScreen.SCROLL_SPEED_VER_ZENITH;
+        maxTimeDragEventTouchScreen = TouchScreenMode1.MAX_TIME_BETWEEN_DRAG;
+
+        rotView = 0;
+
         fullScreen = true;
 
         // Boolean parameters
@@ -433,8 +459,8 @@ public class ConfigParameters {
         this.supportGPS = supportGPS;
     }
     /**
-     *
-     * @return
+     * Return true if touch screen is supported on this phone
+     * @return true if touch screen is supported, else false
      */
     public boolean isSupportTouchScreen() {
         return supportTouchScreen;
@@ -501,12 +527,52 @@ public class ConfigParameters {
         return res / TIME_SIZE;
     }
 
-    public int getSensitivity() {
-        return sensitivity;
+    public int getSensitivityTouchScreen() {
+        return sensitivityTouchScreen;
     }
 
-    public void setSensitivity(int sensitivity) {
-        this.sensitivity = sensitivity;
+    public void setSensitivityTouchScreen(int sensitivity) {
+        this.sensitivityTouchScreen = sensitivity;
+    }
+
+    public float getInertiaTouchScreen() {
+        return inertiaTouchScreen;
+    }
+
+    public void setInertiaTouchScreen(float inertiaTouchScreen) {
+        this.inertiaTouchScreen = inertiaTouchScreen;
+    }
+
+    public int getScrollSpeedHorZenithTouchScreen() {
+        return scrollSpeedHorZenithTouchScreen;
+    }
+
+    public void setScrollSpeedHorZenithTouchScreen(int scrollSpeedHorZenithTouchScreen) {
+        this.scrollSpeedHorZenithTouchScreen = scrollSpeedHorZenithTouchScreen;
+    }
+
+    public int getScrollSpeedHorizonTouchScreen() {
+        return scrollSpeedHorizonTouchScreen;
+    }
+
+    public void setScrollSpeedHorizonTouchScreen(int scrollSpeedHorizonTouchScreen) {
+        this.scrollSpeedHorizonTouchScreen = scrollSpeedHorizonTouchScreen;
+    }
+
+    public int getScrollSpeedVerZenithTouchScreen() {
+        return scrollSpeedVerZenithTouchScreen;
+    }
+
+    public void setScrollSpeedVerZenithTouchScreen(int scrollSpeedVerZenithTouchScreen) {
+        this.scrollSpeedVerZenithTouchScreen = scrollSpeedVerZenithTouchScreen;
+    }
+
+    public int getMaxTimeDragEventTouchScreen() {
+        return maxTimeDragEventTouchScreen;
+    }
+
+    public void setMaxTimeDragEventTouchScreen(int maxTimeDragEventTouchScreen) {
+        this.maxTimeDragEventTouchScreen = maxTimeDragEventTouchScreen;
     }
 
     public boolean isFullScreen() {
@@ -515,6 +581,14 @@ public class ConfigParameters {
 
     public void setFullScreen(boolean fullScreen) {
         this.fullScreen = fullScreen;
+    }
+
+    public float getRotView() {
+        return rotView;
+    }
+
+    public void setRotView(float rotView) {
+        this.rotView = rotView;
     }
 
 }

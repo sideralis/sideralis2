@@ -45,7 +45,7 @@ public class ZenithProj extends ScreenProj {
     public ZenithProj(Sideralis myMidlet, int wD, int hD) {
         super(myMidlet,wD,hD);
         setView(wD,hD);
-        rot = 0;
+        rot = myMidlet.getMyParameter().getRotView();
         shiftY = 0;
         zoom = 1.0F;
         northString = LocalizationSupport.getMessage("NORTH");
@@ -81,7 +81,7 @@ public class ZenithProj extends ScreenProj {
     /**
      * Increase the angle of rotation by PI/20
      */
-    public void left() {
+    public void right() {
         rot += Math.PI / 20;
         if (rot > 2 * Math.PI) {
             rot -= 2 * Math.PI;
@@ -90,7 +90,7 @@ public class ZenithProj extends ScreenProj {
     /**
      * Decrease the angle of rotation by PI/20
      */
-    public void right() {
+    public void left() {
         rot -= Math.PI / 20;
         if (rot < 0) {
             rot += 2 * Math.PI;
@@ -119,7 +119,8 @@ public class ZenithProj extends ScreenProj {
      * @param val the amplitude of horizontal rotation
      */
     public void scrollHor(float val) {
-        rot += val / 20 / zoom;
+        float scSp = myMidlet.getMyParameter().getScrollSpeedHorZenithTouchScreen();
+        rot -= val / scSp / zoom;
         if (rot<0)
             rot += 2 * Math.PI;
         else if (rot>2*Math.PI)
@@ -130,7 +131,8 @@ public class ZenithProj extends ScreenProj {
      * @param val the amplitude of scroll     
      */
     public void scrollVer(float val) {
-        shiftY += val/60*zoom;
+        float scSp = myMidlet.getMyParameter().getScrollSpeedVerZenithTouchScreen();
+        shiftY += val / scSp * zoom;
         if (shiftY > (zoom - 1)) {
             shiftY = zoom - 1;
         }
@@ -211,7 +213,7 @@ public class ZenithProj extends ScreenProj {
         double x;
 
         distL = 1 - hau / (Math.PI / 2);
-        x = -distL * Math.cos(az + rot);                                        // To have west on east and vice versa
+        x = -distL * Math.cos(az + Math.PI - rot);                              // - to have west on east and vice versa
 
         return x;
     }
@@ -227,7 +229,7 @@ public class ZenithProj extends ScreenProj {
         double y;
 
         distL = 1 - hau / (Math.PI / 2);
-        y = distL * Math.sin(az + rot);
+        y = distL * Math.sin(az + Math.PI - rot);
 
         return y;
     }
@@ -238,11 +240,11 @@ public class ZenithProj extends ScreenProj {
     public void project() {
         // === Stars ===
         for (int k = 0; k < getScreenCoordStars().length; k++) {
-            getScreenCoordStars()[k].setVisible(false);
+            getScreenCoordStars()[k].visible = (false);
                 // For a zenith view
             if (mySky.getStar(k).getHeight() > 0) {
                 // Star is above horizon
-                getScreenCoordStars()[k].setVisible(true);
+                getScreenCoordStars()[k].visible = (true);
                 screenCoordStars[k].x = (short)getX(getVirtualX(mySky.getStar(k).getAzimuth(), mySky.getStar(k).getHeight()));
                 screenCoordStars[k].y = (short)getY(getVirtualY(mySky.getStar(k).getAzimuth(), mySky.getStar(k).getHeight()));
             }
@@ -250,38 +252,38 @@ public class ZenithProj extends ScreenProj {
 
         // === Messiers ===
         for (int k = 0; k < screenCoordMessier.length; k++) {
-            screenCoordMessier[k].setVisible(false);
+            screenCoordMessier[k].visible = (false);
                 // For a zenith view
             if (mySky.getMessier(k).getHeight() > 0) {
                 // Star is above horizon
-                screenCoordMessier[k].setVisible(true);
+                screenCoordMessier[k].visible = (true);
                 screenCoordMessier[k].x = (short)getX(getVirtualX(mySky.getMessier(k).getAzimuth(), mySky.getMessier(k).getHeight()));
                 screenCoordMessier[k].y = (short)getY(getVirtualY(mySky.getMessier(k).getAzimuth(), mySky.getMessier(k).getHeight()));
             }
         }
         // === Sun ===
-        screenCoordSun.setVisible(false);
+        screenCoordSun.visible = (false);
         if (mySky.getSun().getHeight() > 0) {
-            screenCoordSun.setVisible(true);
+            screenCoordSun.visible = (true);
             screenCoordSun.x = (short)getX(getVirtualX(mySky.getSun().getAzimuth(), mySky.getSun().getHeight()));
             screenCoordSun.y = (short)getY(getVirtualY(mySky.getSun().getAzimuth(), mySky.getSun().getHeight()));
         }
 
         // === Moon ===
-        screenCoordMoon.setVisible(false);
+        screenCoordMoon.visible = (false);
         if (mySky.getMoon().getHeight() > 0) {
-            screenCoordMoon.setVisible(true);
+            screenCoordMoon.visible = (true);
             screenCoordMoon.x = (short)getX(getVirtualX(mySky.getMoon().getAzimuth(), mySky.getMoon().getHeight()));
             screenCoordMoon.y = (short)getY(getVirtualY(mySky.getMoon().getAzimuth(), mySky.getMoon().getHeight()));
         }
 
         // === Planets ===
         for (int k = 0; k < screenCoordPlanets.length; k++) {
-            screenCoordPlanets[k].setVisible(false);
+            screenCoordPlanets[k].visible = (false);
                 // For a zenith view
             if (mySky.getPlanet(k).getHeight() > 0) {
                 // Star is above horizon
-                screenCoordPlanets[k].setVisible(true);
+                screenCoordPlanets[k].visible = (true);
                 screenCoordPlanets[k].x = (short)getX(getVirtualX(mySky.getPlanet(k).getAzimuth(), mySky.getPlanet(k).getHeight()));
                 screenCoordPlanets[k].y = (short)getY(getVirtualY(mySky.getPlanet(k).getAzimuth(), mySky.getPlanet(k).getHeight()));
             }
@@ -367,14 +369,14 @@ public class ZenithProj extends ScreenProj {
 
         // -----------------------------
         // --- Draw Cardinate points ---
-        x1 = getX(Math.cos(-rot) * .95);
-        y1 = getY(Math.sin(-rot) * .95);
-        x2 = getX(Math.cos(-rot + Math.PI) * .95);
-        y2 = getY(Math.sin(-rot + Math.PI) * .95);
-        x3 = getX(Math.cos(-rot + Math.PI / 2) * .95);
-        y3 = getY(Math.sin(-rot + Math.PI / 2) * .95);
-        x4 = getX(Math.cos(-rot + 3 * Math.PI / 2) * .95);
-        y4 = getY(Math.sin(-rot + 3 * Math.PI / 2) * .95);
+        x1 = getX(Math.cos(rot-Math.PI) * .95);
+        y1 = getY(Math.sin(rot-Math.PI) * .95);
+        x2 = getX(Math.cos(rot) * .95);
+        y2 = getY(Math.sin(rot) * .95);
+        x3 = getX(Math.cos(rot - Math.PI / 2) * .95);
+        y3 = getY(Math.sin(rot - Math.PI / 2) * .95);
+        x4 = getX(Math.cos(rot + Math.PI / 2) * .95);
+        y4 = getY(Math.sin(rot + Math.PI / 2) * .95);
         g.setColor((myMidlet.getMyParameter().getColor())[Color.COL_CROSS]);
         g.setStrokeStyle(Graphics.DOTTED);
         g.drawLine((int) x1, (int) y1, (int) x2, (int) y2);

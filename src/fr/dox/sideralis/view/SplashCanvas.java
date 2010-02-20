@@ -60,7 +60,7 @@ public class SplashCanvas extends Canvas implements Runnable {
         myFontBold = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_LARGE);
         myFontNormal = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM);
         try {
-            introImg = Image.createImage("/iya_logo.png");
+            introImg = Image.createImage("/uranus.png");
             logoImg = Image.createImage("/DoX.png");
         } catch (IOException ex) {
             ex.printStackTrace();

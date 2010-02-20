@@ -49,6 +49,8 @@ public class SideralisCanvas extends Canvas implements Runnable {
     private boolean running;
     /** The calling midlet */
     private final Sideralis myMidlet;
+    /** The parameters */
+    private final ConfigParameters myParameter;
     /** The sky object */
     private final Sky mySky;
     /** The projection used to display the objects on the screen */
@@ -137,6 +139,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
         setFullScreenMode(true);
 
         this.myMidlet = myMidlet;
+        myParameter = myMidlet.getMyParameter();
         runningCmd = running = false;
         mySky = myMidlet.getMySky();
         myFont = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, Font.SIZE_SMALL);
@@ -157,7 +160,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     public void init() {
 
-        if (myMidlet.getMyParameter().isSupportTouchScreen()) {
+        if (myParameter.isSupportTouchScreen()) {
             touchScreen = new TouchScreenMode1(getWidth(), getHeight(),myMidlet);
         } else {
             touchScreen = null;
@@ -175,14 +178,14 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     LocalizationSupport.getMessage("DIH")});
         myHelp.setView(getWidth(), getHeight());
 
-        if (!myMidlet.getMyParameter().isSupport3D()) {
+        if (!myParameter.isSupport3D()) {
             myHelp.setText(Help.STAR, "");
         }
 
         idxClosestObject = idxClosestConst = -1;
         colorClosestConst = 0;
 
-        if (myMidlet.getMyParameter().isSupport3D()) {
+        if (myParameter.isSupport3D()) {
         //#ifdef JSR184
             myProjection = new EyeProj(myMidlet, getWidth(), getHeight());
         //#endif
@@ -296,7 +299,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             }
         }
         
-        if (myMidlet.getMyParameter().isDebug())
+        if (myParameter.isDebug())
             paintDebug(g);
         else
             paintMain(g);
@@ -315,24 +318,31 @@ public class SideralisCanvas extends Canvas implements Runnable {
             // -----------------------------------------------------------------------------
             // ---- Print wait message when projection on screen is ongoing ---
             if (timeCalculate != 0)                                             // Because paint is called before run
-                myMidlet.getMyParameter().addTimeCalculate(System.currentTimeMillis()-timeCalculate);
+                myParameter.addTimeCalculate(System.currentTimeMillis()-timeCalculate);
             mySky.setCalculationDone(false);
             mySky.setProgress(0);
             g.setColor(0x000000FF);
             g.drawString(LocalizationSupport.getMessage("PLEASE_WAIT"), myProjection.getWidth() / 2, myProjection.getHeight() / 2, Graphics.HCENTER | Graphics.BASELINE);
             project();
             // Recalculate the lights position
-            if (myMidlet.getMyParameter().isLight())
+            if (myParameter.isLight())
                 myProjection.setLights();
         } else {
             timeDisplay = System.currentTimeMillis();
             // ------------------------------------------------
             // --- Scroll the screen if user is dragging it ---
             if (touchScreen != null && touchScreen.isScroll()) {
-                myProjection.scrollHor(touchScreen.getRotDir());
-                myProjection.scrollVer(touchScreen.getYScroll());
-                touchScreen.updateScrollParameters();
-                project();
+                if (myParameter.isHistoryOfConstellationDisplayed()) {
+                    yConstText += 2*touchScreen.getYScroll();
+                    if (yConstText > 0)
+                        yConstText = 0;
+                    touchScreen.updateScrollParameters();
+                } else {
+                    myProjection.scrollHor(touchScreen.getRotDir());
+                    myProjection.scrollVer(touchScreen.getYScroll());
+                    touchScreen.updateScrollParameters();
+                    project();
+                }
             }
             // ----------------------------
             // -----   Draw horizon   -----
@@ -370,13 +380,13 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
             // -----------------------------------
             // ----- Display cursor and info -----
-            if (myMidlet.getMyParameter().isCursorDisplayed()) {
+            if (myParameter.isCursorDisplayed()) {
                 drawCursor(g);
             }
 
             // -------------------------------
             // ------ Draw progress bar ------
-            g.setColor(myMidlet.getMyParameter().getColor()[Color.COL_PROGRESS]);
+            g.setColor(myParameter.getColor()[Color.COL_PROGRESS]);
             if (mySky.getProgress() != 0) {
                 g.drawLine(0, 0, mySky.getProgress() * myProjection.getWidth() / 100, 0);
             }
@@ -387,7 +397,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
             // ------------------------------------------
             // ------ Draw constellations history -------
-            if (myMidlet.getMyParameter().isHistoryOfConstellationDisplayed())
+            if (myParameter.isHistoryOfConstellationDisplayed())
                 drawHistoryOfConstellations(g);
 
             // --------------------------------
@@ -395,7 +405,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             if (myHelp.isDisplayed()) {
                 myHelp.draw(g);
             }
-            myMidlet.getMyParameter().addTimeDisplay(System.currentTimeMillis()-timeDisplay);
+            myParameter.addTimeDisplay(System.currentTimeMillis()-timeDisplay);
         }
     }
     /**
@@ -416,6 +426,18 @@ public class SideralisCanvas extends Canvas implements Runnable {
         // ----------------
         // --- Set Font ---
         g.setFont(myFont);
+
+        // ------------------------------------------------
+        // --- Scroll the screen if user is dragging it ---
+        if (touchScreen != null && touchScreen.isScroll()) {
+            yInfoText += 2*touchScreen.getYScroll();
+            if (yInfoText < 0)
+                yInfoText = 0;
+            xInfoText += 2*touchScreen.getRotDir();
+            if (xInfoText < 0)
+                xInfoText = 0;
+            touchScreen.updateScrollParameters();
+        }
 
         // -------------------------------
         // --- Recalculate hei and az ----
@@ -531,9 +553,9 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
         // ----------------------------
         // -----   Clear screen   -----
-        g.setColor(myMidlet.getMyParameter().getColor()[Color.COL_BACKGROUND]);
+        g.setColor(myParameter.getColor()[Color.COL_BACKGROUND]);
         g.fillRect(0, 0, myProjection.getWidth(), myProjection.getHeight());
-        g.setColor(myMidlet.getMyParameter().getColor()[Color.COL_BOX_TEXT]);
+        g.setColor(myParameter.getColor()[Color.COL_BOX_TEXT]);
         int pos = yInfoText;
         g.drawString("Date: " + myMidlet.getMyPosition().getTemps().getCalendar().getTime(), xInfoText, pos, Graphics.LEFT | Graphics.TOP);
         pos += heightFont;
@@ -566,6 +588,12 @@ public class SideralisCanvas extends Canvas implements Runnable {
         pos += heightFont;
         g.drawString("Hei: " + MathFunctions.convert2deg(Math.toDegrees(hau),true), xInfoText, pos, Graphics.LEFT | Graphics.TOP);
 
+        // -----------------------------------
+        // ------ Draw touch screen bar ------
+        if (touchScreen != null) {
+            touchScreen.paint(g);
+        }
+        
         // --------------------------------
         // ------- Draw Help --------------
         if (myHelp.isDisplayed()) {
@@ -592,11 +620,14 @@ public class SideralisCanvas extends Canvas implements Runnable {
         boolean flagInc = false;                                                // To calculate the color of the constellation only one time for all branches of the constellation
         int i, j;
         ConstellationObject co;
-        ConfigParameters rMyParam = myMidlet.getMyParameter();
-        int[] color = rMyParam.getColor();
+        int[] color = myParameter.getColor();
+        int width = myProjection.getWidth();
+        int height = myProjection.getHeight();
+        boolean isConstDisplayed = myParameter.isConstDisplayed();
+        boolean isConstNamesDisplayed = myParameter.isConstNamesDisplayed();
+        boolean isConstNamesLatinDisplayed = myParameter.isConstNamesLatinDisplayed();
 
-
-        if (rMyParam.isConstDisplayed() || rMyParam.isConstNamesDisplayed() || rMyParam.isConstNamesLatinDisplayed()) {
+        if (isConstDisplayed || isConstNamesDisplayed || isConstNamesLatinDisplayed) {
             // If constellations should be displayed
             for (i = 0; i < ConstellationCatalog.getNumberOfConstellations(); i++) {
                 co = ConstellationCatalog.getConstellation(i);
@@ -607,7 +638,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     kStar1 = co.getIdx(j);               // Get index of stars in constellation
                     kStar2 = co.getIdx(j + 1);             // Get index of stars in constellation
                     // Draw one part of the constellation
-                    if (screenCoordStars[kStar1].isVisible() && screenCoordStars[kStar2].isVisible()) {
+                    if (screenCoordStars[kStar1].visible && screenCoordStars[kStar2].visible) {
                         // A line between 2 stars is displayed only if the 2 stars are visible.
                         if (typeClosestObject == SkyObject.STAR && co.getIdxName() == idxClosestConst) {
                             // This constellation is blinking (cursor close to it)
@@ -624,30 +655,30 @@ public class SideralisCanvas extends Canvas implements Runnable {
                         } else {
                                 g.setColor(color[Color.COL_CONST_MAX] / 2);
                         }
-                        if (rMyParam.isConstDisplayed()) {
-                            if ( (screenCoordStars[kStar1].x>=0 && screenCoordStars[kStar1].x<myProjection.getWidth() && screenCoordStars[kStar1].y>=0 && screenCoordStars[kStar1].y<myProjection.getHeight())
-                                 || (screenCoordStars[kStar2].x>=0 && screenCoordStars[kStar2].x<myProjection.getWidth() && screenCoordStars[kStar2].y>=0 && screenCoordStars[kStar2].y<myProjection.getHeight()) )
+                        if (isConstDisplayed) {
+                            if ( (screenCoordStars[kStar1].x>=0 && screenCoordStars[kStar1].x<width && screenCoordStars[kStar1].y>=0 && screenCoordStars[kStar1].y<height)
+                                 || (screenCoordStars[kStar2].x>=0 && screenCoordStars[kStar2].x<width && screenCoordStars[kStar2].y>=0 && screenCoordStars[kStar2].y<height) )
                             g.drawLine(screenCoordStars[kStar1].x, screenCoordStars[kStar1].y, screenCoordStars[kStar2].x, screenCoordStars[kStar2].y);
                         }
                     }
                 }
-                if (rMyParam.isConstNamesDisplayed() || rMyParam.isConstNamesLatinDisplayed()) {
+                if (isConstNamesDisplayed || isConstNamesLatinDisplayed) {
                     g.setColor(color[Color.COL_CONST_NAME_MAX] / 2);
                     // Display the name of the constellation
                     kStar1 = co.getRefStar4ConstellationName();
-                    if (!screenCoordStars[kStar1].isVisible()) {
+                    if (!screenCoordStars[kStar1].visible) {
                         for (j = 0; j < sco; j += 2) {
                             kStar1 = co.getIdx(j);               // Get index of stars in constellation
-                            if (screenCoordStars[kStar1].isVisible()) {
+                            if (screenCoordStars[kStar1].visible) {
                                 break;
                             }
                         }
                     }
-                    if (screenCoordStars[kStar1].isVisible()) {
-                        if (rMyParam.isConstNamesDisplayed() && rMyParam.isConstNamesLatinDisplayed()) {
+                    if (screenCoordStars[kStar1].visible) {
+                        if (isConstNamesDisplayed && isConstNamesLatinDisplayed) {
                             g.drawString(ConstellationCatalog.getConstellation(i).getName(), screenCoordStars[kStar1].x, screenCoordStars[kStar1].y - heightFont / 2, Graphics.TOP | Graphics.HCENTER);
                             g.drawString(ConstellationCatalog.getConstellation(i).getLatinName(), screenCoordStars[kStar1].x, screenCoordStars[kStar1].y + heightFont / 2, Graphics.TOP | Graphics.HCENTER);
-                        } else if (rMyParam.isConstNamesDisplayed()) {
+                        } else if (myParameter.isConstNamesDisplayed()) {
                             g.drawString(ConstellationCatalog.getConstellation(i).getName(), screenCoordStars[kStar1].x, screenCoordStars[kStar1].y, Graphics.TOP | Graphics.HCENTER);
                         } else {
                             g.drawString(ConstellationCatalog.getConstellation(i).getLatinName(), screenCoordStars[kStar1].x, screenCoordStars[kStar1].y, Graphics.TOP | Graphics.HCENTER);
@@ -667,7 +698,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
         int lg;
         int yct = yConstText;
 
-        g.setColor(myMidlet.getMyParameter().getColor()[Color.COL_HISTORY]);
+        g.setColor(myParameter.getColor()[Color.COL_HISTORY]);
         beg = end = endret = lg = 0;
         do {
             do {
@@ -702,13 +733,15 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     private void drawStars(Graphics g) {
         int nbOfStars = mySky.getStarsProj().length;
-        boolean isStarColored = myMidlet.getMyParameter().isStarColored();
-        boolean isStarShownAsCircle = myMidlet.getMyParameter().isStarShownAsCircle();
-        float maxMag = myMidlet.getMyParameter().getMaxMag();
-        int[] color = myMidlet.getMyParameter().getColor();
+        boolean isStarColored = myParameter.isStarColored();
+        boolean isStarShownAsCircle = myParameter.isStarShownAsCircle();
+        float maxMag = myParameter.getMaxMag();
+        int[] color = myParameter.getColor();
+        int width = myProjection.getWidth();
+        int height = myProjection.getHeight();
 
         for (int k = 0; k < nbOfStars; k++) {
-            if (screenCoordStars[k].isVisible()) {
+            if (screenCoordStars[k].visible) {
                 // Star is above horizon
                 float magf = mySky.getStar(k).getObject().getMag();
                 if (magf < maxMag) {
@@ -733,7 +766,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                         if (size > 4) {
                             size = 4;
                         }
-                        if (screenCoordStars[k].x>=0 && screenCoordStars[k].x<myProjection.getWidth() && screenCoordStars[k].y>=0 && screenCoordStars[k].y<getHeight()) {
+                        if (screenCoordStars[k].x>=0 && screenCoordStars[k].x<width && screenCoordStars[k].y>=0 && screenCoordStars[k].y<height) {
                             if (size < 1) {
                                 g.drawLine(screenCoordStars[k].x, screenCoordStars[k].y, screenCoordStars[k].x, screenCoordStars[k].y);
                             } else {
@@ -742,7 +775,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                         }
                     } else {
                         // Or as a dot
-                        if (screenCoordStars[k].x>=0 && screenCoordStars[k].x<myProjection.getWidth() && screenCoordStars[k].y>=0 && screenCoordStars[k].y<getHeight())
+                        if (screenCoordStars[k].x>=0 && screenCoordStars[k].x<width && screenCoordStars[k].y>=0 && screenCoordStars[k].y<height)
                             g.drawLine(screenCoordStars[k].x, screenCoordStars[k].y, screenCoordStars[k].x, screenCoordStars[k].y);
                     }
                 }
@@ -755,16 +788,17 @@ public class SideralisCanvas extends Canvas implements Runnable {
      * @param g the graphic object
      */
     private void drawMessier(Graphics g) {
-        ConfigParameters rMyParam = myMidlet.getMyParameter();
-        int[] color = rMyParam.getColor();
+        int[] color = myParameter.getColor();
         boolean messDisp,messNameDisp;
+        int width = myProjection.getWidth();
+        int height = myProjection.getHeight();
 
-        messDisp = rMyParam.isMessierDisplayed();
-        messNameDisp = rMyParam.isMessierNameDisplayed();
+        messDisp = myParameter.isMessierDisplayed();
+        messNameDisp = myParameter.isMessierNameDisplayed();
 
         if (messDisp || messNameDisp) {
             for (int k = 0; k < MessierCatalog.getNumberOfObjects(); k++) {
-                if (screenCoordMessier[k].isVisible()) {
+                if (screenCoordMessier[k].visible) {
                     // Messier object is above horizon
                     int mag = (int) mySky.getMessier(k).getObject().getMag();
                     mag = (mag-31) /17;                                         // TODO should not be hard coded
@@ -775,7 +809,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     g.setColor(col);
 
                     if (messDisp) {
-                        if (screenCoordMessier[k].x>=0 && screenCoordMessier[k].x<myProjection.getWidth() && screenCoordMessier[k].y>=0 && screenCoordMessier[k].y<getHeight())
+                        if (screenCoordMessier[k].x>=0 && screenCoordMessier[k].x<width && screenCoordMessier[k].y>=0 && screenCoordMessier[k].y<height)
                             g.drawLine(screenCoordMessier[k].x, screenCoordMessier[k].y, screenCoordMessier[k].x, screenCoordMessier[k].y);
                     }
                     if (messNameDisp) {
@@ -791,15 +825,14 @@ public class SideralisCanvas extends Canvas implements Runnable {
      * @param g
      */
     private void drawSystemSolarObjects(Graphics g) {
-        ConfigParameters rMyParam = myMidlet.getMyParameter();
-        int[] color = rMyParam.getColor();
+        int[] color = myParameter.getColor();
 
         // -------------------------
         // ------ Display moon -----
-        if (screenCoordMoon.isVisible()) {
+        if (screenCoordMoon.visible) {
             g.setColor(color[Color.COL_MOON]);
             int z = (int) (myProjection.getZoom() * SIZE_MOON_SUN);
-            if (rMyParam.isPlanetDisplayed()) {
+            if (myParameter.isPlanetDisplayed()) {
                 switch (mySky.getMoon().getPhase()) {
                     case MoonProj.FIRST:
                         g.fillArc((int) screenCoordMoon.x - z, (int) screenCoordMoon.y - z, 2 * z, 2 * z, -100, 200);
@@ -815,31 +848,31 @@ public class SideralisCanvas extends Canvas implements Runnable {
                         break;
                 }
             }
-            if (rMyParam.isPlanetNameDisplayed()) {
+            if (myParameter.isPlanetNameDisplayed()) {
                 g.drawString(LocalizationSupport.getMessage("NAME_MOON"), (int) screenCoordMoon.x, (int) screenCoordMoon.y - heightFont - z, Graphics.TOP | Graphics.HCENTER);
             }
         }
         // -------------------------
         // ------ Display sun -----
-        if (screenCoordSun.isVisible()) {
+        if (screenCoordSun.visible) {
             g.setColor(color[Color.COL_SUN]);
             int z = (int) (myProjection.getZoom() * SIZE_MOON_SUN);
-            if (rMyParam.isPlanetDisplayed()) {
+            if (myParameter.isPlanetDisplayed()) {
                 g.fillArc((int) screenCoordSun.x - z, (int) screenCoordSun.y - z, 2 * z, 2 * z, 0, 360);
             }
-            if (rMyParam.isPlanetNameDisplayed()) {
+            if (myParameter.isPlanetNameDisplayed()) {
                 g.drawString(LocalizationSupport.getMessage("NAME_SUN"), (int) screenCoordSun.x, (int) screenCoordSun.y - heightFont - z, Graphics.TOP | Graphics.HCENTER);
             }
         }
         // ---------------------------
         // ------ Display planets -----
         for (int k = 0; k < Sky.NB_OF_PLANETS; k++) {
-            if (screenCoordPlanets[k].isVisible()) {
+            if (screenCoordPlanets[k].visible) {
                 g.setColor(color[(Color.COL_PLANET) + k]);
-                if (rMyParam.isPlanetDisplayed()) {
+                if (myParameter.isPlanetDisplayed()) {
                     g.fillArc((int) screenCoordPlanets[k].x - 2, (int) screenCoordPlanets[k].y - 2, 4, 4, 0, 360);
                 }
-                if (rMyParam.isPlanetNameDisplayed()) {
+                if (myParameter.isPlanetNameDisplayed()) {
                     g.drawString(mySky.getPlanet(k).getObject().getName(), (int) screenCoordPlanets[k].x, (int) screenCoordPlanets[k].y - heightFont, Graphics.TOP | Graphics.HCENTER);
                 }
             }
@@ -852,8 +885,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     private void drawCursor(Graphics g2) {
         int z;
-        ConfigParameters rMyParam = myMidlet.getMyParameter();
-        int[] color = rMyParam.getColor();
+        int[] color = myParameter.getColor();
 
         // -------------------------------
         // --- Recalculate hei and az ----
@@ -922,10 +954,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 g2.setColor(color[Color.COL_CONST_NAME_MIN] + col);
                 colorConstName += color[Color.COL_CONST_NAME_INC];
 
-                if (yCursor < myProjection.getHeight() / 4 || (yCursor >= myProjection.getHeight() / 2 && yCursor < 3 * myProjection.getHeight() / 4)) { // Displayed below the cursor
-                    g2.drawString(constName2, xCursor, yCursor + 2 * heightFont, Graphics.HCENTER | Graphics.TOP);
+                if (screenCoordStars[idxClosestObject].y < myProjection.getHeight() / 2/* || (screenCoordStars[idxClosestObject].y >= myProjection.getHeight() / 2 && screenCoordStars[idxClosestObject].y < 3 * myProjection.getHeight() / 4)*/) { // Displayed below the cursor
+                    g2.drawString(constName2, screenCoordStars[idxClosestObject].x, screenCoordStars[idxClosestObject].y + 2 * heightFont, Graphics.HCENTER | Graphics.TOP);
                 } else {// Displayed above the cursor
-                    g2.drawString(constName2, xCursor, yCursor - 3 * heightFont, Graphics.HCENTER | Graphics.TOP);
+                    g2.drawString(constName2, screenCoordStars[idxClosestObject].x, screenCoordStars[idxClosestObject].y - 3 * heightFont, Graphics.HCENTER | Graphics.TOP);
                 }
 
             } else {
@@ -1007,7 +1039,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
     private void drawSearched(Graphics g) {
         if (myMidlet.getSearch().getTypeHighlight() != SkyObject.NONE) {
             int z;
-            int[] color = myMidlet.getMyParameter().getColor();
+            int[] color = myParameter.getColor();
             int idx = myMidlet.getSearch().getIdxHighlight();
             angleHighlight = (short) ((angleHighlight + 15) % 360);
             z = (int) (myProjection.getZoom() * SIZE_MOON_SUN) + 2;
@@ -1015,38 +1047,38 @@ public class SideralisCanvas extends Canvas implements Runnable {
             g.setColor(color[Color.COL_HIGHLIGHT]);
             switch (myMidlet.getSearch().getTypeHighlight()) {
                 case SkyObject.STAR:
-                    if (screenCoordStars[idx].isVisible()) {
+                    if (screenCoordStars[idx].visible) {
                         g.drawArc(screenCoordStars[idx].x - 4, screenCoordStars[idx].y - 4, 8, 8, angleHighlight, 90);
                         g.drawArc(screenCoordStars[idx].x - 4, screenCoordStars[idx].y - 4, 8, 8, angleHighlight + 180, 90);
                     }
                     break;
                 case SkyObject.MESSIER:
-                    if (screenCoordMessier[idx].isVisible()) {
+                    if (screenCoordMessier[idx].visible) {
                         g.drawArc(screenCoordMessier[idx].x - 4, screenCoordMessier[idx].y - 4, 8, 8, angleHighlight, 90);
                         g.drawArc(screenCoordMessier[idx].x - 4, screenCoordMessier[idx].y - 4, 8, 8, angleHighlight + 180, 90);
                     }
                     break;
                 case SkyObject.SUN:
-                    if (screenCoordSun.isVisible()) {
+                    if (screenCoordSun.visible) {
                         g.drawArc(screenCoordSun.x - z, screenCoordSun.y - z, 2 * z, 2 * z, angleHighlight, 90);
                         g.drawArc(screenCoordSun.x - z, screenCoordSun.y - z, 2 * z, 2 * z, angleHighlight + 180, 90);
                     }
                     break;
                 case SkyObject.MOON:
-                    if (screenCoordMoon.isVisible()) {
+                    if (screenCoordMoon.visible) {
                         g.drawArc(screenCoordMoon.x - z, screenCoordMoon.y - z, 2 * z, 2 * z, angleHighlight, 90);
                         g.drawArc(screenCoordMoon.x - z, screenCoordMoon.y - z, 2 * z, 2 * z, angleHighlight + 180, 90);
                     }
                     break;
                 case SkyObject.PLANET:
-                    if (screenCoordPlanets[idx].isVisible()) {
+                    if (screenCoordPlanets[idx].visible) {
                         g.drawArc(screenCoordPlanets[idx].x - 4, screenCoordPlanets[idx].y - 4, 8, 8, angleHighlight, 90);
                         g.drawArc(screenCoordPlanets[idx].x - 4, screenCoordPlanets[idx].y - 4, 8, 8, angleHighlight + 180, 90);
                     }
                     break;
                 case SkyObject.CONSTELLATION:
                     idx = ConstellationCatalog.getConstellation(idx).getRefStar4ConstellationName();
-                    if (screenCoordStars[idx].isVisible()) {
+                    if (screenCoordStars[idx].visible) {
                         g.drawArc(screenCoordStars[idx].x - 4, screenCoordStars[idx].y - 4, 8, 8, angleHighlight, 90);
                         g.drawArc(screenCoordStars[idx].x - 4, screenCoordStars[idx].y - 4, 8, 8, angleHighlight + 180, 90);
                     }
@@ -1061,15 +1093,18 @@ public class SideralisCanvas extends Canvas implements Runnable {
     private void drawDirections(Graphics g) {
         g.setColor(0xff0000);
         if (myProjection.is3D()) {
-            g.drawArc(2, myProjection.getHeight() - 22, 20, 20, 0, 360);
-            g.drawArc(25, myProjection.getHeight() - 22, 20, 20, 0, 360);
+            int h = myProjection.getHeight();
+            g.drawArc(2, h - 22, 20, 20, 0, 360);
+            g.drawArc(5, h - 22, 40, 40, 0, 90);
+            g.drawLine(25, h - 2, 45,h - 2);
+            g.drawLine(25, h - 22, 25,h - 2);
             double x1, y1;
-            x1 = 12 - 9 * Math.cos(myProjection.getRot() + Math.PI / 2);
-            y1 = myProjection.getHeight() - 12 - 9 * Math.sin(myProjection.getRot() + Math.PI / 2);
-            g.drawLine(12, myProjection.getHeight() - 12, (int) x1, (int) y1);
-            x1 = 35 + 9 * Math.cos(myProjection.getRotV());
-            y1 = myProjection.getHeight() - 12 - 9 * Math.sin(myProjection.getRotV());
-            g.drawLine(35, myProjection.getHeight() - 12, (int) x1, (int) y1);
+            x1 = 12 - 8 * Math.cos(myProjection.getRot() + Math.PI / 2);
+            y1 = h - 12 - 8 * Math.sin(myProjection.getRot() + Math.PI / 2);
+            g.drawLine(12, h - 12, (int) x1, (int) y1);
+            x1 = 25 + 18 * Math.cos(myProjection.getRotV());
+            y1 = h - 2 - 18 * Math.sin(myProjection.getRotV());
+            g.drawLine(25, h - 2, (int) x1, (int) y1);
         } 
     }
 
@@ -1109,10 +1144,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
         idx = -1;
         // Look for closest star.
-        maxMag = myMidlet.getMyParameter().getMaxMag();
+        maxMag = myParameter.getMaxMag();
         type = SkyObject.NONE;
         for (i = 0; i < screenCoordStars.length; i++) {
-            if (screenCoordStars[i].isVisible() && mySky.getStar(i).getObject().getMag() < maxMag) {
+            if (screenCoordStars[i].visible && mySky.getStar(i).getObject().getMag() < maxMag) {
                 d = Math.abs(xCursor - screenCoordStars[i].x) + Math.abs(yCursor - screenCoordStars[i].y);
                 if (d < min) {
                     min = d;
@@ -1122,9 +1157,9 @@ public class SideralisCanvas extends Canvas implements Runnable {
             }
         }
         // Look for closest messier object.
-        if (myMidlet.getMyParameter().isMessierDisplayed()) {
+        if (myParameter.isMessierDisplayed()) {
             for (i = 0; i < screenCoordMessier.length; i++) {
-                if (screenCoordMessier[i].isVisible()) {
+                if (screenCoordMessier[i].visible) {
                     d = Math.abs(xCursor - screenCoordMessier[i].x) + Math.abs(yCursor - screenCoordMessier[i].y);
                     if (d < min) {
                         min = d;
@@ -1134,23 +1169,23 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 }
             }
         }
-        if (myMidlet.getMyParameter().isPlanetDisplayed()) {
+        if (myParameter.isPlanetDisplayed()) {
             // Sun
             d = Math.abs(xCursor - screenCoordSun.x) + Math.abs(yCursor - screenCoordSun.y);
-            if (d < min && screenCoordSun.isVisible()) {
+            if (d < min && screenCoordSun.visible) {
                 min = d;
                 type =SkyObject.SUN;
             }
             // Moon
             d = Math.abs(xCursor - screenCoordMoon.x) + Math.abs(yCursor - screenCoordMoon.y);
-            if (d < min && screenCoordMoon.isVisible()) {
+            if (d < min && screenCoordMoon.visible) {
                 min = d;
                 type = SkyObject.MOON;
             }
             // Planets
             for (i = 0; i < Sky.NB_OF_PLANETS; i++) {
                 d = Math.abs(xCursor - screenCoordPlanets[i].x) + Math.abs(yCursor - screenCoordPlanets[i].y);
-                if (d < min && screenCoordPlanets[i].isVisible()) {
+                if (d < min && screenCoordPlanets[i].visible) {
                     min = d;
                     idx = i;
                     type = SkyObject.PLANET;
@@ -1159,11 +1194,12 @@ public class SideralisCanvas extends Canvas implements Runnable {
         }
         // Display star information
         if (idx == -1) {
-            myMidlet.getMyParameter().setCursor(false);                                          // Remove cursor is not close object found. Not too clean
+            myParameter.setCursor(false);                                          // Remove cursor is not close object found. Not too clean
         } else if (idx != idxClosestObject || type != typeClosestObject) {
             // The closest star is a new star
             idxClosestObject = (short) idx;
             typeClosestObject = type;
+            idxClosestConst = -1;
             switch (typeClosestObject) {
                 case SkyObject.SUN:
                     objectName = LocalizationSupport.getMessage("NAME_SUN");
@@ -1200,8 +1236,8 @@ public class SideralisCanvas extends Canvas implements Runnable {
                         constName1 = ConstellationCatalog.constNames[idxClosestConst][ConstellationCatalog.NAME] + "/" + ConstellationCatalog.constNames[idxClosestConst][ConstellationCatalog.LATIN] + "/";
                         constName2 = ConstellationCatalog.constNames[idxClosestConst][ConstellationCatalog.NAME];
                         shiftConstName = constName1.indexOf("/", 0) + 1;
-                        colorClosestConst = 0;//color[rMyParam.getColor()][COL_CONST_MAX]/2;
-                        colorConstName = 0;//color[rMyParam.getColor()][COL_CONST_NAME]/2;
+                        colorClosestConst = 0;//color[myParameter.getColor()][COL_CONST_MAX]/2;
+                        colorConstName = 0;//color[myParameter.getColor()][COL_CONST_NAME]/2;
                     }
                     break;
             }
@@ -1237,44 +1273,68 @@ public class SideralisCanvas extends Canvas implements Runnable {
         touchScreen.pointerReleased(x, y);                                      // Pointer is released
         keyCode = touchScreen.getAction();                                      // Get action given by pointer released
 
-        if (keyCode == TouchScreenMode1.ZOOM_IN) {
-            myProjection.incZoom();
-            project();
-        }
-        if (keyCode == TouchScreenMode1.ZOOM_OUT) {
-            myProjection.decZoom();
-            project();
-        }
-        if (keyCode == TouchScreenMode1.MIN_MAX) {
-            myMidlet.getMyParameter().setFullScreen(!myMidlet.getMyParameter().isFullScreen());
-            setFullScreenMode(myMidlet.getMyParameter().isFullScreen());
-            if (myMidlet.getMyParameter().isFullScreen())
-                myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("NSC"));
-            else
-                myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("FSC"));
-        }
-        if (keyCode== TouchScreenMode1.VIEW) {
-            if (myMidlet.getMyParameter().isSupport3D()) {
-                myMidlet.getMyParameter().setHorizontalView(!myMidlet.getMyParameter().isHorizontalView());
-                switchScreen();
-            }
-        }
+        if (myParameter.isDebug()) {
+            if (keyCode == TouchScreen.EXIT)
+                myParameter.setDebug(false);
 
-        if (keyCode == TouchScreenMode1.CURSOR_ON) {
-            xCursor = x;
-            yCursor = y;
-            int tmp1, tmp2;
-            tmp1 = idxClosestObject;
-            tmp2 = typeClosestObject;
-            findClosestObject();
-            if (myMidlet.getMyParameter().isCursorDisplayed()) {
-                if ((tmp1 == idxClosestObject) && (tmp2 == typeClosestObject) ) {
-                    myMidlet.getMyParameter().setCursor(false);
-                    typeClosestObject = SkyObject.NONE;
-                    idxClosestConst = idxClosestObject = -1;
+        } else if (myParameter.isHistoryOfConstellationDisplayed()) {
+            if (keyCode == TouchScreen.EXIT) {
+                myParameter.setDisplayConstHistory(false);
+                myParameter.setCursor(true);
+                displayCursor = COUNTER_CURSOR;
+                myHelp.setText(Help.FIVE, LocalizationSupport.getMessage("CHLP"));
+                findClosestObject();
+            }
+        } else {
+            if (keyCode == TouchScreen.ZOOM_IN) {
+                myProjection.incZoom();
+                project();
+            }
+            if (keyCode == TouchScreen.ZOOM_OUT) {
+                myProjection.decZoom();
+                project();
+            }
+            if (keyCode == TouchScreen.MIN_MAX) {
+                myParameter.setFullScreen(!myParameter.isFullScreen());
+                setFullScreenMode(myParameter.isFullScreen());
+                if (myParameter.isFullScreen())
+                    myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("NSC"));
+                else
+                    myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("FSC"));
+            }
+            if (keyCode == TouchScreen.VIEW) {
+                if (myParameter.isSupport3D()) {
+                    myParameter.setHorizontalView(!myParameter.isHorizontalView());
+                    switchScreen();
                 }
-            } else {
-                myMidlet.getMyParameter().setCursor(true);
+            }
+            if ((keyCode == TouchScreen.CONST) && (idxClosestConst != -1)) {
+                myParameter.setDisplayConstHistory(true);
+                myParameter.setCursor(false);
+                yConstText = 0;
+                constText = ConstellationCatalog.getHistory(idxClosestConst);
+            }
+
+            if (keyCode == TouchScreen.DEBUG) {
+                myParameter.setDebug(true);
+            }
+
+            if (keyCode == TouchScreen.CURSOR_ON) {
+                xCursor = x;
+                yCursor = y;
+                int tmp1, tmp2;
+                tmp1 = idxClosestObject;
+                tmp2 = typeClosestObject;
+                findClosestObject();
+                if (myParameter.isCursorDisplayed()) {
+                    if ((tmp1 == idxClosestObject) && (tmp2 == typeClosestObject) ) {
+                        myParameter.setCursor(false);
+                        typeClosestObject = SkyObject.NONE;
+                        idxClosestConst = idxClosestObject = -1;
+                    }
+                } else {
+                    myParameter.setCursor(true);
+                }
             }
         }
     }
@@ -1295,14 +1355,14 @@ public class SideralisCanvas extends Canvas implements Runnable {
         }
         // Toggle full screen
         if (keyCode == KEY_NUM7) {
-            myMidlet.getMyParameter().setFullScreen(!myMidlet.getMyParameter().isFullScreen());
-            setFullScreenMode(myMidlet.getMyParameter().isFullScreen());
-            if (myMidlet.getMyParameter().isFullScreen())
+            myParameter.setFullScreen(!myParameter.isFullScreen());
+            setFullScreenMode(myParameter.isFullScreen());
+            if (myParameter.isFullScreen())
                 myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("NSC"));
             else
                 myHelp.setText(Help.SEVEN, LocalizationSupport.getMessage("FSC"));
         }
-        if (myMidlet.getMyParameter().isDebug()) {
+        if (myParameter.isDebug()) {
             // ================================
             // === Debug data are displayed ===
             if (getGameAction(keyCode) == UP) {
@@ -1322,11 +1382,11 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 }
             }  
             if (keyCode == KEY_STAR) {
-                myMidlet.getMyParameter().setDebug(false);
+                myParameter.setDebug(false);
                 myHelp.setText(Help.FIVE, LocalizationSupport.getMessage("CHLP"));
                 myHelp.setText(Help.STAR,LocalizationSupport.getMessage("DDBG"));
             }
-        } else if (myMidlet.getMyParameter().isHistoryOfConstellationDisplayed()) {
+        } else if (myParameter.isHistoryOfConstellationDisplayed()) {
             // ==========================================
             // === History of constellation displayed ===
             if (getGameAction(keyCode) == UP) {
@@ -1338,7 +1398,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 yConstText -= heightFont;
             }
             if (getGameAction(keyCode) == FIRE) {
-                myMidlet.getMyParameter().setDisplayConstHistory(false);
+                myParameter.setDisplayConstHistory(false);
                 myHelp.setText(Help.FOUR,LocalizationSupport.getMessage("LFT"));
                 myHelp.setText(Help.FIVE,LocalizationSupport.getMessage("CHLP"));
                 myHelp.setText(Help.SIX,LocalizationSupport.getMessage("RIT"));
@@ -1347,22 +1407,22 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 myHelp.setText(Help.ZERO,LocalizationSupport.getMessage("DIC2"));
                 myHelp.setText(Help.STAR, LocalizationSupport.getMessage("DDBG"));
 
-                myMidlet.getMyParameter().setCursor(true);
+                myParameter.setCursor(true);
                 displayCursor = COUNTER_CURSOR;
                 myHelp.setText(Help.FIVE, LocalizationSupport.getMessage("CHLP"));
                 findClosestObject();
             }
-        } else if (!myMidlet.getMyParameter().isCursorDisplayed()) {
+        } else if (!myParameter.isCursorDisplayed()) {
             // =================================================================
             // ===================== Default mode ==============================
             // * = Next display
             if (keyCode == KEY_STAR) {
-                myMidlet.getMyParameter().setHorizontalView(!myMidlet.getMyParameter().isHorizontalView());
+                myParameter.setHorizontalView(!myParameter.isHorizontalView());
                 switchScreen();
             }
             // 0 = Show cursor
             if (keyCode == KEY_NUM0) {
-                myMidlet.getMyParameter().setCursor(true);
+                myParameter.setCursor(true);
                 displayCursor = COUNTER_CURSOR;
                 myHelp.setText(Help.FIVE, LocalizationSupport.getMessage("CHLP"));
                 myHelp.setText(Help.ZERO, LocalizationSupport.getMessage("DIC2"));
@@ -1401,16 +1461,17 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 myProjection.down();
                 project();
             }
-        } else if (myMidlet.getMyParameter().isCursorDisplayed()) {
+        } else if (myParameter.isCursorDisplayed()) {
             // =================================================================
             // ========================= Cursor mode ===========================
             // 0 = Hide cursor
             if (keyCode == KEY_NUM0) {
-                myMidlet.getMyParameter().setCursor(false);
+                myParameter.setCursor(false);
                 typeClosestObject = SkyObject.NONE;
                 idxClosestConst = idxClosestObject = -1;
                 myHelp.setText(Help.FIVE, "");
                 myHelp.setText(Help.ZERO, LocalizationSupport.getMessage("DIC"));
+                myHelp.setText(Help.STAR, "");
             }
             // 1 = Zoom out
             if (keyCode == KEY_NUM1) {
@@ -1457,14 +1518,14 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     myHelp.setText(Help.THREE, "");
                     myHelp.setText(Help.ZERO,"");
                     myHelp.setText(Help.STAR, "");
-                    myMidlet.getMyParameter().setDisplayConstHistory(true);
-                    myMidlet.getMyParameter().setCursor(false);
+                    myParameter.setDisplayConstHistory(true);
+                    myParameter.setCursor(false);
                     yConstText = 0;
                     constText = ConstellationCatalog.getHistory(idxClosestConst);
                 }
             }
             if (keyCode == KEY_STAR) {
-                myMidlet.getMyParameter().setDebug(true);
+                myParameter.setDebug(true);
                 myHelp.setText(Help.FIVE, "");
                 myHelp.setText(Help.ONE,"");
                 myHelp.setText(Help.THREE, "");
@@ -1628,9 +1689,11 @@ public class SideralisCanvas extends Canvas implements Runnable {
      */
     private void switchScreen() {
 //#ifdef JSR184
-        if (myMidlet.getMyParameter().isSupport3D()) {
+        if (myParameter.isSupport3D()) {
             runningCmd = false;
             if (myProjection.is3D()) {
+                // Save view rotation
+                myParameter.setRotView((float)myProjection.getRot());
                 // Switch to zenith view
                 myHelp.setText(Help.STAR, LocalizationSupport.getMessage("PARAM_HOR"));
                 try {
@@ -1652,7 +1715,9 @@ public class SideralisCanvas extends Canvas implements Runnable {
                 runningCmd = true;
                 new Thread(this).start();
             } else {
-                // Switch to horizontal 3D view
+                // Save view rotation
+                myParameter.setRotView((float)myProjection.getRot());
+               // Switch to horizontal 3D view
                 myHelp.setText(Help.STAR, LocalizationSupport.getMessage("ZEV"));
                 try {
                     Thread.sleep(MS_PER_FRAME);
@@ -1681,7 +1746,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
      * This is done in this function
      */
     public void updateColorAndLight() {
-        if (myMidlet.getMyParameter().isLight()) {
+        if (myParameter.isLight()) {
             myProjection.initLights();
             myProjection.setLights();
         } else {

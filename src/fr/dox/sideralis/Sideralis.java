@@ -120,24 +120,22 @@ package fr.dox.sideralis;
 
 /*
  * TODO: Test on all Nokia phones
- * TODO: Change touch screen support
- * TODO: manage touch screen support for history of constellation
  * TODO: Perf and memory profiling
- * TODO: add latitude and longitude to know where we are looking
  * TODO: Correct scrolling when using upper part
  * TODO: Define test set
- * TODO: Touch screen: click on constellation name
- * TODO: Touch screen: click on info box
- * TODO: Save direction
  *
  */
 
 /*
+ * TODO: Later: Add horizon line
+ * TODO: Later: Add moon phase
+ * TODO: Later: sunrise, noon and sunset
  * TODO: Later: Add light in system solar view
  * TODO: Later: Add orbit in system solar view
  * TODO: Later: Add ring to saturn
  * TODO: Later: Add cursor in system solar view
  * TODO: Later: Add touch screen support in system solar view
+ * TODO: Later: add latitude and longitude to know where we are looking
  *
  */
 
@@ -272,6 +270,12 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private long myOffsetForCancellation;
     /** Some items for the touch screen configuration form */
     private Gauge sensitivityGauge;
+    private Gauge inertiaGauge;
+    private Gauge scrollSpeedHorizonGauge;
+    private Gauge scrollSpeedHorZenithGauge;
+    private Gauge scrollSpeedVerZenithGauge;
+    private Gauge skipDragEventGauge;
+
 
     /** The locate me object */
 //#ifdef JSR179
@@ -528,7 +532,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         displayOptionsForm = new Form(LocalizationSupport.getMessage("AE"));
         displayOptionsStringItem = new StringItem(LocalizationSupport.getMessage("AF"), "");
         displayOptionsChoiceGroup = new ChoiceGroup(LocalizationSupport.getMessage("AG"), ChoiceGroup.MULTIPLE, ConfigParameters.getParamNames(), null);
-        displayOptionsTextMaxMag = new TextField(ConfigParameters.getName(ConfigParameters.MAX_MAG), Float.toString(myParameter.getMaxMag()), 15, TextField.DECIMAL);
+        displayOptionsTextMaxMag = new TextField(ConfigParameters.getName(ConfigParameters.MAX_MAG), Float.toString(myParameter.getMaxMag()), 4, TextField.DECIMAL);
         displayOptionsForm.append(displayOptionsStringItem);
         displayOptionsForm.append(displayOptionsChoiceGroup);
         displayOptionsForm.append(displayOptionsTextMaxMag);
@@ -621,8 +625,18 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         // Create the touch screen form
         if (myParameter.isSupportTouchScreen()) {
             touchScreenForm = new Form(LocalizationSupport.getMessage("TOUCH_FORM_TITLE"));
-            sensitivityGauge = new Gauge("Sensitivity Touch Screen", true, 40, myParameter.getSensitivity());
+            sensitivityGauge = new Gauge(LocalizationSupport.getMessage("TSSENSE"), true, 80, myParameter.getSensitivityTouchScreen());
+            inertiaGauge = new Gauge(LocalizationSupport.getMessage("TSINERTIA"), true, 10, (int)(myParameter.getInertiaTouchScreen()*10)-10);
+            scrollSpeedHorizonGauge = new Gauge(LocalizationSupport.getMessage("TSSPHOR"), true, 99, 100-myParameter.getScrollSpeedHorizonTouchScreen());
+            scrollSpeedHorZenithGauge = new Gauge(LocalizationSupport.getMessage("TSSPHZEN"), true, 99, 100-myParameter.getScrollSpeedHorZenithTouchScreen());
+            scrollSpeedVerZenithGauge = new Gauge(LocalizationSupport.getMessage("TSSPVZEN"), true, 99, 100-myParameter.getScrollSpeedVerZenithTouchScreen());
+            skipDragEventGauge = new Gauge("To be tested", true, 200, myParameter.getMaxTimeDragEventTouchScreen());
             touchScreenForm.append(sensitivityGauge);
+            touchScreenForm.append(inertiaGauge);
+            touchScreenForm.append(scrollSpeedHorizonGauge);
+            touchScreenForm.append(scrollSpeedHorZenithGauge);
+            touchScreenForm.append(scrollSpeedVerZenithGauge);
+            touchScreenForm.append(skipDragEventGauge);
             touchScreenForm.addCommand(cancelCommand);
             touchScreenForm.addCommand(okCommand);
             touchScreenForm.setCommandListener(this);
@@ -701,7 +715,12 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             myDisplay.setCurrent(langForm);
         } else if (c == touchScreenCommand) {
             // To configure touch screen
-            sensitivityGauge.setValue(myParameter.getSensitivity());
+            sensitivityGauge.setValue(myParameter.getSensitivityTouchScreen());
+            inertiaGauge.setValue((int)(myParameter.getInertiaTouchScreen()*10)-10);
+            scrollSpeedHorizonGauge.setValue(100-myParameter.getScrollSpeedHorizonTouchScreen());
+            scrollSpeedHorZenithGauge.setValue(100-myParameter.getScrollSpeedHorZenithTouchScreen());
+            scrollSpeedVerZenithGauge.setValue(100-myParameter.getScrollSpeedVerZenithTouchScreen());
+            skipDragEventGauge.setValue(myParameter.getMaxTimeDragEventTouchScreen());
             myDisplay.setCurrent(touchScreenForm);
 
         // === CANCEL command ===
@@ -754,10 +773,13 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 displayOptionsChoiceGroup.getSelectedFlags(b);
                 myParameter.setSelectedFlags(b);
                 myCanvas.updateColorAndLight();
-                if (displayOptionsTextMaxMag.getString().length()!=0)
-                    myParameter.setMaxMag(Float.parseFloat(displayOptionsTextMaxMag.getString()));
-                else
-                    myParameter.setMaxMag(0);
+                float mm = 0;
+                if (displayOptionsTextMaxMag.getString().length()!=0) {
+                    mm = Float.parseFloat(displayOptionsTextMaxMag.getString());
+                    if (mm>5)
+                        mm = 5f;
+                }
+                myParameter.setMaxMag(mm);
                 myDisplay.setCurrent(myCanvas);
                 saveData();
             } else if (myDisplay.getCurrent() == langForm) {
@@ -771,7 +793,12 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             } else if (myDisplay.getCurrent() == helpForm) {
                 myDisplay.setCurrent(myCanvas);
             } else if (myDisplay.getCurrent() == touchScreenForm) {
-                myParameter.setSensitivity(sensitivityGauge.getValue());
+                myParameter.setSensitivityTouchScreen(sensitivityGauge.getValue());
+                myParameter.setInertiaTouchScreen((float)(inertiaGauge.getValue()+10)/10);
+                myParameter.setScrollSpeedHorizonTouchScreen(100-scrollSpeedHorizonGauge.getValue());
+                myParameter.setScrollSpeedHorZenithTouchScreen(100-scrollSpeedHorZenithGauge.getValue());
+                myParameter.setScrollSpeedVerZenithTouchScreen(100-scrollSpeedVerZenithGauge.getValue());
+                myParameter.setMaxTimeDragEventTouchScreen(skipDragEventGauge.getValue());
                 myDisplay.setCurrent(myCanvas);
                 saveData();
             }
@@ -1037,6 +1064,13 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             dout.writeUTF(myParameter.getCity2().getName());
             dout.writeDouble(myParameter.getCity2().getLatitude());
             dout.writeDouble(myParameter.getCity2().getLongitude());
+            dout.writeInt(myParameter.getSensitivityTouchScreen());
+            dout.writeFloat(myParameter.getInertiaTouchScreen());
+            dout.writeInt(myParameter.getScrollSpeedHorizonTouchScreen());
+            dout.writeInt(myParameter.getScrollSpeedHorZenithTouchScreen());
+            dout.writeInt(myParameter.getScrollSpeedVerZenithTouchScreen());
+            dout.writeInt(myParameter.getMaxTimeDragEventTouchScreen());
+            dout.writeFloat(myParameter.getRotView());
             bParam = myParameter.getSelectedFlags();
             for (i = 0; i < bParam.length; i++) {
                 dout.writeBoolean(bParam[i]);
@@ -1101,6 +1135,20 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 lo = din.readDouble();
                 c = new CityObject(sv,la,lo);
                 myParameter.setCity2(c);                                        // Set store city2
+                i = din.readInt();
+                myParameter.setSensitivityTouchScreen(i);                       // Set sensitivity
+                f =din.readFloat();
+                myParameter.setInertiaTouchScreen(f);                           // Set inertia
+                i =din.readInt();
+                myParameter.setScrollSpeedHorizonTouchScreen(i);                // Set scroll speed horizon view
+                i =din.readInt();
+                myParameter.setScrollSpeedHorZenithTouchScreen(i);              // Set scroll speed hor in zenith view
+                i =din.readInt();
+                myParameter.setScrollSpeedVerZenithTouchScreen(i);              // Set scroll speed ver in zenith view
+                i =din.readInt();
+                myParameter.setMaxTimeDragEventTouchScreen(i);                  //
+                f = din.readFloat();
+                myParameter.setRotView(f);
                 bParam = myParameter.getSelectedFlags();
                 for (i = 0; i < bParam.length; i++) {
                     bb = din.readBoolean();
