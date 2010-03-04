@@ -4,6 +4,7 @@ import fr.dox.sideralis.LocalizationSupport;
 import fr.dox.sideralis.location.Position;
 import fr.dox.sideralis.object.PlanetObject;
 import fr.dox.sideralis.object.SkyObject;
+import fr.dox.sideralis.object.StarObject;
 import fr.dox.sideralis.projection.sphere.MessierProj;
 import fr.dox.sideralis.projection.sphere.MoonProj;
 import fr.dox.sideralis.projection.sphere.PlanetProj;

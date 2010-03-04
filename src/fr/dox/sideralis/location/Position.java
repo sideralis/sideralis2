@@ -62,6 +62,7 @@ public class Position {
         new CityObject(LocalizationSupport.getMessage("CITY_JERUSALEM"), 31.767, 35.233),
         new CityObject(LocalizationSupport.getMessage("CITY_JAKARTA"), -6.167, 106.8),
         new CityObject(LocalizationSupport.getMessage("CITY_KARACHI"), 24.867, 67.050),
+        new CityObject(LocalizationSupport.getMessage("CITY_KUALA"), 30.13, 101.7),
         new CityObject(LocalizationSupport.getMessage("CITY_HONG_KONG"), 22.283, 114.150),
         new CityObject(LocalizationSupport.getMessage("CITY_LAGOS"), 6.453, 3.396),
         new CityObject(LocalizationSupport.getMessage("CITY_LAHORE"), 31.571, 74.313),
@@ -116,8 +117,8 @@ public class Position {
      * Creates a new instance of Position 
      */
     public Position() {
-        // Nice = 56
-        setCity(58);
+ //       setCity(41);                                                            // Kuala Lumpur
+        setCity(59);                                                          // Nice
         myTime = new Temps();
         alt = 105;                                                              // altitude of the user
         myTime.calculateJourJulien();

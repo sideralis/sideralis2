@@ -22,5 +22,13 @@ public class MessierObject extends SkyObject {
     public float getDist() {
         return dist;
     }
-    
+
+    /**
+     * Return the magnitude of the object
+     * @return mag as a float
+     */
+    public float getMag() {
+        return (float) mag / 10;
+    }
+
 }

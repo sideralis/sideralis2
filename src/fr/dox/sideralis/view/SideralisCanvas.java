@@ -1021,7 +1021,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             vSize = myProjection.getHeight() - yInfo;
         }
 
-// Display text in info box
+        // Display text in info box
         g2.setColor(color[Color.COL_BOX_TEXT]);
         g2.drawString(objectName, xInfo + 4, yInfo + 4, Graphics.LEFT | Graphics.TOP);
         g2.drawString(magName, xInfo + 4, yInfo + 1 * heightFont + 4, Graphics.LEFT | Graphics.TOP);

@@ -19,7 +19,7 @@ import java.util.Hashtable;
  */
 public class LocalizationSupport {
 
-    public static final short NB_LANG = 8;
+    public static final short NB_LANG = 7;                                      // 8 with ru, 9 with cz
     /**************************************************************************
      ****
      ****   Localization Support Begin
@@ -176,10 +176,16 @@ public class LocalizationSupport {
         if (in != null) {
             langSupported[6] = true;
         }
-        in = clazz.getResourceAsStream(prefix+"_cs"+suffix);
-        if (in != null) {
-            langSupported[7] = true;
-        }
+
+//        in = clazz.getResourceAsStream(prefix+"_ru"+suffix);
+//        if (in != null) {
+//            langSupported[7] = true;
+//        }
+
+//        in = clazz.getResourceAsStream(prefix+"_cs"+suffix);
+//        if (in != null) {
+//            langSupported[8] = true;
+//        }
 
         ret = new String[NB_LANG];
 
@@ -190,7 +196,8 @@ public class LocalizationSupport {
         ret[4] = (langSupported[4] == true?"Portugués":"English (Portugués)");
         ret[5] = (langSupported[5] == true?"Deutsch":"English (Deutsch)");
         ret[6] = (langSupported[6] == true?"Polski":"English (Polski)");
-        ret[7] = (langSupported[7] == true?"\u010cesky":"English (\u010cesky)");
+//        ret[7] = (langSupported[7] == true?"Russian":"English (Russian)");
+//        ret[8] = (langSupported[7] == true?"\u010cesky":"English (\u010cesky)");
         
         return ret;        
     }

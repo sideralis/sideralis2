@@ -75,10 +75,10 @@ public abstract class TouchScreen {
     /** Default sensitivity touch screen (between drag & click) */
     public static final int SENSITIVITY_DRAG_CLICK = 15;
     /** Default value of inertia touch screen */
-    public static final float INERTIA = 1.5f;
+    public static final float INERTIA = 1.4f;
     /** Scroll speed default settings */
-    public static final int SCROLL_SPEED_HORIZON = 70;
-    public static final int SCROLL_SPEED_HOR_ZENITH = 20;
+    public static final int SCROLL_SPEED_HORIZON = 82;
+    public static final int SCROLL_SPEED_HOR_ZENITH = 54;
     public static final int SCROLL_SPEED_VER_ZENITH = 60;
 
     /**

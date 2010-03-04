@@ -43,7 +43,7 @@ package fr.dox.sideralis;
  * v1.0.0   English official release.                                           DONE
  * v1.1.1   Change main engine for display: thread usage                        DONE
  *          Correct bug for full screen                                         CORRECTED
- *          Change time calculation                                             DONE
+ *          Change time clculation                                             DONE
  * v1.1.2   Add night display (red)                                             DONE
  *          Add some more cities (Australian one)                               DONE
  *          Bug: Box around object information was a little too big             CORRECTED
@@ -67,7 +67,7 @@ package fr.dox.sideralis;
  *          Add more stars                                                      Done
  *          Display right ascension and declination                             Done     
  *          Support for large screen                                            Done
- * v1.5.0   GUI Code full rewrite                                               Done
+ * v2.0.0   GUI Code full rewrite                                               Done
  *          Support of multiple keys press                                      Done
  *          Add Uranus and Neptune                                              Done
  *          Improve precision for large planet                                  Done
@@ -77,7 +77,7 @@ package fr.dox.sideralis;
  *          Add support for touch screen                                        Done
  *          Add possibility to zoom and scroll in horizontal view               Done
  *          Add new help system                                                 Done
- * v1.6.0
+ * v2.1.0
  *          Support for sensors
  *          Add 3D system solar view
  *          Display moon phase.
@@ -87,7 +87,7 @@ package fr.dox.sideralis;
  *          Stars are displayed only during days
  *          Add light in 3D view
  *          Add object in horizon view
- * v1.7.0   Add milky way
+ * v2.2.0   Add milky way
  *          All corrections (nutation (p48), aberration (p50), parallaxe, ... ?)
  */
 
@@ -123,10 +123,14 @@ package fr.dox.sideralis;
  * TODO: Perf and memory profiling
  * TODO: Correct scrolling when using upper part
  * TODO: Define test set
+ * TODO: Add docking bar.
+ * TODO: Bug: icons bar may be hidden in non full screen mode
  *
  */
 
 /*
+ * TODO: Later: Add fast display menu
+ * TODO: Later: Add info on planets
  * TODO: Later: Add horizon line
  * TODO: Later: Add moon phase
  * TODO: Later: sunrise, noon and sunset
@@ -136,6 +140,8 @@ package fr.dox.sideralis;
  * TODO: Later: Add cursor in system solar view
  * TODO: Later: Add touch screen support in system solar view
  * TODO: Later: add latitude and longitude to know where we are looking
+ * TODO: Later: Add fuzzy effect behind info box.
+ * TODO: Later: Optimize calc if max mag is decreased
  *
  */
 
@@ -274,7 +280,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private Gauge scrollSpeedHorizonGauge;
     private Gauge scrollSpeedHorZenithGauge;
     private Gauge scrollSpeedVerZenithGauge;
-    private Gauge skipDragEventGauge;
 
 
     /** The locate me object */
@@ -630,13 +635,11 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             scrollSpeedHorizonGauge = new Gauge(LocalizationSupport.getMessage("TSSPHOR"), true, 99, 100-myParameter.getScrollSpeedHorizonTouchScreen());
             scrollSpeedHorZenithGauge = new Gauge(LocalizationSupport.getMessage("TSSPHZEN"), true, 99, 100-myParameter.getScrollSpeedHorZenithTouchScreen());
             scrollSpeedVerZenithGauge = new Gauge(LocalizationSupport.getMessage("TSSPVZEN"), true, 99, 100-myParameter.getScrollSpeedVerZenithTouchScreen());
-            skipDragEventGauge = new Gauge("To be tested", true, 200, myParameter.getMaxTimeDragEventTouchScreen());
             touchScreenForm.append(sensitivityGauge);
             touchScreenForm.append(inertiaGauge);
             touchScreenForm.append(scrollSpeedHorizonGauge);
             touchScreenForm.append(scrollSpeedHorZenithGauge);
             touchScreenForm.append(scrollSpeedVerZenithGauge);
-            touchScreenForm.append(skipDragEventGauge);
             touchScreenForm.addCommand(cancelCommand);
             touchScreenForm.addCommand(okCommand);
             touchScreenForm.setCommandListener(this);
@@ -720,7 +723,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             scrollSpeedHorizonGauge.setValue(100-myParameter.getScrollSpeedHorizonTouchScreen());
             scrollSpeedHorZenithGauge.setValue(100-myParameter.getScrollSpeedHorZenithTouchScreen());
             scrollSpeedVerZenithGauge.setValue(100-myParameter.getScrollSpeedVerZenithTouchScreen());
-            skipDragEventGauge.setValue(myParameter.getMaxTimeDragEventTouchScreen());
             myDisplay.setCurrent(touchScreenForm);
 
         // === CANCEL command ===
@@ -798,7 +800,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 myParameter.setScrollSpeedHorizonTouchScreen(100-scrollSpeedHorizonGauge.getValue());
                 myParameter.setScrollSpeedHorZenithTouchScreen(100-scrollSpeedHorZenithGauge.getValue());
                 myParameter.setScrollSpeedVerZenithTouchScreen(100-scrollSpeedVerZenithGauge.getValue());
-                myParameter.setMaxTimeDragEventTouchScreen(skipDragEventGauge.getValue());
                 myDisplay.setCurrent(myCanvas);
                 saveData();
             }
@@ -1005,6 +1006,9 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 ret = "pl_PL";
                 break;
             case 7:
+                ret = "ru_RU";
+                break;
+            case 8:
                 ret = "cs_CZ";
                 break;
         }
@@ -1034,8 +1038,10 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             lang = 5;
         } else if (s.startsWith("pl")) {
             lang = 6;
-        } else if (s.startsWith("cs")) {
+        } else if (s.startsWith("ru")) {
             lang = 7;
+        } else if (s.startsWith("cs")) {
+            lang = 8;
         } else {
             lang = 0;
         }

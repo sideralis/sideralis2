@@ -56,7 +56,7 @@ public abstract class Color {
             COL_PROGRESS = COL_KEYBOARD +1;
 
     public static final int colorDay[] = {
-            /* BACKGROUND */0x00000000,
+            /* BACKGROUND */ 0x00000000,
             /* HELP       */ 0x00ffffff,
             /* MOON       */ 0x00dcdcdc,
             /* SUN        */ 0x00ffff00,
@@ -102,7 +102,7 @@ public abstract class Color {
             /* PROGRESS   */ 0x000000ff,
         };
     public static final int colorNight[] = {
-            /* BACKGROUND */0x00000000,
+            /* BACKGROUND */ 0x00000000,
             /* HELP       */ 0x00ff0000,
             /* MOON       */ 0x00ff0000,
             /* SUN        */ 0x00ff0000,
