@@ -318,7 +318,7 @@ new StarObject(10.9962225F /*RA2000*/,-18.29889F /*DE2000*/,4.07F /*mag*/,(short
 new StarObject(11.030666F /*RA2000*/,56.38222F /*DE2000*/,2.37F /*mag*/,(short)4295 /*hr*/,(short)((5<<8)+82) /*bn<<8+cn*/,79.0F /*dist*/,"Merak"),
 new StarObject(11.062111F /*RA2000*/,61.75083F /*DE2000*/,1.79F /*mag*/,(short)4301 /*hr*/,(short)((1<<8)+82) /*bn<<8+cn*/,125.0F /*dist*/,"Dubhe"),
 new StarObject(11.0888605F /*RA2000*/,-27.293333F /*DE2000*/,4.94F /*mag*/,(short)4314 /*hr*/,(short)((9<<8)+41) /*bn<<8+cn*/,148.0F /*dist*/,""),
-new StarObject(11.143139F /*RA2000*/,-58.975002F /*DE2000*/,3.83F /*mag*/,(short)4337 /*hr*/,(short)((0<<8)+0) /*bn<<8+cn*/,4393.0F /*dist*/,""),
+new StarObject(11.143139F /*RA2000*/,-58.975002F /*DE2000*/,3.83F /*mag*/,(short)4337 /*hr*/,(short)((0<<8)+88) /*bn<<8+cn*/,4393.0F /*dist*/,""),
 new StarObject(11.194278F /*RA2000*/,-22.825834F /*DE2000*/,4.48F /*mag*/,(short)4343 /*hr*/,(short)((5<<8)+28) /*bn<<8+cn*/,271.0F /*dist*/,""),
 new StarObject(11.235111F /*RA2000*/,20.523611F /*DE2000*/,2.56F /*mag*/,(short)4357 /*hr*/,(short)((11<<8)+45) /*bn<<8+cn*/,58.0F /*dist*/,"Zozma"),
 new StarObject(11.237306F /*RA2000*/,15.429444F /*DE2000*/,3.35F /*mag*/,(short)4359 /*hr*/,(short)((71<<8)+45) /*bn<<8+cn*/,181.0F /*dist*/,"Coxa"),

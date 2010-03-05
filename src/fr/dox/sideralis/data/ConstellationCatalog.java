@@ -192,7 +192,7 @@ new ConstellationObject(new short[]{257, 232, 232, 228, 232, 227, 227, 252, 252,
         {"Vir", "Virgo", LocalizationSupport.getMessage("CONST_VIR"), LocalizationSupport.getMessage("CONST_HIS_VIR")},
         {"Vol", "Volans", LocalizationSupport.getMessage("CONST_VOL"), LocalizationSupport.getMessage("CONST_HIS_VOL")},
         {"Vul", "Vulpecula", LocalizationSupport.getMessage("CONST_VUL"), LocalizationSupport.getMessage("CONST_HIS_VUL")},
-        {"No name", "No name", LocalizationSupport.getMessage("CONST_NON"), ""},
+        {"", "", "", ""},
     };
 
     /**

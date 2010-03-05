@@ -800,7 +800,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
             for (int k = 0; k < MessierCatalog.getNumberOfObjects(); k++) {
                 if (screenCoordMessier[k].visible) {
                     // Messier object is above horizon
-                    int mag = (int) mySky.getMessier(k).getObject().getMag();
+                    int mag = (int) (mySky.getMessier(k).getObject().getMag()*10);  // *10 to convert float into int without loosing too much precision
                     mag = (mag-31) /17;                                         // TODO should not be hard coded
                     if (mag > 5) {
                         mag = 5;

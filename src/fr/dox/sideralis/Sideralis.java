@@ -125,6 +125,8 @@ package fr.dox.sideralis;
  * TODO: Define test set
  * TODO: Add docking bar.
  * TODO: Bug: icons bar may be hidden in non full screen mode
+ * TODO: Make it working for RIM phones - See Trevor Poole.
+ * TODO: Add hipparcos number/id
  *
  */
 
