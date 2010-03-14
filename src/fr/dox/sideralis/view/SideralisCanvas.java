@@ -344,6 +344,12 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     project();
                 }
             }
+            // -----------------------------------
+            // ------ Draw touch screen bar ------
+            if (touchScreen != null) {
+//                touchScreen.paint(g);
+                g.setClip(0, 0, myProjection.getWidth(), myProjection.getHeight());
+            }
             // ----------------------------
             // -----   Draw horizon   -----
             drawHorizon(g);
@@ -397,8 +403,13 @@ public class SideralisCanvas extends Canvas implements Runnable {
 
             // ------------------------------------------
             // ------ Draw constellations history -------
-            if (myParameter.isHistoryOfConstellationDisplayed())
+            if (myParameter.isHistoryOfConstellationDisplayed()) {
+                if (touchScreen != null)
+                    g.setClip(0, 0, touchScreen.getWidthDisplay(), touchScreen.getHeightDisplay());
                 drawHistoryOfConstellations(g);
+                if (touchScreen != null)
+                    g.setClip(0, 0, myProjection.getWidth(), myProjection.getHeight());
+            }
 
             // --------------------------------
             // ------- Draw Help --------------
@@ -555,6 +566,10 @@ public class SideralisCanvas extends Canvas implements Runnable {
         // -----   Clear screen   -----
         g.setColor(myParameter.getColor()[Color.COL_BACKGROUND]);
         g.fillRect(0, 0, myProjection.getWidth(), myProjection.getHeight());
+        // Set clipping
+        if (touchScreen != null)
+            g.setClip(0, 0, touchScreen.getWidthDisplay(), touchScreen.getHeightDisplay());
+
         g.setColor(myParameter.getColor()[Color.COL_BOX_TEXT]);
         int pos = yInfoText;
         g.drawString("Date: " + myMidlet.getMyPosition().getTemps().getCalendar().getTime(), xInfoText, pos, Graphics.LEFT | Graphics.TOP);
@@ -591,6 +606,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
         // -----------------------------------
         // ------ Draw touch screen bar ------
         if (touchScreen != null) {
+            g.setClip(0, 0, myProjection.getWidth(), myProjection.getHeight());
             touchScreen.paint(g);
         }
         
@@ -599,7 +615,6 @@ public class SideralisCanvas extends Canvas implements Runnable {
         if (myHelp.isDisplayed()) {
             myHelp.draw(g);
         }
-
     }
 
     /**
@@ -698,6 +713,13 @@ public class SideralisCanvas extends Canvas implements Runnable {
         int lg;
         int yct = yConstText;
 
+        int xmax;
+        if (touchScreen != null) 
+            xmax = touchScreen.getWidthDisplay();
+        else 
+            xmax = myProjection.getWidth();
+       
+
         g.setColor(myParameter.getColor()[Color.COL_HISTORY]);
         beg = end = endret = lg = 0;
         do {
@@ -708,7 +730,7 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     s1 = constText.substring(beg, end);              // s1 = constText from beg to end
                     lg = myFont.stringWidth(s1);
                 }
-            } while ((lg < myProjection.getWidth() - 4) && (end != -1));
+            } while ((lg < xmax - 4) && (end != -1));
             s1 = constText.substring(beg, oldEnd);
             endret = s1.indexOf("\n");
             if (endret != -1) {
@@ -886,6 +908,15 @@ public class SideralisCanvas extends Canvas implements Runnable {
     private void drawCursor(Graphics g2) {
         int z;
         int[] color = myParameter.getColor();
+        int xmax,ymax;
+
+        if (touchScreen != null) {
+            ymax = touchScreen.getHeightDisplay();
+            xmax = touchScreen.getWidthDisplay();
+        } else {
+            ymax = myProjection.getHeight();
+            xmax = myProjection.getWidth();
+        }
 
         // -------------------------------
         // --- Recalculate hei and az ----
@@ -999,26 +1030,27 @@ public class SideralisCanvas extends Canvas implements Runnable {
         maxl += 8;
 
         // Calculate position of info box
-        if (yCursor < myProjection.getHeight() / 2) {
-            yInfoDest = myProjection.getHeight() - vSize - 4;
+        if (yCursor < ymax / 2) {
+            yInfoDest = ymax - vSize - 4;
         } else {
             yInfoDest = 6;
         }
 
-        if (xCursor < myProjection.getWidth() / 2) {
-            xInfoDest = myProjection.getWidth() - maxl - 4;
+        if (xCursor < xmax / 2) {
+            xInfoDest = xmax - maxl - 4;
         } else {
             xInfoDest = 6;
         }
 
         xInfo = xInfo + (xInfoDest - xInfo) / 4;
         yInfo = yInfo + (yInfoDest - yInfo) / 4;
-        if ((xInfo + maxl + 4) > myProjection.getWidth()) {
-            xInfo = myProjection.getWidth() - maxl - 4;        // Get background image (behing info box) to do transparence
+        if ((xInfo + maxl + 4) > xmax) {
+            xInfo = xmax - maxl - 4;        // Get background image (behing info box) to do transparence
         }
 
-        if ((yInfo + vSize) > myProjection.getHeight()) {
-            vSize = myProjection.getHeight() - yInfo;
+        if ((yInfo + vSize) > ymax) {
+            yInfo = ymax - vSize - 4;
+//            vSize = ymax - yInfo;
         }
 
         // Display text in info box
@@ -1336,7 +1368,11 @@ public class SideralisCanvas extends Canvas implements Runnable {
                     myParameter.setCursor(true);
                 }
             }
+            if (keyCode == TouchScreen.EXIT) {
+                myParameter.setCursor(false);
+            }
         }
+        touchScreen.updateToolBarDimension();
     }
 
     /**

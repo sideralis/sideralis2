@@ -132,8 +132,8 @@ public class Position {
     public double getLongitude() {
         int tmp;
         double ret;
-        tmp = (int) (longi * 1000);
-        ret = (double) tmp / 1000;
+        tmp = (int) (longi * 10000);
+        ret = (double) tmp / 10000;
         return ret;
     }
 
@@ -144,8 +144,8 @@ public class Position {
     public double getLatitude() {
         int tmp;
         double ret;
-        tmp = (int) (lat * 1000);
-        ret = (double) tmp / 1000;
+        tmp = (int) (lat * 10000);
+        ret = (double) tmp / 10000;
         return ret;
     }
 

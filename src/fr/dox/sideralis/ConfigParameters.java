@@ -54,11 +54,11 @@ public class ConfigParameters {
     private int scrollSpeedVerZenithTouchScreen;
     /** Threshold to skip event if max time between drag is over */
     private int maxTimeDragEventTouchScreen;
+    /** Boolean to indicate if the tool bar is docked or not */
+    private boolean barDockedTouchScreen;
 
     /** Horizontal direction */
     private float rotView;
-
-
 
     /** To know if we are in full screen mode or not */
     private boolean fullScreen;
@@ -113,6 +113,7 @@ public class ConfigParameters {
         scrollSpeedHorZenithTouchScreen = TouchScreen.SCROLL_SPEED_HOR_ZENITH;
         scrollSpeedVerZenithTouchScreen = TouchScreen.SCROLL_SPEED_VER_ZENITH;
         maxTimeDragEventTouchScreen = TouchScreenMode1.MAX_TIME_BETWEEN_DRAG;
+        barDockedTouchScreen = true;
 
         rotView = 0;
 
@@ -589,6 +590,14 @@ public class ConfigParameters {
 
     public void setRotView(float rotView) {
         this.rotView = rotView;
+    }
+
+    public boolean isBarDockedTouchScreen() {
+        return barDockedTouchScreen;
+    }
+
+    public void setBarDockedTouchScreen(boolean barDockedTouchScreen) {
+        this.barDockedTouchScreen = barDockedTouchScreen;
     }
 
 }

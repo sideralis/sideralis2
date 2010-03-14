@@ -548,6 +548,8 @@ public class EyeProj extends ScreenProj {
         if (rot<0)
             rot += 2*Math.PI;
         setCamera();
+        myMidlet.getMyParameter().setRotView(rot);
+
     }
     /**
      * Go right by some degrees
@@ -557,6 +559,8 @@ public class EyeProj extends ScreenProj {
         if (rot>2*Math.PI)
             rot -= 2*Math.PI;
         setCamera();
+        myMidlet.getMyParameter().setRotView(rot);
+
     }
     /**
      * Go up by some degrees
@@ -588,6 +592,7 @@ public class EyeProj extends ScreenProj {
         if (rot>2*Math.PI)
             rot -= 2*Math.PI;
         setCamera();
+        myMidlet.getMyParameter().setRotView(rot);
     }
 
     /**
@@ -602,6 +607,7 @@ public class EyeProj extends ScreenProj {
         if (rotV>Math.PI/2)
             rotV = (float)Math.PI/2;
         setCamera();
+        myMidlet.getMyParameter().setRotView(rot);
     }
     /**
      * Increase the field of vision by 10 degrees

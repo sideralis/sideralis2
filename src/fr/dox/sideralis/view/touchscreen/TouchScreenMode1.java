@@ -40,27 +40,6 @@ public class TouchScreenMode1 extends TouchScreen {
         super.pointerPressed(x,y);
     }
     /**
-     * Drag the screen
-     * @param x horizontal coordinate of the dragging
-     * @param y vertical coordinate of the dragging
-     */
-    public void pointerDragged(int x,int y) {
-        int dist;
-        if (counterVanishIcon != 0) {
-            dist = (x-xPressed)*(x-xPressed)+(y-yPressed)*(y-yPressed);
-            if (dist > myParameter.getSensitivityTouchScreen()) {
-                if (barPressed) {
-                    xBar = xBarOrigine + x - xPressed;
-                    yBar = yBarOrigine + y - yPressed;
-                    barDragged = true;
-                } else {
-                    screenDragged = true;
-                    setScrollParameters(x, y);
-                }
-            }
-        }
-    }
-    /**
      * Activate or update scroll parameters (called by pointerDragged)
      * @param x the last position of dragging
      * @param y the last position of dragging

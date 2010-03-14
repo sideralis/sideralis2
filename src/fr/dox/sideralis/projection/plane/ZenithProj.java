@@ -72,13 +72,6 @@ public class ZenithProj extends ScreenProj {
             screenCoordPlanets[k] = new ScreenCoord();
     }
     /**
-     * Set the new rotation of the view
-     * @param rot the new angle rotation
-     */
-    public void setRot(float rot) {
-        this.rot = rot;
-    }
-    /**
      * Increase the angle of rotation by PI/20
      */
     public void right() {
@@ -86,6 +79,7 @@ public class ZenithProj extends ScreenProj {
         if (rot > 2 * Math.PI) {
             rot -= 2 * Math.PI;
         }
+        myMidlet.getMyParameter().setRotView(rot);
     }
     /**
      * Decrease the angle of rotation by PI/20
@@ -95,6 +89,7 @@ public class ZenithProj extends ScreenProj {
         if (rot < 0) {
             rot += 2 * Math.PI;
         }
+        myMidlet.getMyParameter().setRotView(rot);
     }
     /**
      * Scroll the view up
@@ -125,6 +120,8 @@ public class ZenithProj extends ScreenProj {
             rot += 2 * Math.PI;
         else if (rot>2*Math.PI)
             rot -= 2 * Math.PI;
+        myMidlet.getMyParameter().setRotView(rot);
+
     }
     /**
      * Scroll vertically by val

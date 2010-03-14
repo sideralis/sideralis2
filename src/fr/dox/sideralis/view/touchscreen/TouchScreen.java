@@ -16,8 +16,6 @@ import javax.microedition.lcdui.Image;
  * @author Bernard
  */
 public abstract class TouchScreen {
-    /** My counter used to make icons vanish */
-    protected int counterVanishIcon;
     /** Sensitivity drag vs click */
     protected ConfigParameters myParameter;
     /** Position of floating bar for pointer */
@@ -26,6 +24,8 @@ public abstract class TouchScreen {
     protected int heightBar, widthBar;
     /** Original position of touch screen bar when dragged */
     protected int xBarOrigine, yBarOrigine;
+    /** Width and height of screen */
+    protected int widthDisplay, heightDisplay;
 
     /** Status of touch screen bar */
     protected boolean barPressed,screenPressed;
@@ -45,9 +45,9 @@ public abstract class TouchScreen {
     protected float rotDir,yDir;
 
     /** Default size of icon */
-    protected static final int SIZE_ICON = 48;
+    public static final int SIZE_ICON = 48;
     /** Number of icon */
-    protected static final int NB_ICON = 4;
+    protected short numberOfIcons;
 
     /** Nothing to do  after releasing or stoping dragging the pointer */
     public static final short NOTHING = 30;
@@ -70,8 +70,6 @@ public abstract class TouchScreen {
     /** Screen to be moved */
     public static final short MOVE = 20;
 
-    /** Reset value before tool bar disapears when nothing is done */
-    protected static final int COUNTER_VANISH_ICON = 100;
     /** Default sensitivity touch screen (between drag & click) */
     public static final int SENSITIVITY_DRAG_CLICK = 15;
     /** Default value of inertia touch screen */
@@ -88,12 +86,12 @@ public abstract class TouchScreen {
      * @param myMidlet the calling midlet
      */
     public TouchScreen(int width, int height, Sideralis myMidlet) {
-        counterVanishIcon = 0;
         setSize(width, height);
         xBar = 0;
         yBar = 0;
         barPressed = false;
         myParameter = myMidlet.getMyParameter();
+        numberOfIcons = 4;
         try {
             zoomInIcon = Image.createImage("/View-zoom-in.png");
             zoomOutIcon = Image.createImage("/View-zoom-out.png");
@@ -113,58 +111,75 @@ public abstract class TouchScreen {
      * @param g the graphic object
      */
     public void paint(Graphics g) {
-        if (counterVanishIcon>0) {
-            counterVanishIcon--;
+        int x,y;
 
-            int x,y;
-            x = xBar + SIZE_ICON/2;
-            y = yBar + SIZE_ICON/2;
-
-            if (myParameter.isHistoryOfConstellationDisplayed() || myParameter.isDebug()) {
-                // In this case only exit icon to display
-                g.drawImage(exitIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
-            } else if (vertical) {
-                // Draw zoom in
-                g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
-                // Draw zoom out
-                g.drawImage(zoomOutIcon, x, y+SIZE_ICON, Graphics.HCENTER | Graphics.VCENTER);
-                if (myParameter.isCursorDisplayed()) {
-                    // Draw const info
-                    g.drawImage(histIcon, x, y+SIZE_ICON*2, Graphics.HCENTER | Graphics.VCENTER);
-                    // Draw debug icon
-                    g.drawImage(debugIcon, x, y+SIZE_ICON*3, Graphics.HCENTER | Graphics.VCENTER);
-                } else {
-                    // Draw full screen <-> normal screen
-                    if (myParameter.isFullScreen())
-                        g.drawImage(minIcon, x, y+SIZE_ICON*2, Graphics.HCENTER | Graphics.VCENTER);
-                    else
-                        g.drawImage(maxIcon, x, y+SIZE_ICON*2, Graphics.HCENTER | Graphics.VCENTER);
-                    // Draw horizontal <-> zenith view
-                    if (myParameter.isHorizontalView())
-                        g.drawImage(zenithIcon, x, y+SIZE_ICON*3, Graphics.HCENTER | Graphics.VCENTER);
-                    else
-                        g.drawImage(horizonIcon, x, y+SIZE_ICON*3, Graphics.HCENTER | Graphics.VCENTER);
-                }
+        if (myParameter.isBarDockedTouchScreen()) {
+            if (vertical) {
+                xBar = widthDisplay - SIZE_ICON;
+                yBar = heightDisplay/2 - SIZE_ICON*numberOfIcons/2;
             } else {
-                g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
-                g.drawImage(zoomOutIcon, x+SIZE_ICON, y, Graphics.HCENTER | Graphics.VCENTER);
-                if (myParameter.isCursorDisplayed()) {
-                    // Draw const info
-                    g.drawImage(histIcon, x+SIZE_ICON*2, y, Graphics.HCENTER | Graphics.VCENTER);
-                    // Draw debug icon
-                    g.drawImage(debugIcon, x+SIZE_ICON*3, y, Graphics.HCENTER | Graphics.VCENTER);
-                } else {                    
-                    if (myParameter.isFullScreen())
-                        g.drawImage(minIcon, x+SIZE_ICON*2, y, Graphics.HCENTER | Graphics.VCENTER);
-                    else
-                        g.drawImage(maxIcon, x+SIZE_ICON*2, y, Graphics.HCENTER | Graphics.VCENTER);
-                    if (myParameter.isHorizontalView())
-                        g.drawImage(zenithIcon, x+SIZE_ICON*3, y, Graphics.HCENTER | Graphics.VCENTER);
-                    else
-                        g.drawImage(horizonIcon, x+SIZE_ICON*3, y, Graphics.HCENTER | Graphics.VCENTER);
-                }
+                xBar = widthDisplay/2 - SIZE_ICON*numberOfIcons/2;
+                yBar = heightDisplay - SIZE_ICON;
             }
         }
+        x = xBar + SIZE_ICON/2;
+        y = yBar + SIZE_ICON/2;
+
+        // Clear icon background
+//            if (myParameter.isBarDockedTouchScreen()) {
+//                g.setColor((myParameter.getColor())[Color.COL_BACKGROUND]);
+//                g.fillRect(xBar, yBar, widthBar, heightBar);
+//            }
+
+        if (myParameter.isHistoryOfConstellationDisplayed() || myParameter.isDebug()) {
+            // In this case only exit icon to display
+            g.drawImage(exitIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
+        } else if (vertical) {
+            // Draw zoom in
+            g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
+            // Draw zoom out
+            g.drawImage(zoomOutIcon, x, y+SIZE_ICON, Graphics.HCENTER | Graphics.VCENTER);
+            if (myParameter.isCursorDisplayed()) {
+                // Draw const info
+                g.drawImage(histIcon, x, y+SIZE_ICON*2, Graphics.HCENTER | Graphics.VCENTER);
+                // Draw debug icon
+                g.drawImage(debugIcon, x, y+SIZE_ICON*3, Graphics.HCENTER | Graphics.VCENTER);
+                // Draw close cursor
+                g.drawImage(exitIcon, x, y+SIZE_ICON*4, Graphics.HCENTER | Graphics.VCENTER);
+            } else {
+                // Draw full screen <-> normal screen
+                if (myParameter.isFullScreen())
+                    g.drawImage(minIcon, x, y+SIZE_ICON*2, Graphics.HCENTER | Graphics.VCENTER);
+                else
+                    g.drawImage(maxIcon, x, y+SIZE_ICON*2, Graphics.HCENTER | Graphics.VCENTER);
+                // Draw horizontal <-> zenith view
+                if (myParameter.isHorizontalView())
+                    g.drawImage(zenithIcon, x, y+SIZE_ICON*3, Graphics.HCENTER | Graphics.VCENTER);
+                else
+                    g.drawImage(horizonIcon, x, y+SIZE_ICON*3, Graphics.HCENTER | Graphics.VCENTER);
+            }
+        } else {
+            g.drawImage(zoomInIcon, x, y, Graphics.HCENTER | Graphics.VCENTER);
+            g.drawImage(zoomOutIcon, x+SIZE_ICON, y, Graphics.HCENTER | Graphics.VCENTER);
+            if (myParameter.isCursorDisplayed()) {
+                // Draw const info
+                g.drawImage(histIcon, x+SIZE_ICON*2, y, Graphics.HCENTER | Graphics.VCENTER);
+                // Draw debug icon
+                g.drawImage(debugIcon, x+SIZE_ICON*3, y, Graphics.HCENTER | Graphics.VCENTER);
+                // Draw exit cursor
+                g.drawImage(exitIcon, x+SIZE_ICON*4, y, Graphics.HCENTER | Graphics.VCENTER);
+            } else {
+                if (myParameter.isFullScreen())
+                    g.drawImage(minIcon, x+SIZE_ICON*2, y, Graphics.HCENTER | Graphics.VCENTER);
+                else
+                    g.drawImage(maxIcon, x+SIZE_ICON*2, y, Graphics.HCENTER | Graphics.VCENTER);
+                if (myParameter.isHorizontalView())
+                    g.drawImage(zenithIcon, x+SIZE_ICON*3, y, Graphics.HCENTER | Graphics.VCENTER);
+                else
+                    g.drawImage(horizonIcon, x+SIZE_ICON*3, y, Graphics.HCENTER | Graphics.VCENTER);
+            }
+        }
+
     }
     /**
      * Return the button associate with the pointer pressed
@@ -194,18 +209,15 @@ public abstract class TouchScreen {
      * @param h
      */
     public void setSize(int w, int h) {
+        widthDisplay = w;
+        heightDisplay = h;
+
         if (w>h)
             vertical = true;
         else
             vertical = false;
 
-        if (vertical) {
-            widthBar = SIZE_ICON;
-            heightBar = NB_ICON*widthBar;
-        } else {
-            heightBar = SIZE_ICON;
-            widthBar = NB_ICON*heightBar;
-        }
+        updateToolBarDimension();
     }
     /**
      * Return true if scroll is active (meaning that scroll inc is still > 0.2)
@@ -250,17 +262,15 @@ public abstract class TouchScreen {
      */
     public void pointerDragged(int x,int y) {
         int dist;
-        if (counterVanishIcon != 0) {
-            dist = (x-xPressed)*(x-xPressed)+(y-yPressed)*(y-yPressed);
-            if (dist > myParameter.getSensitivityTouchScreen()) {
-                if (barPressed) {
-                    xBar = xBarOrigine + x - xPressed;
-                    yBar = yBarOrigine + y - yPressed;
-                    barDragged = true;
-                } else {
-                    screenDragged = true;
-                    setScrollParameters(x, y);
-                }
+        dist = (x-xPressed)*(x-xPressed)+(y-yPressed)*(y-yPressed);
+        if (dist > myParameter.getSensitivityTouchScreen()) {
+            if (barPressed && !myParameter.isBarDockedTouchScreen()) {
+                xBar = xBarOrigine + x - xPressed;
+                yBar = yBarOrigine + y - yPressed;
+                barDragged = true;
+            } else {
+                screenDragged = true;
+                setScrollParameters(x, y);
             }
         }
     }
@@ -272,31 +282,29 @@ public abstract class TouchScreen {
      */
     public void pointerPressed(int x,int y) {
         int w,h;
-        if (counterVanishIcon != 0) {
-            // In some case we have only one icon so bar size is smaller
-            if (myParameter.isHistoryOfConstellationDisplayed() || myParameter.isDebug()) {
-                w = h = SIZE_ICON;
-            } else {
-                w = widthBar;
-                h = heightBar;
-            }
-            // Check if pointer is clicked on bar
-            if (x>xBar && x<(xBar+w)) {
-                if (y>yBar && y<(yBar+h)) {
-                    // The user has touched the touch screen bar
-                    barPressed = true;
-                    xPressed = x;                                               // Store the position of the touch
-                    yPressed = y;
-                    xBarOrigine = xBar;                                         // Store the position of the touch screen bar
-                    yBarOrigine = yBar;
-                }
-            }
-            if (!barPressed) {
-                // The user has touched outside the touch screen bar
-                screenPressed = true;
-                xPressed = x;                                                   // Store the position of the touch
+        // In some case we have only one icon so bar size is smaller
+        if (myParameter.isHistoryOfConstellationDisplayed() || myParameter.isDebug()) {
+            w = h = SIZE_ICON;
+        } else {
+            w = widthBar;
+            h = heightBar;
+        }
+        // Check if pointer is clicked on bar
+        if (x>xBar && x<(xBar+w)) {
+            if (y>yBar && y<(yBar+h)) {
+                // The user has touched the touch screen bar
+                barPressed = true;
+                xPressed = x;                                               // Store the position of the touch
                 yPressed = y;
+                xBarOrigine = xBar;                                         // Store the position of the touch screen bar
+                yBarOrigine = yBar;
             }
+        }
+        if (!barPressed) {
+            // The user has touched outside the touch screen bar
+            screenPressed = true;
+            xPressed = x;                                                   // Store the position of the touch
+            yPressed = y;
         }
         scroll = false;
     }
@@ -309,22 +317,51 @@ public abstract class TouchScreen {
      */
     public void pointerReleased(int x,int y) {
         action = NOTHING;
-        if (counterVanishIcon != 0) {
-            // Clicks are only active if bar is displayed
-            counterVanishIcon = COUNTER_VANISH_ICON;
-            if (barPressed && !barDragged) {
-                // The user has pressed the bar without dragging
-                action = getButton(x,y);
-            }
-            if (screenPressed && !screenDragged) {
-                action = CURSOR_ON;
-            }
-            barDragged = screenDragged = false;
-            barPressed = screenPressed = false;
+        if (barPressed && !barDragged) {
+            // The user has pressed the bar without dragging
+            action = getButton(x,y);
         }
-       counterVanishIcon = COUNTER_VANISH_ICON;
+        if (screenPressed && !screenDragged) {
+            action = CURSOR_ON;
+        }
+        barDragged = screenDragged = false;
+        barPressed = screenPressed = false;
     }
 
+    /** 
+     * Recalculate the number of icon and dimension of tool bar depending on the context
+     */
+    public void updateToolBarDimension() {
+        numberOfIcons = 4;
+        if (myParameter != null) {
+            if (myParameter.isCursorDisplayed())
+                numberOfIcons = 5;
+            if (myParameter.isDebug() || myParameter.isHistoryOfConstellationDisplayed())
+                numberOfIcons = 1;
+        }
+
+        if (vertical) {
+            widthBar = SIZE_ICON;
+            heightBar = numberOfIcons*widthBar;
+        } else {
+            heightBar = SIZE_ICON;
+            widthBar = numberOfIcons*heightBar;
+        }
+    }
+
+    public int getHeightDisplay() {
+        if (vertical)
+            return heightDisplay;
+        else
+            return heightDisplay-SIZE_ICON;
+    }
+
+    public int getWidthDisplay() {
+        if (vertical)
+            return widthDisplay-SIZE_ICON;
+        else
+            return widthDisplay;
+    }
     /**
      * 
      */

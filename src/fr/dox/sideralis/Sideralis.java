@@ -277,7 +277,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
     private ChoiceGroup langChoiceGroup;
     private long myOffsetForCancellation;
     /** Some items for the touch screen configuration form */
-    private Gauge sensitivityGauge;
     private Gauge inertiaGauge;
     private Gauge scrollSpeedHorizonGauge;
     private Gauge scrollSpeedHorZenithGauge;
@@ -632,12 +631,10 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
         // Create the touch screen form
         if (myParameter.isSupportTouchScreen()) {
             touchScreenForm = new Form(LocalizationSupport.getMessage("TOUCH_FORM_TITLE"));
-            sensitivityGauge = new Gauge(LocalizationSupport.getMessage("TSSENSE"), true, 80, myParameter.getSensitivityTouchScreen());
             inertiaGauge = new Gauge(LocalizationSupport.getMessage("TSINERTIA"), true, 10, (int)(myParameter.getInertiaTouchScreen()*10)-10);
             scrollSpeedHorizonGauge = new Gauge(LocalizationSupport.getMessage("TSSPHOR"), true, 99, 100-myParameter.getScrollSpeedHorizonTouchScreen());
             scrollSpeedHorZenithGauge = new Gauge(LocalizationSupport.getMessage("TSSPHZEN"), true, 99, 100-myParameter.getScrollSpeedHorZenithTouchScreen());
             scrollSpeedVerZenithGauge = new Gauge(LocalizationSupport.getMessage("TSSPVZEN"), true, 99, 100-myParameter.getScrollSpeedVerZenithTouchScreen());
-            touchScreenForm.append(sensitivityGauge);
             touchScreenForm.append(inertiaGauge);
             touchScreenForm.append(scrollSpeedHorizonGauge);
             touchScreenForm.append(scrollSpeedHorZenithGauge);
@@ -720,7 +717,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             myDisplay.setCurrent(langForm);
         } else if (c == touchScreenCommand) {
             // To configure touch screen
-            sensitivityGauge.setValue(myParameter.getSensitivityTouchScreen());
             inertiaGauge.setValue((int)(myParameter.getInertiaTouchScreen()*10)-10);
             scrollSpeedHorizonGauge.setValue(100-myParameter.getScrollSpeedHorizonTouchScreen());
             scrollSpeedHorZenithGauge.setValue(100-myParameter.getScrollSpeedHorZenithTouchScreen());
@@ -785,6 +781,10 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 }
                 myParameter.setMaxMag(mm);
                 myDisplay.setCurrent(myCanvas);
+//                if (myParameter.isNightView())
+//                    myDisplay.flashBacklight(0);
+//                else
+//                    myDisplay.flashBacklight(10000);                            // TODO to be tested
                 saveData();
             } else if (myDisplay.getCurrent() == langForm) {
                 int selLang;
@@ -797,7 +797,6 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             } else if (myDisplay.getCurrent() == helpForm) {
                 myDisplay.setCurrent(myCanvas);
             } else if (myDisplay.getCurrent() == touchScreenForm) {
-                myParameter.setSensitivityTouchScreen(sensitivityGauge.getValue());
                 myParameter.setInertiaTouchScreen((float)(inertiaGauge.getValue()+10)/10);
                 myParameter.setScrollSpeedHorizonTouchScreen(100-scrollSpeedHorizonGauge.getValue());
                 myParameter.setScrollSpeedHorZenithTouchScreen(100-scrollSpeedHorZenithGauge.getValue());
@@ -1079,6 +1078,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
             dout.writeInt(myParameter.getScrollSpeedVerZenithTouchScreen());
             dout.writeInt(myParameter.getMaxTimeDragEventTouchScreen());
             dout.writeFloat(myParameter.getRotView());
+            System.out.println("Rot "+myParameter.getRotView());
             bParam = myParameter.getSelectedFlags();
             for (i = 0; i < bParam.length; i++) {
                 dout.writeBoolean(bParam[i]);
@@ -1157,6 +1157,7 @@ public class Sideralis extends MIDlet implements CommandListener, ItemCommandLis
                 myParameter.setMaxTimeDragEventTouchScreen(i);                  //
                 f = din.readFloat();
                 myParameter.setRotView(f);
+                System.out.println("rot R="+f);
                 bParam = myParameter.getSelectedFlags();
                 for (i = 0; i < bParam.length; i++) {
                     bb = din.readBoolean();
