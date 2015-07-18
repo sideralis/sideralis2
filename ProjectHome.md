@@ -1,0 +1,2 @@
+This is the original version of Sideralis application for J2ME phones.
+Sideralis (http://sideralis.free.fr) is a sky map for mobile phones. Depending on your location and time, Sideralis will display a real time map of the sky, including stars, main planets, sun, moon and Messier objects.
